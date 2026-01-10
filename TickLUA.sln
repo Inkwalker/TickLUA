@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36623.8
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TickLUA", "TickLUA\TickLUA.csproj", "{7DB1ACAE-815F-46F4-A05B-733468A3A9E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TickLUA.Tests", "TickLUA,Tests\TickLUA.Tests.csproj", "{6E29878A-569A-430A-9775-2D3D8F12879B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7DB1ACAE-815F-46F4-A05B-733468A3A9E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7DB1ACAE-815F-46F4-A05B-733468A3A9E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7DB1ACAE-815F-46F4-A05B-733468A3A9E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7DB1ACAE-815F-46F4-A05B-733468A3A9E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E29878A-569A-430A-9775-2D3D8F12879B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E29878A-569A-430A-9775-2D3D8F12879B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E29878A-569A-430A-9775-2D3D8F12879B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E29878A-569A-430A-9775-2D3D8F12879B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D702C4B2-B614-4780-BA66-CEFFE889509E}
+	EndGlobalSection
+EndGlobal

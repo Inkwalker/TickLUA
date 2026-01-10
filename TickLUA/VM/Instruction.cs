@@ -1,0 +1,66 @@
+﻿namespace TickLUA.VM
+{
+    // instruction layout:
+    // +--------+--------+--------+--------+
+    // |   C    |   B    |   A    | OPCODE |
+    // |        Bx       |   A    | OPCODE |
+    // +--------+--------+--------+--------+
+    // 32       24       16       8        0
+
+    internal static class Instruction
+    {
+        internal static Opcode GetOpcode(uint instruction)
+        {
+            return (Opcode)(instruction & 0xFF);
+        }
+
+        internal static uint GetOpcodeI(uint instruction)
+        {
+            return instruction & 0xFF;
+        }
+
+        internal static byte GetA(uint instruction)
+        {
+            return (byte)((instruction >> 8) & 0xFF);
+        }
+
+        internal static byte GetB(uint instruction)
+        {
+            return (byte)((instruction >> 16) & 0xFF);
+        }
+
+        internal static byte GetC(uint instruction)
+        {
+            return (byte)((instruction >> 24) & 0xFF);
+        }
+
+        internal static short GetBx(uint instruction)
+        {
+            return (short)((instruction >> 16) & 0xFFFF);
+        }
+
+        internal static uint New(Opcode opcode, byte a, byte b, byte c)
+        {
+            return (uint)((byte)opcode | (a << 8) | (b << 16) | (c << 24));
+        }
+
+        internal static uint New(Opcode opcode, byte a, short bx)
+        {
+            return (uint)((byte)opcode | (a << 8) | (bx << 16));
+        }
+
+        #region Factory methods
+
+        internal static uint NOP() => New(Opcode.NOP, 0, 0);
+        internal static uint LOADK(byte dest_reg, ushort const_index) => New(Opcode.LOADK, dest_reg, (short)const_index);
+        internal static uint LOADI(byte dest_reg, short integer) => New(Opcode.LOADI, dest_reg, integer);
+        internal static uint ADD(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.ADD, dest_reg, left_reg, right_reg);
+        internal static uint RETURN(byte start_reg, int count)
+        {
+            int c = count < -1 ? -1 : count;
+            return New(Opcode.RETURN, start_reg, (short)(c + 1));
+        }
+
+        #endregion
+    }
+}
