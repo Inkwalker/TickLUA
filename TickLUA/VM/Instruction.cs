@@ -34,7 +34,12 @@
             return (byte)((instruction >> 24) & 0xFF);
         }
 
-        internal static short GetBx(uint instruction)
+        internal static ushort GetBx(uint instruction)
+        {
+            return (ushort)((instruction >> 16) & 0xFFFF);
+        }
+
+        internal static short GetBxSigned(uint instruction)
         {
             return (short)((instruction >> 16) & 0xFFFF);
         }
@@ -44,7 +49,12 @@
             return (uint)((byte)opcode | (a << 8) | (b << 16) | (c << 24));
         }
 
-        internal static uint New(Opcode opcode, byte a, short bx)
+        internal static uint New(Opcode opcode, byte a, short sbx)
+        {
+            return (uint)((byte)opcode | (a << 8) | (sbx << 16));
+        }
+
+        internal static uint New(Opcode opcode, byte a, ushort bx)
         {
             return (uint)((byte)opcode | (a << 8) | (bx << 16));
         }
@@ -58,7 +68,7 @@
         internal static uint RETURN(byte start_reg, int count)
         {
             int c = count < -1 ? -1 : count;
-            return New(Opcode.RETURN, start_reg, (short)(c + 1));
+            return New(Opcode.RETURN, start_reg, (ushort)(c + 1));
         }
 
         #endregion

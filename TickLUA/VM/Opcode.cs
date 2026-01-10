@@ -47,6 +47,9 @@
         //TESTSET,
         //CALL,
         //TAILCALL,
+        /// <summary>
+        /// Return from a function. A - start result reg, Bx - number of registers to return (0 - all, 1 - none, 2+ - (Bx-1))
+        /// </summary>
         RETURN,
         //FORLOOP,
         //FORPREP,

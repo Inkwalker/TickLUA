@@ -5,7 +5,7 @@ VisualStudioVersion = 17.14.36623.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TickLUA", "TickLUA\TickLUA.csproj", "{7DB1ACAE-815F-46F4-A05B-733468A3A9E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TickLUA.Tests", "TickLUA,Tests\TickLUA.Tests.csproj", "{6E29878A-569A-430A-9775-2D3D8F12879B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TickLUA.Tests", "TickLUA.Tests\TickLUA.Tests.csproj", "{6E29878A-569A-430A-9775-2D3D8F12879B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

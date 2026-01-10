@@ -11,8 +11,8 @@ namespace TickLUA.VM.Handlers
 
         internal static void LOADK(TickVM vm, StackFrame frame, uint instruction)
         {
-            byte  a  = Instruction.GetA(instruction);
-            ushort bx = (ushort)Instruction.GetBx(instruction);
+            byte  a   = Instruction.GetA(instruction);
+            ushort bx = Instruction.GetBx(instruction);
 
             // Load constant at index bx into register a
             frame.Registers[a] = frame.Constants[bx];
@@ -21,7 +21,7 @@ namespace TickLUA.VM.Handlers
         internal static void LOADI(TickVM vm, StackFrame frame, uint instruction)
         {
             byte  a = Instruction.GetA(instruction);
-            short b = Instruction.GetBx(instruction);
+            short b = Instruction.GetBxSigned(instruction);
 
             // Load integer b into register a
             frame.Registers[a] = new IntegerObject(b);
@@ -32,7 +32,7 @@ namespace TickLUA.VM.Handlers
             frame.PC = frame.Function.Instructions.Count;
 
             byte a = Instruction.GetA(instruction);
-            ushort b = (ushort)Instruction.GetBx(instruction);
+            ushort b = Instruction.GetBx(instruction);
 
             frame.SetResults(a, b - 1);
         }
