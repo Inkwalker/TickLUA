@@ -12,7 +12,7 @@ namespace TickLUA_Tests
         [Test]
         public void Add()
         {
-            var bytecode = new LuaFunction();
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
 
             bytecode.Instructions.Add(Instruction.LOADI(0, 40));
             bytecode.Instructions.Add(Instruction.LOADI(1, 2));

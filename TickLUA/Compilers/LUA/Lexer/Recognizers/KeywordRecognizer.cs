@@ -25,7 +25,7 @@
             }
 
             int line = source.Line;
-            int colon = source.Colon;
+            int column = source.Column;
             int start_pos = source.Position;
 
             char c = source.Peek();
@@ -36,7 +36,7 @@
                 c = source.Next();
             }
 
-            token = new Token(tokenType) { Content = source.Substring(start_pos), Line = line, Colon = colon };
+            token = new Token(tokenType) { Content = source.Substring(start_pos), Line = line, Column = column };
 
             return true;
         }

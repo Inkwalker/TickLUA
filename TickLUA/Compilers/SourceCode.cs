@@ -6,7 +6,7 @@
 
         public int Position { get; private set; }
         public int Line { get; private set; }
-        public int Colon { get; private set; }
+        public int Column { get; private set; }
 
         public bool EoF => Position >= Str.Length;
         public int Length => Str.Length;
@@ -16,7 +16,7 @@
             Str = str;
             Position = 0;
             Line = 1;
-            Colon = 1;
+            Column = 1;
         }
 
         /// <summary>
@@ -29,12 +29,12 @@
             while (Position > pos)
             {
                 Position--;
-                Colon--;
+                Column--;
 
                 if (Str[Position] == '\n')
                 {
                     Line--;
-                    Colon = 1;
+                    Column = 1;
                 }
             }
         }
@@ -47,10 +47,10 @@
             if (Str[Position] == '\n')
             {
                 Line++;
-                Colon = 0;
+                Column = 0;
             }
             Position++;
-            Colon++;
+            Column++;
             return EoF ? ' ' : Str[Position];
         }
 

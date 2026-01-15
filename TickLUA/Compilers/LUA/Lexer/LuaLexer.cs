@@ -57,7 +57,7 @@ namespace TickLUA.Compilers.LUA.Lexer
 
                 if (source.Position == start_pos)
                 {
-                    throw new System.Exception($"Unknown character at: ln{source.Line}, ch{source.Colon}");
+                    throw new System.Exception($"Unknown character at: ln{source.Line}, ch{source.Column}");
                 }
             }
 

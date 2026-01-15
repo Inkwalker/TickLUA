@@ -6,25 +6,25 @@
         public string Content { get; set; }
 
         public int Line { get; set; }
-        public int Colon { get; set; }
+        public int Column { get; set; }
 
         public Token(TokenType type)
         {
             Type = type;
             Line = 1;
-            Colon = 1;
+            Column = 1;
         }
 
         public Token(TokenType type, int line, int col)
         {
             Type = type;
             Line = line;
-            Colon = col;
+            Column = col;
         }
 
         public override string ToString()
         {
-            return $"Token: {Type} | {Content} [ln:{Line},ch:{Colon}]";
+            return $"Token: {Type} | {Content} [ln:{Line},ch:{Column}]";
         }
 
         public bool IsEndOfBlock()

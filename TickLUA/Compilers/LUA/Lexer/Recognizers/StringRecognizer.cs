@@ -8,7 +8,7 @@
 
             int start_pos = source.Position;
             int line = source.Line;
-            int colon = source.Colon;
+            int column = source.Column;
 
             char c = source.Peek();
             char startChar = c;
@@ -33,7 +33,7 @@
                 string content = source.Str.Substring(start_pos + 1, len - 2);
                 content = content.Replace("\\n", "\n");
 
-                token = new Token(TokenType.String) { Content = content, Line = line, Colon = colon };
+                token = new Token(TokenType.String) { Content = content, Line = line, Column = column };
                 return true;
             }
 

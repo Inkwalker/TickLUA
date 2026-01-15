@@ -10,7 +10,7 @@
 
             int start_pos = source.Position;
             int line = source.Line;
-            int colon = source.Colon;
+            int column = source.Column;
 
             char c = source.Peek();
             while ((IsDigit(c) || c == '.') && !source.EoF)
@@ -20,7 +20,7 @@
 
             if (source.Position > start_pos)
             {
-                token = new Token(TokenType.Number) { Content = source.Substring(start_pos), Line = line, Colon = colon };
+                token = new Token(TokenType.Number) { Content = source.Substring(start_pos), Line = line, Column = column };
                 return true;
             }
 
