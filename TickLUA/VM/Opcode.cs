@@ -7,6 +7,10 @@
         /// </summary>
         NOP,
         /// <summary>
+        /// Copy value from one register to another. A - target reg, B - source reg
+        /// </summary>
+        MOVE,
+        /// <summary>
         /// Load constant. A - target reg, Bx - constant index
         /// </summary>
         LOADK,

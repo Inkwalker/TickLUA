@@ -9,6 +9,15 @@ namespace TickLUA.VM.Handlers
             // No operation
         }
 
+        internal static void MOVE(TickVM vm, StackFrame frame, uint instruction)
+        {
+            byte a = Instruction.GetA(instruction);
+            byte b = Instruction.GetB(instruction);
+
+            // Move value from register b to register a
+            frame.Registers[a] = frame.Registers[b];
+        }
+
         internal static void LOADK(TickVM vm, StackFrame frame, uint instruction)
         {
             byte  a   = Instruction.GetA(instruction);

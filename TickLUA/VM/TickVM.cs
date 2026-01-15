@@ -13,6 +13,7 @@ namespace TickLUA.VM
         private readonly Dictionary<Opcode, InstructionHandler> instructionSet = new Dictionary<Opcode, InstructionHandler>
         {
             { Opcode.NOP,    HandlersCore.NOP },
+            { Opcode.MOVE,   HandlersCore.MOVE },
             { Opcode.LOADK,  HandlersCore.LOADK },
             { Opcode.LOADI,  HandlersCore.LOADI },
             { Opcode.ADD,    HandlersMath.ADD },
