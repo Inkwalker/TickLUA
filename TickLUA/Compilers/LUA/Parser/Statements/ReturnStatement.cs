@@ -28,24 +28,42 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
         public override void Compile(FunctionBuilder builder)
         {
-            //if (!context.Symbols.IsInsideFunction())
-                //throw new CompilationException($"Return statement outside function at line {line}");
+            if (values.Count == 0)
+            {
+                // Return nothing
+                builder.AddInstruction(Instruction.RETURN(0, 0));
+                return;
+            }
 
-            //if (values.Count > 0)
-            //{
-            //    for (int i = 0; i < values.Count; i++)
-            //    {
-            //        values[i].Compile(context, code);
-            //    }
+            List<byte> regs = new List<byte>(values.Count);
 
-            //    code += Instruction.MakeTuple(values.Count);
-            //}
-            //else if (values.Count == 1)
-            byte reg_result = values[0].CompileRead(builder);
-            //else
-            //    code += Instruction.MakeNil();
+            for (int i = 0; i < values.Count; i++)
+            {
+                byte reg = values[i].CompileRead(builder);
+                regs.Add(reg);
+            }
 
-            builder.AddInstruction(Instruction.RETURN(reg_result, 1));
+            if (!IsConsecutiveRegisters(regs))
+            {
+                var new_start_reg = builder.AllocateRegisters(regs.Count);
+                for (int i = 0; i < regs.Count; i++)
+                {
+                    byte new_reg = (byte)(new_start_reg + i);
+                    builder.AddInstruction(Instruction.MOVE(new_reg, regs[i]));
+                    regs[i] = new_reg;
+                }
+            }
+
+            builder.AddInstruction(Instruction.RETURN(regs[0], regs.Count));
+        }
+
+        private static bool IsConsecutiveRegisters(List<byte> regs)
+        {
+            for (int i = 1; i < regs.Count; i++)
+            {
+                if (regs[i] != regs[i - 1] + 1) return false;
+            }
+            return true;
         }
     }
 }

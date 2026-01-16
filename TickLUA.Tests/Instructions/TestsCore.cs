@@ -1,6 +1,7 @@
+using TickLUA.Compilers.LUA;
 using TickLUA.VM.Objects;
 
-namespace TickLUA_Tests
+namespace TickLUA_Tests.Instructions
 {
     public class TestsCore
     {
