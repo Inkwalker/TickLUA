@@ -66,6 +66,12 @@
         internal static uint LOADK(byte dest_reg, ushort const_index) => New(Opcode.LOADK, dest_reg, (short)const_index);
         internal static uint LOADI(byte dest_reg, short integer) => New(Opcode.LOADI, dest_reg, integer);
         internal static uint ADD(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.ADD, dest_reg, left_reg, right_reg);
+        internal static uint SUB(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.SUB, dest_reg, left_reg, right_reg);
+        internal static uint MUL(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.MUL, dest_reg, left_reg, right_reg);
+        internal static uint MOD(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.MOD, dest_reg, left_reg, right_reg);
+        internal static uint POW(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.POW, dest_reg, left_reg, right_reg);
+        internal static uint DIV(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.DIV, dest_reg, left_reg, right_reg);
+        internal static uint IDIV(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.IDIV, dest_reg, left_reg, right_reg);
         internal static uint RETURN(byte start_reg, int count)
         {
             int c = count < -1 ? -1 : count;

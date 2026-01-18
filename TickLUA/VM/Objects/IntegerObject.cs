@@ -41,10 +41,10 @@ namespace TickLUA.VM.Objects
         public static IntegerObject operator +(IntegerObject l, IntegerObject r) => new IntegerObject(l.Value + r.Value);
         public static IntegerObject operator -(IntegerObject l, IntegerObject r) => new IntegerObject(l.Value - r.Value);
         public static IntegerObject operator *(IntegerObject l, IntegerObject r) => new IntegerObject(l.Value * r.Value);
-        
+
         //TODO: float type return
-        //public static IntegerObject operator /(IntegerObject l, IntegerObject r) => new IntegerObject(l.Value / r.Value);
-       
+        public static IntegerObject operator /(IntegerObject l, IntegerObject r) => new IntegerObject(l.Value / r.Value);
+
         public static IntegerObject operator %(IntegerObject l, IntegerObject r) => new IntegerObject(l.Value % r.Value);
         public static IntegerObject operator -(IntegerObject n) => new IntegerObject(-n.Value);
         //public static BooleanObject operator >(NumberObject l, NumberObject r) => new BooleanObject(l.Value > r.Value);

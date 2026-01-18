@@ -34,11 +34,30 @@
         /// Add two values. A - result reg, B - left val reg, C - right val reg
         /// </summary>
         ADD,
-        //SUB,
-        //MUL,
-        //DIV,
-        //MOD,
-        //POW,
+        /// <summary>
+        /// Subtract two values. A - result reg, B - left val reg, C - right val reg
+        /// </summary>
+        SUB,
+        /// <summary>
+        /// Multiply two values. A - result reg, B - left val reg, C - right val reg
+        /// </summary>
+        MUL,
+        /// <summary>
+        /// Modulus of two values. A - result reg, B - left val reg, C - right val reg
+        /// </summary>
+        MOD,
+        /// <summary>
+        /// Power of two values. A - result reg, B - left val reg, C - right val reg
+        /// </summary>
+        POW,
+        /// <summary>
+        /// Divide two values. A - result reg, B - left val reg, C - right val reg
+        /// </summary>
+        DIV,
+        /// <summary>
+        /// Integer divide two values. A - result reg, B - left val reg, C - right val reg
+        /// </summary>
+        IDIV,
         //UNM,
         //NOT,
         //LEN,

@@ -221,11 +221,17 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 case BinaryOperation.Add:
                     return Instruction.ADD(reg_res, reg_l, reg_r);
                 case BinaryOperation.Sub:
+                    return Instruction.SUB(reg_res, reg_l, reg_r);
                 case BinaryOperation.Mul:
+                    return Instruction.MUL(reg_res, reg_l, reg_r);
                 case BinaryOperation.Div:
+                    return Instruction.DIV(reg_res, reg_l, reg_r);
                 case BinaryOperation.iDiv:
+                    return Instruction.IDIV(reg_res, reg_l, reg_r);
                 case BinaryOperation.Mod:
+                    return Instruction.MOD(reg_res, reg_l, reg_r);
                 case BinaryOperation.Pow:
+                    return Instruction.POW(reg_res, reg_l, reg_r);
                 default:
                     throw new CompilationException($"Unexpected binary operator", 1, 1);
             }
@@ -243,8 +249,8 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 uint instruction = CreateInstruction(
                     operation, 
                     reg_res, 
-                    reg_r, 
-                    reg_l
+                    reg_l,
+                    reg_r 
                 );
 
                 builder.AddInstruction(instruction);

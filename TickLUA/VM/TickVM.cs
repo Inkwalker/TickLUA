@@ -12,11 +12,20 @@ namespace TickLUA.VM
 
         private readonly Dictionary<Opcode, InstructionHandler> instructionSet = new Dictionary<Opcode, InstructionHandler>
         {
+            // Core operations
             { Opcode.NOP,    HandlersCore.NOP },
             { Opcode.MOVE,   HandlersCore.MOVE },
             { Opcode.LOADK,  HandlersCore.LOADK },
             { Opcode.LOADI,  HandlersCore.LOADI },
+            // Math operations
             { Opcode.ADD,    HandlersMath.ADD },
+            { Opcode.SUB,    HandlersMath.SUB },
+            { Opcode.MUL,    HandlersMath.MUL },
+            { Opcode.MOD,    HandlersMath.MOD },
+            { Opcode.POW,    HandlersMath.POW },
+            { Opcode.DIV,    HandlersMath.DIV },
+            { Opcode.IDIV,   HandlersMath.IDIV },
+            // Function operations
             { Opcode.RETURN, HandlersCore.RETURN },
         };
 

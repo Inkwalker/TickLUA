@@ -6,18 +6,81 @@ namespace TickLUA.VM.Handlers
     {
         internal static void ADD(TickVM vm, StackFrame frame, uint instruction)
         {
-            int result_reg = Instruction.GetA(instruction);
-            int l_reg      = Instruction.GetB(instruction);
-            int r_reg      = Instruction.GetC(instruction);
-
             // TODO: type checks
-            // TODO: metatables
-            var l = frame.Registers[l_reg] as IntegerObject;
-            var r = frame.Registers[r_reg] as IntegerObject;
+            var l = GetRegB(frame, instruction);
+            var r = GetRegC(frame, instruction);
 
-            var result = l + r;
+            SetRegA(frame, instruction, l + r);
+        }
 
-            frame.Registers[result_reg] = result;
+        internal static void SUB(TickVM vm, StackFrame frame, uint instruction)
+        {
+            // TODO: type checks
+            var l = GetRegB(frame, instruction);
+            var r = GetRegC(frame, instruction);
+
+            SetRegA(frame, instruction, l - r);
+        }
+
+        internal static void MUL(TickVM vm, StackFrame frame, uint instruction)
+        {
+            // TODO: type checks
+            var l = GetRegB(frame, instruction);
+            var r = GetRegC(frame, instruction);
+
+            SetRegA(frame, instruction, l * r);
+        }
+
+        internal static void MOD(TickVM vm, StackFrame frame, uint instruction)
+        {
+            // TODO: type checks
+            var l = GetRegB(frame, instruction);
+            var r = GetRegC(frame, instruction);
+
+            SetRegA(frame, instruction, l % r);
+        }
+
+        internal static void POW(TickVM vm, StackFrame frame, uint instruction)
+        {
+            // TODO: type checks
+            var l = GetRegB(frame, instruction);
+            var r = GetRegC(frame, instruction);
+
+            SetRegA(frame, instruction, IntegerObject.Pow(l, r));
+        }
+
+        internal static void DIV(TickVM vm, StackFrame frame, uint instruction)
+        {
+            // TODO: type checks
+            var l = GetRegB(frame, instruction);
+            var r = GetRegC(frame, instruction);
+
+            SetRegA(frame, instruction, l / r);
+        }
+
+        internal static void IDIV(TickVM vm, StackFrame frame, uint instruction)
+        {
+            // TODO: type checks
+            var l = GetRegB(frame, instruction);
+            var r = GetRegC(frame, instruction);
+
+            SetRegA(frame, instruction, IntegerObject.IntDiv(l,r));
+        }
+
+        private static void SetRegA(StackFrame frame, uint instruction, IntegerObject value)
+        {
+            int a = Instruction.GetA(instruction);
+            frame.Registers[a] = value;
+        }
+        private static IntegerObject GetRegB(StackFrame frame, uint instruction)
+        {
+            int b = Instruction.GetB(instruction);
+            return frame.Registers[b] as IntegerObject;
+        }
+        private static IntegerObject GetRegC(StackFrame frame, uint instruction)
+        {
+            int c = Instruction.GetC(instruction);
+            return frame.Registers[c] as IntegerObject;
         }
     }
 }

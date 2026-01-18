@@ -1,7 +1,4 @@
-﻿using TickLUA.Compilers.LUA;
-using TickLUA.VM.Objects;
-
-namespace TickLUA_Tests.LUA
+﻿namespace TickLUA_Tests.LUA
 {
     internal class Returns
     {

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TickLUA.Compilers.LUA;
+﻿using TickLUA.Compilers.LUA;
 using TickLUA.VM.Objects;
 
 namespace TickLUA_Tests.LUA
@@ -13,7 +8,13 @@ namespace TickLUA_Tests.LUA
         public static TickVM Run(string code, int tick_limit)
         {
             var luaFunction = LuaCompiler.Compile(code);
-            var vm = new TickVM(luaFunction);
+            
+            return Run(luaFunction, tick_limit);
+        }
+
+        public static TickVM Run(LuaFunction func, int tick_limit)
+        {
+            var vm = new TickVM(func);
 
             int ticks = 0;
             while (!vm.IsFinished)
