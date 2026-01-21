@@ -14,7 +14,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             this.operation = ParseOperation(token);
 
             //optimization for number literals
-            if (operation == OperationType.Negate && expression is LiteralExpression le && le.Value is IntegerObject num)
+            if (operation == OperationType.Negate && expression is LiteralExpression le && le.Value is NumberObject num)
             {
                 this.expression = new LiteralExpression(-num.Value);
                 this.operation = OperationType.None;

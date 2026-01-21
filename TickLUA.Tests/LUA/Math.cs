@@ -48,13 +48,28 @@
         }
 
         [Test]
+        public void Division()
+        {
+            var source =
+                @"local x = 32
+                  local y = 5
+                  local r1 = x / y
+                  local r2 = y / x
+                  return r1, r2";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertFloatResult(vm, 6.4f, 0);
+            Utils.AssertFloatResult(vm, 0.15625f, 1);
+        }
+
+        [Test]
         public void IntegerDivision()
         {
             var source =
                 @"local x = 32
                   local y = 5
-                  local r1 = x \ y
-                  local r2 = y \ x
+                  local r1 = x // y
+                  local r2 = y // x
                   return r1, r2";
 
             var vm = Utils.Run(source, 100);
@@ -88,8 +103,8 @@
                   return r1, r2";
 
             var vm = Utils.Run(source, 100);
-            Utils.AssertIntegerResult(vm, 32, 0);
-            Utils.AssertIntegerResult(vm, 25, 1);
+            Utils.AssertFloatResult(vm, 32, 0);
+            Utils.AssertFloatResult(vm, 25, 1);
         }
     }
 }

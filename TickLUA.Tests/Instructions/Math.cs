@@ -92,7 +92,24 @@ namespace TickLUA_Tests.Instructions
 
             var vm = Utils.Run(bytecode, 4);
 
-            Utils.AssertIntegerResult(vm, 64);
+            Utils.AssertFloatResult(vm, 64);
+        }
+
+        [Test]
+        public void DIV()
+        {
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
+
+            bytecode.Instructions.Add(Instruction.LOADI(0, 5));
+            bytecode.Instructions.Add(Instruction.LOADI(1, 2));
+            bytecode.Instructions.Add(Instruction.DIV(2, 0, 1));
+            bytecode.Instructions.Add(Instruction.RETURN(2, 1));
+
+            bytecode.RegisterCount = 3;
+
+            var vm = Utils.Run(bytecode, 4);
+
+            Utils.AssertFloatResult(vm, 2.5f);
         }
 
         [Test]

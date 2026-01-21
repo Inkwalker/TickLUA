@@ -40,7 +40,7 @@ namespace TickLUA_Tests.Instructions
             bytecode.Instructions.Add(Instruction.LOADK(0, 0));
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
 
-            bytecode.Constants.Add(new IntegerObject(42));
+            bytecode.Constants.Add(new NumberObject(42));
             bytecode.RegisterCount = 1;
 
             var vm = Utils.Run(bytecode, 2);

@@ -46,7 +46,7 @@ namespace TickLUA.VM.Handlers
             var l = GetRegB(frame, instruction);
             var r = GetRegC(frame, instruction);
 
-            SetRegA(frame, instruction, IntegerObject.Pow(l, r));
+            SetRegA(frame, instruction, NumberObject.Pow(l, r));
         }
 
         internal static void DIV(TickVM vm, StackFrame frame, uint instruction)
@@ -64,23 +64,23 @@ namespace TickLUA.VM.Handlers
             var l = GetRegB(frame, instruction);
             var r = GetRegC(frame, instruction);
 
-            SetRegA(frame, instruction, IntegerObject.IntDiv(l,r));
+            SetRegA(frame, instruction, NumberObject.IntDiv(l,r));
         }
 
-        private static void SetRegA(StackFrame frame, uint instruction, IntegerObject value)
+        private static void SetRegA(StackFrame frame, uint instruction, NumberObject value)
         {
             int a = Instruction.GetA(instruction);
             frame.Registers[a] = value;
         }
-        private static IntegerObject GetRegB(StackFrame frame, uint instruction)
+        private static NumberObject GetRegB(StackFrame frame, uint instruction)
         {
             int b = Instruction.GetB(instruction);
-            return frame.Registers[b] as IntegerObject;
+            return frame.Registers[b] as NumberObject;
         }
-        private static IntegerObject GetRegC(StackFrame frame, uint instruction)
+        private static NumberObject GetRegC(StackFrame frame, uint instruction)
         {
             int c = Instruction.GetC(instruction);
-            return frame.Registers[c] as IntegerObject;
+            return frame.Registers[c] as NumberObject;
         }
     }
 }

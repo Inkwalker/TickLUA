@@ -33,7 +33,7 @@ namespace TickLUA.VM.Handlers
             short b = Instruction.GetBxSigned(instruction);
 
             // Load integer b into register a
-            frame.Registers[a] = new IntegerObject(b);
+            frame.Registers[a] = new NumberObject(b);
         }
 
         internal static void RETURN(TickVM vm, StackFrame frame, uint instruction)

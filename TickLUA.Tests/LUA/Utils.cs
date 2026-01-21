@@ -35,8 +35,18 @@ namespace TickLUA_Tests.LUA
         {
             Assert.NotNull(vm.ExecutionResult);
             Assert.IsTrue(vm.ExecutionResult.Length > result_index);
-            Assert.IsInstanceOf<IntegerObject>(vm.ExecutionResult[result_index]);
-            var answer = (IntegerObject)vm.ExecutionResult[result_index];
+            Assert.IsInstanceOf<NumberObject>(vm.ExecutionResult[result_index]);
+            var answer = (NumberObject)vm.ExecutionResult[result_index];
+            Assert.That(answer.Value, Is.EqualTo(expected_value));
+        }
+
+        public static void AssertFloatResult(TickVM vm, float expected_value, int result_index = 0)
+        {
+            Assert.NotNull(vm.ExecutionResult);
+            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.IsInstanceOf<NumberObject>(vm.ExecutionResult[result_index]);
+            var answer = (NumberObject)vm.ExecutionResult[result_index];
+
             Assert.That(answer.Value, Is.EqualTo(expected_value));
         }
     }
