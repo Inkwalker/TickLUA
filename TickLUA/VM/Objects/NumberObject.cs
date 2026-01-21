@@ -52,14 +52,14 @@ namespace TickLUA.VM.Objects
         public static NumberObject operator %(NumberObject l, NumberObject r) => new NumberObject(l.Value % r.Value);
         public static NumberObject operator -(NumberObject n) => new NumberObject(-n.Value);
 
-        //public static BooleanObject operator >(NumberObject l, NumberObject r) => new BooleanObject(l.Value > r.Value);
-        //public static BooleanObject operator >=(NumberObject l, NumberObject r) => new BooleanObject(l.Value >= r.Value);
-        //public static BooleanObject operator <(NumberObject l, NumberObject r) => new BooleanObject(l.Value < r.Value);
-        //public static BooleanObject operator <=(NumberObject l, NumberObject r) => new BooleanObject(l.Value <= r.Value);
-        //public static BooleanObject operator ==(NumberObject l, NumberObject r) => new BooleanObject(l.Value == r.Value);
-        //public static BooleanObject operator !=(NumberObject l, NumberObject r) => new BooleanObject(l.Value != r.Value);
+        public static BooleanObject operator >(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value > r.Value);
+        public static BooleanObject operator >=(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value >= r.Value);
+        public static BooleanObject operator <(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value < r.Value);
+        public static BooleanObject operator <=(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value <= r.Value);
+        public static BooleanObject operator ==(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value == r.Value);
+        public static BooleanObject operator !=(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value != r.Value);
 
-        //public static implicit operator BooleanObject(NumberObject num) => new BooleanObject(true);
+        public static implicit operator BooleanObject(NumberObject num) => BooleanObject.True;
 
         public static explicit operator int(NumberObject num)    => (int)num.Value;
         public static explicit operator double(NumberObject num) => (double)num.Value;

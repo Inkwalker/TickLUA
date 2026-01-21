@@ -89,5 +89,29 @@ namespace TickLUA_Tests.LUA
                 Assert.Pass();
             }
         }
+
+        [Test]
+        public void Booleans()
+        {
+            var source =
+                @"local x = true
+                  local y = false
+                  return x, y";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertBoolResult(vm, true, 0);
+            Utils.AssertBoolResult(vm, false, 1);
+        }
+
+        [Test]
+        public void Nil()
+        {
+            var source =
+                @"local x = nil
+                  return x";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertNilResult(vm);
+        }
     }
 }

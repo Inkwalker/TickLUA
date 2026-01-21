@@ -46,7 +46,8 @@
             return $"< object >";
         }
 
-        //public virtual BooleanObject ToBooleanObject() => new BooleanObject(true);
+        public virtual BooleanObject ToBooleanObject() => BooleanObject.True;
+
         //public abstract StringObject ToStringObject();
 
         public static bool NullOrNil(LuaObject obj) => obj == null || obj == NilObject.Nil;

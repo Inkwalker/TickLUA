@@ -48,12 +48,12 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 //case TokenType.String:
                 //    Value = new StringObject(t.Content);
                 //    break;
-                //case TokenType.True:
-                //    Value = BooleanObject.True;
-                //    break;
-                //case TokenType.False:
-                //    Value = BooleanObject.False;
-                //    break;
+                case TokenType.True:
+                    Value = BooleanObject.True;
+                    break;
+                case TokenType.False:
+                    Value = BooleanObject.False;
+                    break;
                 case TokenType.Nil:
                     Value = NilObject.Nil;
                     break;
