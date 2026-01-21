@@ -3,7 +3,6 @@ using System.Globalization;
 using TickLUA.Compilers.LUA.Lexer;
 using TickLUA.VM;
 using TickLUA.VM.Objects;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace TickLUA.Compilers.LUA.Parser.Expressions
 {
@@ -21,10 +20,10 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             Value = new NumberObject(value);
         }
 
-        //public LiteralExpression(bool value)
-        //{
-        //    Value = new BooleanObject(value);
-        //}
+        public LiteralExpression(bool value)
+        {
+            Value = BooleanObject.FromBool(value);
+        }
 
         //public LiteralExpression(string value)
         //{
@@ -133,8 +132,23 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
         public override byte CompileRead(FunctionBuilder builder)
         {
-            ushort index = builder.AddConstant(Value);
             ResultRegister = builder.AllocateRegisters(1);
+
+            if (Value is BooleanObject boolObj)
+            {
+                // LOADBOOL
+                builder.AddInstruction(Instruction.LOADBOOL((byte)ResultRegister, boolObj));
+                return (byte)ResultRegister;
+            }
+            if (Value is NilObject)
+            {
+                // LOADNIL
+                builder.AddInstruction(Instruction.LOADNIL((byte)ResultRegister));
+                return (byte)ResultRegister;
+            }
+
+            // LOADK
+            ushort index = builder.AddConstant(Value);
             builder.AddInstruction(Instruction.LOADK((byte)ResultRegister, index));
 
             return (byte)ResultRegister;

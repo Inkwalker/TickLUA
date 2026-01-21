@@ -65,6 +65,8 @@
         internal static uint MOVE(byte dest_reg, byte src_reg) => New(Opcode.MOVE, dest_reg, src_reg, 0);
         internal static uint LOADK(byte dest_reg, ushort const_index) => New(Opcode.LOADK, dest_reg, (short)const_index);
         internal static uint LOADI(byte dest_reg, short integer) => New(Opcode.LOADI, dest_reg, integer);
+        internal static uint LOADBOOL(byte dest_reg, bool value) => New(Opcode.LOADBOOL, dest_reg, (byte)(value ? 1 : 0), 0);
+        internal static uint LOADNIL(byte start_reg, byte count = 1) => New(Opcode.LOADNIL, start_reg, count, 0);
         internal static uint ADD(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.ADD, dest_reg, left_reg, right_reg);
         internal static uint SUB(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.SUB, dest_reg, left_reg, right_reg);
         internal static uint MUL(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.MUL, dest_reg, left_reg, right_reg);

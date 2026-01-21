@@ -35,13 +35,12 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void LOADK()
         {
-            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
 
             bytecode.Instructions.Add(Instruction.LOADK(0, 0));
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
 
             bytecode.Constants.Add(new NumberObject(42));
-            bytecode.RegisterCount = 1;
 
             var vm = Utils.Run(bytecode, 2);
 
@@ -51,12 +50,10 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void LOADI()
         {
-            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
 
             bytecode.Instructions.Add(Instruction.LOADI(0, 42));
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
-
-            bytecode.RegisterCount = 1;
 
             var vm = Utils.Run(bytecode, 2);
 
@@ -64,16 +61,43 @@ namespace TickLUA_Tests.Instructions
         }
 
         [Test]
+        public void LOADBOOL()
+        {
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 2);
+
+            bytecode.Instructions.Add(Instruction.LOADBOOL(0, true));
+            bytecode.Instructions.Add(Instruction.LOADBOOL(1, false));
+            bytecode.Instructions.Add(Instruction.RETURN(0, 2));
+
+            var vm = Utils.Run(bytecode, 3);
+
+            Utils.AssertBoolResult(vm, true,  0);
+            Utils.AssertBoolResult(vm, false, 1);
+        }
+
+        [Test]
+        public void LOADNIL()
+        {
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
+
+            bytecode.Instructions.Add(Instruction.LOADBOOL(0, true));
+            bytecode.Instructions.Add(Instruction.LOADNIL(0));
+            bytecode.Instructions.Add(Instruction.RETURN(0, 1));
+
+            var vm = Utils.Run(bytecode, 3);
+
+            Utils.AssertNilResult(vm, 0);
+        }
+
+        [Test]
         public void MOVE()
         {
-            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 2);
 
             bytecode.Instructions.Add(Instruction.LOADI(0, 42));
             bytecode.Instructions.Add(Instruction.LOADI(1, 2));
             bytecode.Instructions.Add(Instruction.MOVE(1, 0));
             bytecode.Instructions.Add(Instruction.RETURN(1, 1));
-
-            bytecode.RegisterCount = 3;
 
             var vm = Utils.Run(bytecode, 4);
 

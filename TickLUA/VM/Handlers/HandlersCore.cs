@@ -36,6 +36,28 @@ namespace TickLUA.VM.Handlers
             frame.Registers[a] = new NumberObject(b);
         }
 
+        internal static void LOADBOOL(TickVM vm, StackFrame frame, uint instruction)
+        {
+            byte a = Instruction.GetA(instruction);
+            byte b = Instruction.GetB(instruction);
+
+            // Load boolean b into register a. 0 = false, 1 = true
+            frame.Registers[a] = BooleanObject.FromBool(b == 0 ? false : true);
+        }
+
+        internal static void LOADNIL(TickVM vm, StackFrame frame, uint instruction)
+        {
+            byte a = Instruction.GetA(instruction);
+            byte b = Instruction.GetB(instruction);
+
+            // Load nil into registers. a - start register, b - number of registers
+
+            for (int i = 0; i < b; i++)
+            {
+                frame.Registers[a + i] = NilObject.Nil;
+            }
+        }
+
         internal static void RETURN(TickVM vm, StackFrame frame, uint instruction)
         {
             frame.PC = frame.Function.Instructions.Count;

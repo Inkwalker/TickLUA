@@ -18,8 +18,15 @@
         /// Load integer. A - target reg, Bx - literal value
         /// </summary>
         LOADI,
-        //LOADBOOL,
-        //LOADNIL,
+        /// <summary>
+        /// Load boolean. A - target reg, B - bool value (0 - false, 1 - true)
+        /// </summary>
+        LOADBOOL,
+        /// <summary>
+        /// Load nil. A - start reg, Bx - number of registers to set to nil
+        /// </summary>
+        LOADNIL,
+
         //GETUPVAL,
         //GETGLOBAL,
         //GETTABLE,
