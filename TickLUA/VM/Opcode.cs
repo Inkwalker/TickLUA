@@ -69,7 +69,11 @@
         //NOT,
         //LEN,
         //CONCAT,
-        //JMP,
+
+        /// <summary>
+        /// Relative jump. sBx - jump offset
+        /// </summary>
+        JMP,
         //EQ,
         //LT,
         //LE,

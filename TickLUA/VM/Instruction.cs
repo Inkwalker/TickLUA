@@ -24,6 +24,25 @@
             return (byte)((instruction >> 8) & 0xFF);
         }
 
+        internal static uint GetAx(uint instruction)
+        {
+            return instruction >> 8;
+        }
+
+        internal static int GetAxSigned(uint instruction)
+        {
+            uint ax = instruction >> 8;
+            if ((ax & 0x800000) != 0)
+            {
+                // negative number
+                return (int)(ax | 0xFF000000);
+            }
+            else
+            {
+                return (int)ax;
+            }
+        }
+
         internal static byte GetB(uint instruction)
         {
             return (byte)((instruction >> 16) & 0xFF);
@@ -44,24 +63,84 @@
             return (short)((instruction >> 16) & 0xFFFF);
         }
 
+        /// <summary>
+        /// Creates a new instruction with three 8-bit unsigned arguments.
+        /// </summary>
+        /// <param name="opcode">The opcode of the instruction.</param>
+        /// <param name="a">The first 8-bit value to encode.</param>
+        /// <param name="b">The second 8-bit value to encode.</param>
+        /// <param name="c">The third 8-bit value to encode.</param>
+        /// <returns>A 32-bit unsigned integer representing the instruction.</returns>
         internal static uint New(Opcode opcode, byte a, byte b, byte c)
         {
             return (uint)((byte)opcode | (a << 8) | (b << 16) | (c << 24));
         }
 
+        /// <summary>
+        /// Creates a new instruction with a 8-bit unsigned and a 16-bit signed arguments.
+        /// </summary>
+        /// <param name="opcode">The opcode of the instruction.</param>
+        /// <param name="a">The 8-bit value to encode.</param>
+        /// <param name="sbx">The 16-bit signed value to encode.</param>
+        /// <returns>A 32-bit unsigned integer representing the instruction.</returns>
         internal static uint New(Opcode opcode, byte a, short sbx)
         {
             return (uint)((byte)opcode | (a << 8) | (sbx << 16));
         }
 
+        /// <summary>
+        /// Creates a new instruction with a 8-bit unsigned and a 16-bit unsigned arguments.
+        /// </summary>
+        /// <param name="opcode">The opcode of the instruction.</param>
+        /// <param name="a">The 8-bit value to encode.</param>
+        /// <param name="sbx">The 16-bit unsigned value to encode.</param>
+        /// <returns>A 32-bit unsigned integer representing the instruction.</returns>
         internal static uint New(Opcode opcode, byte a, ushort bx)
         {
             return (uint)((byte)opcode | (a << 8) | (bx << 16));
         }
 
+        /// <summary>
+        /// Creates a new instruction with a 24-bit unsigned argument.
+        /// </summary>
+        /// <param name="opcode">The opcode of the instruction.</param>
+        /// <param name="ax">The 24-bit unsigned argument to encode in the instruction in range from 0 to 16_777_215.</param>
+        /// <returns>A 32-bit unsigned integer representing the instruction.</returns>
+        /// <remarks>
+        /// Argument range is not checked. Make sure the provided value fits in 24 bits.
+        /// </remarks>
+        internal static uint New(Opcode opcode, uint ax)
+        {
+            return (byte)opcode | (ax << 8);
+        }
+
+        /// <summary>
+        /// Creates a new instruction with a 24-bit signed argument.
+        /// </summary>
+        /// <param name="opcode">The opcode of the instruction.</param>
+        /// <param name="sax">The 24-bit signed argument to encode in the instruction in range from −8_388_608 to 8_388_607.</param>
+        /// <returns>A 32-bit unsigned integer representing the instruction.</returns>
+        /// <remarks>
+        /// Argument range is not checked. Make sure the provided value fits in 24 bits.
+        /// </remarks>
+        internal static uint New(Opcode opcode, int sax)
+        {
+            return (byte)opcode | (uint)(sax << 8);
+        }
+
+        /// <summary>
+        /// Creates a new instruction with only an opcode and no arguments.
+        /// </summary>
+        /// <param name="opcode">The opcode of the instruction.</param>
+        /// <returns>A 32-bit unsigned integer representing the instruction.</returns>
+        internal static uint New(Opcode opcode)
+        {
+            return (byte)opcode;
+        }
+
         #region Factory methods
 
-        internal static uint NOP() => New(Opcode.NOP, 0, 0);
+        internal static uint NOP() => New(Opcode.NOP);
         internal static uint MOVE(byte dest_reg, byte src_reg) => New(Opcode.MOVE, dest_reg, src_reg, 0);
         internal static uint LOADK(byte dest_reg, ushort const_index) => New(Opcode.LOADK, dest_reg, (short)const_index);
         internal static uint LOADI(byte dest_reg, short integer) => New(Opcode.LOADI, dest_reg, integer);
@@ -79,6 +158,7 @@
             int c = count < -1 ? -1 : count;
             return New(Opcode.RETURN, start_reg, (ushort)(c + 1));
         }
+        internal static uint JMP(int offset) => New(Opcode.JMP, offset);
 
         #endregion
     }

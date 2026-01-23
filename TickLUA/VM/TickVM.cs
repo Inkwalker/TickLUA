@@ -29,6 +29,11 @@ namespace TickLUA.VM
             { Opcode.IDIV,     HandlersMath.IDIV },
             // Function operations
             { Opcode.RETURN,   HandlersCore.RETURN },
+            // Jumps
+            { Opcode.JMP,      HandlersJumps.JMP },
+            //{ Opcode.EQ,       HandlersJumps.EQ },
+            //{ Opcode.LT,       HandlersJumps.LT },
+            //{ Opcode.LE,       HandlersJumps.LE },
         };
 
         private readonly InstructionHandler[] instructionHandlers;
