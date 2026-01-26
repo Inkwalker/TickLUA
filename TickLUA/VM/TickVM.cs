@@ -31,6 +31,7 @@ namespace TickLUA.VM
             { Opcode.RETURN,   HandlersCore.RETURN },
             // Jumps
             { Opcode.JMP,      HandlersJumps.JMP },
+            { Opcode.TEST,     HandlersJumps.TEST },
             //{ Opcode.EQ,       HandlersJumps.EQ },
             //{ Opcode.LT,       HandlersJumps.LT },
             //{ Opcode.LE,       HandlersJumps.LE },

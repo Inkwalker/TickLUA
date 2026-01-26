@@ -77,14 +77,20 @@
         //EQ,
         //LT,
         //LE,
-        //TEST,
+
+        /// <summary>
+        /// Test condition and skip next instruction if not true. A - register to test, B - expected boolean value (0 - false, 1 - true)
+        /// </summary>
+        TEST,
         //TESTSET,
+
         //CALL,
         //TAILCALL,
         /// <summary>
         /// Return from a function. A - start result reg, Bx - number of registers to return (0 - all, 1 - none, 2+ - (Bx-1))
         /// </summary>
         RETURN,
+
         //FORLOOP,
         //FORPREP,
         //TFORCALL,

@@ -159,6 +159,7 @@
             return New(Opcode.RETURN, start_reg, (ushort)(c + 1));
         }
         internal static uint JMP(int offset) => New(Opcode.JMP, offset);
+        internal static uint TEST(byte reg, bool expected) => New(Opcode.TEST, reg, (byte)(expected ? 1 : 0));
 
         #endregion
     }
