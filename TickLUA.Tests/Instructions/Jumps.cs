@@ -44,5 +44,74 @@ namespace TickLUA_Tests.Instructions
             Utils.AssertIntegerResult(vm, 32, 0);
             Utils.AssertIntegerResult(vm, 16, 1);
         }
+
+        [Test]
+        public void EQ_Numbers()
+        {
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
+
+            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
+            bytecode.Instructions.Add(Instruction.LOADI(1, 16));
+
+            // If reg[0] == reg[1], execute the next instruction (should skip it)
+            bytecode.Instructions.Add(Instruction.EQ(0, 1, true));
+            bytecode.Instructions.Add(Instruction.LOADI(1, 42));
+
+            // If reg[0] != reg[1], execute the next instruction (should execute it)
+            bytecode.Instructions.Add(Instruction.EQ(0, 1, false));
+            bytecode.Instructions.Add(Instruction.LOADI(1, 64));
+
+            bytecode.Instructions.Add(Instruction.RETURN(1, 1));
+
+            var vm = Utils.Run(bytecode, 7);
+
+            Utils.AssertIntegerResult(vm, 64, 0);
+        }
+
+        [Test]
+        public void EQ_Nil()
+        {
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
+
+            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
+            bytecode.Instructions.Add(Instruction.LOADNIL(1));
+
+            // If reg[0] == nil, execute the next instruction (should skip it)
+            bytecode.Instructions.Add(Instruction.EQ(0, 1, true));
+            bytecode.Instructions.Add(Instruction.LOADI(0, 32));
+
+            // If reg[0] != nil, execute the next instruction (should execute it)
+            bytecode.Instructions.Add(Instruction.EQ(0, 1, false));
+            bytecode.Instructions.Add(Instruction.LOADI(0, 64));
+
+            bytecode.Instructions.Add(Instruction.RETURN(0, 1));
+
+            var vm = Utils.Run(bytecode, 7);
+
+            Utils.AssertIntegerResult(vm, 64, 0);
+        }
+
+        [Test]
+        public void EQ_Bool()
+        {
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
+
+            bytecode.Instructions.Add(Instruction.LOADBOOL(0, true));
+            bytecode.Instructions.Add(Instruction.LOADBOOL(1, false));
+
+            // If reg[0] != reg[1], execute the next instruction (should execute it)
+            bytecode.Instructions.Add(Instruction.EQ(0, 1, false));
+            bytecode.Instructions.Add(Instruction.LOADBOOL(1, true));
+
+            // If reg[0] == reg[1], execute the next instruction (should execute it)
+            bytecode.Instructions.Add(Instruction.EQ(0, 1, true));
+            bytecode.Instructions.Add(Instruction.LOADBOOL(0, false));
+
+            bytecode.Instructions.Add(Instruction.RETURN(0, 1));
+
+            var vm = Utils.Run(bytecode, 7);
+
+            Utils.AssertBoolResult(vm, false, 0);
+        }
     }
 }

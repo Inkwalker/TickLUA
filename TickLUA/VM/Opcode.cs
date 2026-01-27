@@ -74,7 +74,10 @@
         /// Relative jump. sBx - jump offset
         /// </summary>
         JMP,
-        //EQ,
+        /// <summary>
+        /// Equality test and skip next instruction if not true. A - first register to compare, B - second register to compare, C - expected boolean value (0 - false, 1 - true)
+        /// </summary>
+        EQ,
         //LT,
         //LE,
 

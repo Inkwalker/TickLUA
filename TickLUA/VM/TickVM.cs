@@ -32,7 +32,7 @@ namespace TickLUA.VM
             // Jumps
             { Opcode.JMP,      HandlersJumps.JMP },
             { Opcode.TEST,     HandlersJumps.TEST },
-            //{ Opcode.EQ,       HandlersJumps.EQ },
+            { Opcode.EQ,       HandlersJumps.EQ },
             //{ Opcode.LT,       HandlersJumps.LT },
             //{ Opcode.LE,       HandlersJumps.LE },
         };

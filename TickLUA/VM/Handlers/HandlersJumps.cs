@@ -22,5 +22,20 @@ namespace TickLUA.VM.Handlers
                 frame.PC++;
             }
         }
+
+        internal static void EQ(TickVM vm, StackFrame frame, uint instruction)
+        {
+            int reg_a = Instruction.GetA(instruction);
+            int reg_b = Instruction.GetB(instruction);
+            bool expected = Instruction.GetC(instruction) != 0;
+
+            var obj_a = frame.Registers[reg_a];
+            var obj_b = frame.Registers[reg_b];
+
+            if ((obj_a == obj_b) != expected)
+            {
+                frame.PC++;
+            }
+        }
     }
 }
