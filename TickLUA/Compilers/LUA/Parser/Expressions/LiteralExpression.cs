@@ -137,7 +137,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             if (Value is BooleanObject boolObj)
             {
                 // LOADBOOL
-                builder.AddInstruction(Instruction.LOADBOOL((byte)ResultRegister, boolObj));
+                builder.AddInstruction(Instruction.LOADBOOL((byte)ResultRegister, (bool)boolObj));
                 return (byte)ResultRegister;
             }
             if (Value is NilObject)

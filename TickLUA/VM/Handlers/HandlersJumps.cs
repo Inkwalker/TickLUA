@@ -37,5 +37,53 @@ namespace TickLUA.VM.Handlers
                 frame.PC++;
             }
         }
+
+        internal static void LT(TickVM vm, StackFrame frame, uint instruction)
+        {
+            int reg_a = Instruction.GetA(instruction);
+            int reg_b = Instruction.GetB(instruction);
+            bool expected = Instruction.GetC(instruction) != 0;
+
+            var obj_a = frame.Registers[reg_a];
+            var obj_b = frame.Registers[reg_b];
+
+            var number_a = obj_a as NumberObject;
+            var number_b = obj_b as NumberObject;
+
+            if (number_a == null || number_b == null)
+            {
+                // TODO: proper error handling
+                throw new System.Exception("Attempt to compare non-number values.");
+            }
+
+            if ((number_a < number_b) != expected)
+            {
+                frame.PC++;
+            }
+        }
+
+        internal static void LE(TickVM vm, StackFrame frame, uint instruction)
+        {
+            int reg_a = Instruction.GetA(instruction);
+            int reg_b = Instruction.GetB(instruction);
+            bool expected = Instruction.GetC(instruction) != 0;
+
+            var obj_a = frame.Registers[reg_a];
+            var obj_b = frame.Registers[reg_b];
+
+            var number_a = obj_a as NumberObject;
+            var number_b = obj_b as NumberObject;
+
+            if (number_a == null || number_b == null)
+            {
+                // TODO: proper error handling
+                throw new System.Exception("Attempt to compare non-number values.");
+            }
+
+            if ((number_a <= number_b) != expected)
+            {
+                frame.PC++;
+            }
+        }
     }
 }

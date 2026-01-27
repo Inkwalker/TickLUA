@@ -113,5 +113,51 @@ namespace TickLUA_Tests.Instructions
 
             Utils.AssertBoolResult(vm, false, 0);
         }
+
+        [Test]
+        public void LT()
+        {
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
+
+            bytecode.Instructions.Add(Instruction.LOADI(0, 32));
+            bytecode.Instructions.Add(Instruction.LOADI(1, 42));
+
+            // If reg[0] < reg[1], execute the next instruction (should execute it)
+            bytecode.Instructions.Add(Instruction.LT(0, 1, true));
+            bytecode.Instructions.Add(Instruction.LOADI(0, 64));
+
+            // If reg[0] >= reg[1], execute the next instruction (should execute it)
+            bytecode.Instructions.Add(Instruction.LT(0, 1, false));
+            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
+
+            bytecode.Instructions.Add(Instruction.RETURN(0, 1));
+
+            var vm = Utils.Run(bytecode, 7);
+
+            Utils.AssertIntegerResult(vm, 42, 0);
+        }
+
+        [Test]
+        public void LE()
+        {
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
+
+            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
+            bytecode.Instructions.Add(Instruction.LOADI(1, 42));
+
+            // If reg[0] <= reg[1], execute the next instruction (should execute it)
+            bytecode.Instructions.Add(Instruction.LT(0, 1, true));
+            bytecode.Instructions.Add(Instruction.LOADI(0, 64));
+
+            // If reg[0] > reg[1], execute the next instruction (should execute it)
+            bytecode.Instructions.Add(Instruction.LT(0, 1, false));
+            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
+
+            bytecode.Instructions.Add(Instruction.RETURN(0, 1));
+
+            var vm = Utils.Run(bytecode, 7);
+
+            Utils.AssertIntegerResult(vm, 42, 0);
+        }
     }
 }

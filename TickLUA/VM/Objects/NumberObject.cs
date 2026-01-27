@@ -52,12 +52,24 @@ namespace TickLUA.VM.Objects
         public static NumberObject operator %(NumberObject l, NumberObject r) => new NumberObject(l.Value % r.Value);
         public static NumberObject operator -(NumberObject n) => new NumberObject(-n.Value);
 
-        public static BooleanObject operator >(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value > r.Value);
-        public static BooleanObject operator >=(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value >= r.Value);
-        public static BooleanObject operator <(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value < r.Value);
-        public static BooleanObject operator <=(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value <= r.Value);
-        public static BooleanObject operator ==(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value == r.Value);
-        public static BooleanObject operator !=(NumberObject l, NumberObject r) => BooleanObject.FromBool(l.Value != r.Value);
+        public static bool operator >(NumberObject l, NumberObject r) => l.Value > r.Value;
+        public static bool operator >=(NumberObject l, NumberObject r) => l.Value >= r.Value;
+        public static bool operator <(NumberObject l, NumberObject r) => l.Value < r.Value;
+        public static bool operator <=(NumberObject l, NumberObject r) => l.Value <= r.Value;
+        public static bool operator ==(NumberObject l, LuaObject r)
+        {
+            if (r is NumberObject nr)
+                return l.Value == nr.Value;
+            else
+                return ReferenceEquals(l, r);
+        }
+        public static bool operator !=(NumberObject l, LuaObject r)
+        {
+            if (r is NumberObject nr)
+                return l.Value != nr.Value;
+            else
+                return !ReferenceEquals(l, r);
+        }
 
         public static implicit operator BooleanObject(NumberObject num) => BooleanObject.True;
 

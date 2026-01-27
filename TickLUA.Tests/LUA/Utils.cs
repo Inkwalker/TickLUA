@@ -57,7 +57,7 @@ namespace TickLUA_Tests.LUA
             Assert.IsInstanceOf<BooleanObject>(vm.ExecutionResult[result_index]);
             var answer = (BooleanObject)vm.ExecutionResult[result_index];
 
-            Assert.True(answer == expected_value);
+            Assert.True((bool)answer == expected_value);
         }
 
         public static void AssertNilResult(TickVM vm, int result_index = 0)

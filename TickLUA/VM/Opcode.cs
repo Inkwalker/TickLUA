@@ -75,14 +75,20 @@
         /// </summary>
         JMP,
         /// <summary>
-        /// Equality test and skip next instruction if not true. A - first register to compare, B - second register to compare, C - expected boolean value (0 - false, 1 - true)
+        /// Equality test and skip next instruction if not expected result. A - first register to compare, B - second register to compare, C - expected boolean value (0 - false, 1 - true)
         /// </summary>
         EQ,
-        //LT,
-        //LE,
+        /// <summary>
+        /// Less-than test and skip next instruction if not expected result. A - first register to compare, B - second register to compare, C - expected boolean value (0 - false, 1 - true)
+        /// </summary>
+        LT,
+        /// <summary>
+        /// Less-than-or-equal test and skip next instruction if not expected result. A - first register to compare, B - second register to compare, C - expected boolean value (0 - false, 1 - true)
+        /// </summary>
+        LE,
 
         /// <summary>
-        /// Test condition and skip next instruction if not true. A - register to test, B - expected boolean value (0 - false, 1 - true)
+        /// Test condition and skip next instruction if not expected result. A - register to test, B - expected boolean value (0 - false, 1 - true)
         /// </summary>
         TEST,
         //TESTSET,

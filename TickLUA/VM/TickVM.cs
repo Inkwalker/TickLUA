@@ -33,8 +33,8 @@ namespace TickLUA.VM
             { Opcode.JMP,      HandlersJumps.JMP },
             { Opcode.TEST,     HandlersJumps.TEST },
             { Opcode.EQ,       HandlersJumps.EQ },
-            //{ Opcode.LT,       HandlersJumps.LT },
-            //{ Opcode.LE,       HandlersJumps.LE },
+            { Opcode.LT,       HandlersJumps.LT },
+            { Opcode.LE,       HandlersJumps.LE },
         };
 
         private readonly InstructionHandler[] instructionHandlers;

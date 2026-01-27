@@ -161,6 +161,8 @@
         internal static uint JMP(int offset) => New(Opcode.JMP, offset);
         internal static uint TEST(byte reg, bool expected) => New(Opcode.TEST, reg, (byte)(expected ? 1 : 0));
         internal static uint EQ(byte reg_a, byte reg_b, bool expected) => New(Opcode.EQ, reg_a, reg_b, (byte)(expected ? 1 : 0));
+        internal static uint LT(byte reg_a, byte reg_b, bool expected) => New(Opcode.LT, reg_a, reg_b, (byte)(expected ? 1 : 0));
+        internal static uint LE(byte reg_a, byte reg_b, bool expected) => New(Opcode.LE, reg_a, reg_b, (byte)(expected ? 1 : 0));
 
         #endregion
     }

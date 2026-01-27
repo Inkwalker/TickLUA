@@ -13,15 +13,15 @@
 
         public override string ToString()
         {
-            return this? "true" : "false";
+            return (bool)this? "true" : "false";
         }
 
         public override BooleanObject ToBooleanObject() => this;
 
-        public static BooleanObject operator !(BooleanObject o) => o? True : False;
+        public static BooleanObject operator !(BooleanObject o) => (bool)o? True : False;
 
-        public static explicit operator NumberObject(BooleanObject value) => new NumberObject(value ? 1 : 0);
+        public static explicit operator NumberObject(BooleanObject value) => new NumberObject((bool)value ? 1 : 0);
 
-        public static implicit operator bool(BooleanObject value) => value == True;
+        public static explicit operator bool(BooleanObject value) => value == True;
     }
 }
