@@ -106,5 +106,107 @@
             Utils.AssertFloatResult(vm, 32, 0);
             Utils.AssertFloatResult(vm, 25, 1);
         }
+
+        [Test]
+        public void Less()
+        {
+            var source =
+                @"local x = 2
+                  local y = 5
+                  local r1 = x < y
+                  local r2 = y < x
+                  local r3 = x < x
+                  return r1, r2, r3";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertBoolResult(vm, true, 0);
+            Utils.AssertBoolResult(vm, false, 1);
+            Utils.AssertBoolResult(vm, false, 2);
+        }
+
+        [Test]
+        public void LessOrEqual()
+        {
+            var source =
+                @"local x = 2
+                  local y = 5
+                  local r1 = x <= y
+                  local r2 = y <= x
+                  local r3 = x <= x
+                  return r1, r2, r3";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertBoolResult(vm, true, 0);
+            Utils.AssertBoolResult(vm, false, 1);
+            Utils.AssertBoolResult(vm, true, 2);
+        }
+
+        [Test]
+        public void Greater()
+        {
+            var source =
+                @"local x = 2
+                  local y = 5
+                  local r1 = x > y
+                  local r2 = y > x
+                  local r3 = x > x
+                  return r1, r2, r3";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertBoolResult(vm, false, 0);
+            Utils.AssertBoolResult(vm, true, 1);
+            Utils.AssertBoolResult(vm, false, 2);
+        }
+
+        [Test]
+        public void GreaterOrEqual()
+        {
+            var source =
+                @"local x = 2
+                  local y = 5
+                  local r1 = x >= y
+                  local r2 = y >= x
+                  local r3 = x >= x
+                  return r1, r2, r3";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertBoolResult(vm, false, 0);
+            Utils.AssertBoolResult(vm, true, 1);
+            Utils.AssertBoolResult(vm, true, 2);
+        }
+
+        [Test]
+        public void Equal()
+        {
+            var source =
+                @"local x = 2
+                  local y = 5
+                  local r1 = x == y
+                  local r2 = y == x
+                  local r3 = x == x
+                  return r1, r2, r3";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertBoolResult(vm, false, 0);
+            Utils.AssertBoolResult(vm, false, 1);
+            Utils.AssertBoolResult(vm, true, 2);
+        }
+
+        [Test]
+        public void NotEqual()
+        {
+            var source =
+                @"local x = 2
+                  local y = 5
+                  local r1 = x != y
+                  local r2 = y != x
+                  local r3 = x != x
+                  return r1, r2, r3";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertBoolResult(vm, true, 0);
+            Utils.AssertBoolResult(vm, true, 1);
+            Utils.AssertBoolResult(vm, false, 2);
+        }
     }
 }
