@@ -13,19 +13,27 @@
         /// <summary>
         /// Load constant. A - target reg, Bx - constant index
         /// </summary>
-        LOADK,
+        LOAD_CONST,
         /// <summary>
         /// Load integer. A - target reg, Bx - literal value
         /// </summary>
-        LOADI,
+        LOAD_INT,
         /// <summary>
-        /// Load boolean. A - target reg, B - bool value (0 - false, 1 - true)
+        /// Load boolean true. A - target reg
         /// </summary>
-        LOADBOOL,
+        LOAD_TRUE,
+        /// <summary>
+        /// Load boolean false. A - target reg
+        /// </summary>
+        LOAD_FALSE,
+        /// <summary>
+        /// Load boolean false and skip next instruction. A - target reg
+        /// </summary>
+        LOAD_FALSE_SKIP,
         /// <summary>
         /// Load nil. A - start reg, Bx - number of registers to set to nil
         /// </summary>
-        LOADNIL,
+        LOAD_NIL,
 
         //GETUPVAL,
         //GETGLOBAL,

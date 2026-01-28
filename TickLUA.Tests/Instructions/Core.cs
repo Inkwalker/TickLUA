@@ -33,11 +33,11 @@ namespace TickLUA_Tests.Instructions
         }
 
         [Test]
-        public void LOADK()
+        public void LOAD_CONST()
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
 
-            bytecode.Instructions.Add(Instruction.LOADK(0, 0));
+            bytecode.Instructions.Add(Instruction.LOAD_CONST(0, 0));
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
 
             bytecode.Constants.Add(new NumberObject(42));
@@ -48,11 +48,11 @@ namespace TickLUA_Tests.Instructions
         }
 
         [Test]
-        public void LOADI()
+        public void LOAD_INT()
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
 
-            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
 
             var vm = Utils.Run(bytecode, 2);
@@ -61,12 +61,12 @@ namespace TickLUA_Tests.Instructions
         }
 
         [Test]
-        public void LOADBOOL()
+        public void LOAD_BOOL()
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 2);
 
-            bytecode.Instructions.Add(Instruction.LOADBOOL(0, true));
-            bytecode.Instructions.Add(Instruction.LOADBOOL(1, false));
+            bytecode.Instructions.Add(Instruction.LOAD_BOOL(0, true));
+            bytecode.Instructions.Add(Instruction.LOAD_BOOL(1, false));
             bytecode.Instructions.Add(Instruction.RETURN(0, 2));
 
             var vm = Utils.Run(bytecode, 3);
@@ -76,12 +76,26 @@ namespace TickLUA_Tests.Instructions
         }
 
         [Test]
-        public void LOADNIL()
+        public void LOAD_FALSE_SKIP()
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
 
-            bytecode.Instructions.Add(Instruction.LOADBOOL(0, true));
-            bytecode.Instructions.Add(Instruction.LOADNIL(0));
+            bytecode.Instructions.Add(Instruction.LOAD_FALSE_SKIP(0));
+            bytecode.Instructions.Add(Instruction.LOAD_TRUE(0));
+            bytecode.Instructions.Add(Instruction.RETURN(0, 1));
+
+            var vm = Utils.Run(bytecode, 3);
+
+            Utils.AssertBoolResult(vm, false, 0);
+        }
+
+        [Test]
+        public void LOAD_NIL()
+        {
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
+
+            bytecode.Instructions.Add(Instruction.LOAD_TRUE(0));
+            bytecode.Instructions.Add(Instruction.LOAD_NIL(0));
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
 
             var vm = Utils.Run(bytecode, 3);
@@ -94,8 +108,8 @@ namespace TickLUA_Tests.Instructions
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 2);
 
-            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
-            bytecode.Instructions.Add(Instruction.LOADI(1, 2));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(1, 2));
             bytecode.Instructions.Add(Instruction.MOVE(1, 0));
             bytecode.Instructions.Add(Instruction.RETURN(1, 1));
 

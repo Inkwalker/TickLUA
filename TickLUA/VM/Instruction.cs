@@ -142,10 +142,13 @@
 
         internal static uint NOP() => New(Opcode.NOP);
         internal static uint MOVE(byte dest_reg, byte src_reg) => New(Opcode.MOVE, dest_reg, src_reg, 0);
-        internal static uint LOADK(byte dest_reg, ushort const_index) => New(Opcode.LOADK, dest_reg, (short)const_index);
-        internal static uint LOADI(byte dest_reg, short integer) => New(Opcode.LOADI, dest_reg, integer);
-        internal static uint LOADBOOL(byte dest_reg, bool value) => New(Opcode.LOADBOOL, dest_reg, (byte)(value ? 1 : 0), 0);
-        internal static uint LOADNIL(byte start_reg, byte count = 1) => New(Opcode.LOADNIL, start_reg, count, 0);
+        internal static uint LOAD_CONST(byte dest_reg, ushort const_index) => New(Opcode.LOAD_CONST, dest_reg, (short)const_index);
+        internal static uint LOAD_INT(byte dest_reg, short integer) => New(Opcode.LOAD_INT, dest_reg, integer);
+        internal static uint LOAD_TRUE(byte dest_reg) => New(Opcode.LOAD_TRUE, dest_reg, 0, 0);
+        internal static uint LOAD_FALSE(byte dest_reg) => New(Opcode.LOAD_FALSE, dest_reg, 0, 0);
+        internal static uint LOAD_FALSE_SKIP(byte dest_reg) => New(Opcode.LOAD_FALSE_SKIP, dest_reg, 0, 0);
+        internal static uint LOAD_BOOL(byte dest_reg, bool value) => value ? LOAD_TRUE(dest_reg) : LOAD_FALSE(dest_reg);
+        internal static uint LOAD_NIL(byte start_reg, byte count = 1) => New(Opcode.LOAD_NIL, start_reg, count, 0);
         internal static uint ADD(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.ADD, dest_reg, left_reg, right_reg);
         internal static uint SUB(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.SUB, dest_reg, left_reg, right_reg);
         internal static uint MUL(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.MUL, dest_reg, left_reg, right_reg);

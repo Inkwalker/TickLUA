@@ -18,7 +18,7 @@ namespace TickLUA.VM.Handlers
             frame.Registers[a] = frame.Registers[b];
         }
 
-        internal static void LOADK(TickVM vm, StackFrame frame, uint instruction)
+        internal static void LOAD_CONST(TickVM vm, StackFrame frame, uint instruction)
         {
             byte  a   = Instruction.GetA(instruction);
             ushort bx = Instruction.GetBx(instruction);
@@ -27,7 +27,7 @@ namespace TickLUA.VM.Handlers
             frame.Registers[a] = frame.Constants[bx];
         }
 
-        internal static void LOADI(TickVM vm, StackFrame frame, uint instruction)
+        internal static void LOAD_INT(TickVM vm, StackFrame frame, uint instruction)
         {
             byte  a = Instruction.GetA(instruction);
             short b = Instruction.GetBxSigned(instruction);
@@ -36,16 +36,32 @@ namespace TickLUA.VM.Handlers
             frame.Registers[a] = new NumberObject(b);
         }
 
-        internal static void LOADBOOL(TickVM vm, StackFrame frame, uint instruction)
+        internal static void LOAD_TRUE(TickVM vm, StackFrame frame, uint instruction)
         {
             byte a = Instruction.GetA(instruction);
-            byte b = Instruction.GetB(instruction);
 
-            // Load boolean b into register a. 0 = false, 1 = true
-            frame.Registers[a] = BooleanObject.FromBool(b == 0 ? false : true);
+            // Load boolean true into register a
+            frame.Registers[a] = BooleanObject.True;
         }
 
-        internal static void LOADNIL(TickVM vm, StackFrame frame, uint instruction)
+        internal static void LOAD_FALSE(TickVM vm, StackFrame frame, uint instruction)
+        {
+            byte a = Instruction.GetA(instruction);
+
+            // Load boolean false into register a
+            frame.Registers[a] = BooleanObject.False;
+        }
+
+        internal static void LOAD_FALSE_SKIP(TickVM vm, StackFrame frame, uint instruction)
+        {
+            byte a = Instruction.GetA(instruction);
+
+            // Load boolean false into register a and skip next instruction
+            frame.Registers[a] = BooleanObject.False;
+            frame.PC++;
+        }
+
+        internal static void LOAD_NIL(TickVM vm, StackFrame frame, uint instruction)
         {
             byte a = Instruction.GetA(instruction);
             byte b = Instruction.GetB(instruction);

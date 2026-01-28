@@ -13,28 +13,30 @@ namespace TickLUA.VM
         private readonly Dictionary<Opcode, InstructionHandler> instructionSet = new Dictionary<Opcode, InstructionHandler>
         {
             // Core operations
-            { Opcode.NOP,      HandlersCore.NOP },
-            { Opcode.MOVE,     HandlersCore.MOVE },
-            { Opcode.LOADK,    HandlersCore.LOADK },
-            { Opcode.LOADI,    HandlersCore.LOADI },
-            { Opcode.LOADBOOL, HandlersCore.LOADBOOL },
-            { Opcode.LOADNIL,  HandlersCore.LOADNIL },
+            { Opcode.NOP,             HandlersCore.NOP },
+            { Opcode.MOVE,            HandlersCore.MOVE },
+            { Opcode.LOAD_CONST,      HandlersCore.LOAD_CONST },
+            { Opcode.LOAD_INT,        HandlersCore.LOAD_INT },
+            { Opcode.LOAD_TRUE,       HandlersCore.LOAD_TRUE },
+            { Opcode.LOAD_FALSE,      HandlersCore.LOAD_FALSE },
+            { Opcode.LOAD_FALSE_SKIP, HandlersCore.LOAD_FALSE_SKIP },
+            { Opcode.LOAD_NIL,        HandlersCore.LOAD_NIL },
             // Math operations
-            { Opcode.ADD,      HandlersMath.ADD },
-            { Opcode.SUB,      HandlersMath.SUB },
-            { Opcode.MUL,      HandlersMath.MUL },
-            { Opcode.MOD,      HandlersMath.MOD },
-            { Opcode.POW,      HandlersMath.POW },
-            { Opcode.DIV,      HandlersMath.DIV },
-            { Opcode.IDIV,     HandlersMath.IDIV },
+            { Opcode.ADD,             HandlersMath.ADD },
+            { Opcode.SUB,             HandlersMath.SUB },
+            { Opcode.MUL,             HandlersMath.MUL },
+            { Opcode.MOD,             HandlersMath.MOD },
+            { Opcode.POW,             HandlersMath.POW },
+            { Opcode.DIV,             HandlersMath.DIV },
+            { Opcode.IDIV,            HandlersMath.IDIV },
             // Function operations
-            { Opcode.RETURN,   HandlersCore.RETURN },
+            { Opcode.RETURN,          HandlersCore.RETURN },
             // Jumps
-            { Opcode.JMP,      HandlersJumps.JMP },
-            { Opcode.TEST,     HandlersJumps.TEST },
-            { Opcode.EQ,       HandlersJumps.EQ },
-            { Opcode.LT,       HandlersJumps.LT },
-            { Opcode.LE,       HandlersJumps.LE },
+            { Opcode.JMP,             HandlersJumps.JMP },
+            { Opcode.TEST,            HandlersJumps.TEST },
+            { Opcode.EQ,              HandlersJumps.EQ },
+            { Opcode.LT,              HandlersJumps.LT },
+            { Opcode.LE,              HandlersJumps.LE },
         };
 
         private readonly InstructionHandler[] instructionHandlers;

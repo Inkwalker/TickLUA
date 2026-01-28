@@ -10,9 +10,9 @@ namespace TickLUA_Tests.Instructions
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
 
-            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
             bytecode.Instructions.Add(Instruction.JMP(1));
-            bytecode.Instructions.Add(Instruction.LOADI(0, 32));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 32));
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
 
             var vm = Utils.Run(bytecode, 4);
@@ -25,17 +25,17 @@ namespace TickLUA_Tests.Instructions
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
 
-            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
-            bytecode.Instructions.Add(Instruction.LOADI(1, 16));
-            bytecode.Instructions.Add(Instruction.LOADBOOL(2, true));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(1, 16));
+            bytecode.Instructions.Add(Instruction.LOAD_TRUE(2));
 
             // If register 2 is true, execute the next instruction (should execute it)
             bytecode.Instructions.Add(Instruction.TEST(2, true));
-            bytecode.Instructions.Add(Instruction.LOADI(0, 32));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 32));
 
             // If register 2 is false, execute the next instruction (should skip it)
             bytecode.Instructions.Add(Instruction.TEST(2, false));
-            bytecode.Instructions.Add(Instruction.LOADI(1, 64));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(1, 64));
 
             bytecode.Instructions.Add(Instruction.RETURN(0, 2));
 
@@ -50,16 +50,16 @@ namespace TickLUA_Tests.Instructions
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
 
-            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
-            bytecode.Instructions.Add(Instruction.LOADI(1, 16));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(1, 16));
 
             // If reg[0] == reg[1], execute the next instruction (should skip it)
             bytecode.Instructions.Add(Instruction.EQ(0, 1, true));
-            bytecode.Instructions.Add(Instruction.LOADI(1, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(1, 42));
 
             // If reg[0] != reg[1], execute the next instruction (should execute it)
             bytecode.Instructions.Add(Instruction.EQ(0, 1, false));
-            bytecode.Instructions.Add(Instruction.LOADI(1, 64));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(1, 64));
 
             bytecode.Instructions.Add(Instruction.RETURN(1, 1));
 
@@ -73,16 +73,16 @@ namespace TickLUA_Tests.Instructions
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
 
-            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
-            bytecode.Instructions.Add(Instruction.LOADNIL(1));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_NIL(1));
 
             // If reg[0] == nil, execute the next instruction (should skip it)
             bytecode.Instructions.Add(Instruction.EQ(0, 1, true));
-            bytecode.Instructions.Add(Instruction.LOADI(0, 32));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 32));
 
             // If reg[0] != nil, execute the next instruction (should execute it)
             bytecode.Instructions.Add(Instruction.EQ(0, 1, false));
-            bytecode.Instructions.Add(Instruction.LOADI(0, 64));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 64));
 
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
 
@@ -96,16 +96,16 @@ namespace TickLUA_Tests.Instructions
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
 
-            bytecode.Instructions.Add(Instruction.LOADBOOL(0, true));
-            bytecode.Instructions.Add(Instruction.LOADBOOL(1, false));
+            bytecode.Instructions.Add(Instruction.LOAD_BOOL(0, true));
+            bytecode.Instructions.Add(Instruction.LOAD_BOOL(1, false));
 
             // If reg[0] != reg[1], execute the next instruction (should execute it)
             bytecode.Instructions.Add(Instruction.EQ(0, 1, false));
-            bytecode.Instructions.Add(Instruction.LOADBOOL(1, true));
+            bytecode.Instructions.Add(Instruction.LOAD_BOOL(1, true));
 
             // If reg[0] == reg[1], execute the next instruction (should execute it)
             bytecode.Instructions.Add(Instruction.EQ(0, 1, true));
-            bytecode.Instructions.Add(Instruction.LOADBOOL(0, false));
+            bytecode.Instructions.Add(Instruction.LOAD_BOOL(0, false));
 
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
 
@@ -119,16 +119,16 @@ namespace TickLUA_Tests.Instructions
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
 
-            bytecode.Instructions.Add(Instruction.LOADI(0, 32));
-            bytecode.Instructions.Add(Instruction.LOADI(1, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 32));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(1, 42));
 
             // If reg[0] < reg[1], execute the next instruction (should execute it)
             bytecode.Instructions.Add(Instruction.LT(0, 1, true));
-            bytecode.Instructions.Add(Instruction.LOADI(0, 64));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 64));
 
             // If reg[0] >= reg[1], execute the next instruction (should execute it)
             bytecode.Instructions.Add(Instruction.LT(0, 1, false));
-            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
 
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
 
@@ -142,16 +142,16 @@ namespace TickLUA_Tests.Instructions
         {
             var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 3);
 
-            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
-            bytecode.Instructions.Add(Instruction.LOADI(1, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(1, 42));
 
             // If reg[0] <= reg[1], execute the next instruction (should execute it)
             bytecode.Instructions.Add(Instruction.LT(0, 1, true));
-            bytecode.Instructions.Add(Instruction.LOADI(0, 64));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 64));
 
             // If reg[0] > reg[1], execute the next instruction (should execute it)
             bytecode.Instructions.Add(Instruction.LT(0, 1, false));
-            bytecode.Instructions.Add(Instruction.LOADI(0, 42));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
 
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
 

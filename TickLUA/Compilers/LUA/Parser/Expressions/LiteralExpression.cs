@@ -136,20 +136,22 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
             if (Value is BooleanObject boolObj)
             {
-                // LOADBOOL
-                builder.AddInstruction(Instruction.LOADBOOL((byte)ResultRegister, (bool)boolObj));
+                // LOAD_BOOL
+                builder.AddInstruction(Instruction.LOAD_BOOL((byte)ResultRegister, (bool)boolObj));
                 return (byte)ResultRegister;
             }
             if (Value is NilObject)
             {
-                // LOADNIL
-                builder.AddInstruction(Instruction.LOADNIL((byte)ResultRegister));
+                // LOAD_NIL
+                builder.AddInstruction(Instruction.LOAD_NIL((byte)ResultRegister));
                 return (byte)ResultRegister;
             }
 
-            // LOADK
+            //TODO: Optimize for small integers
+
+            // LOAD_CONST
             ushort index = builder.AddConstant(Value);
-            builder.AddInstruction(Instruction.LOADK((byte)ResultRegister, index));
+            builder.AddInstruction(Instruction.LOAD_CONST((byte)ResultRegister, index));
 
             return (byte)ResultRegister;
         }
