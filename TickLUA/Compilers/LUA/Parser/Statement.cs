@@ -1,5 +1,4 @@
 ﻿using TickLUA.Compilers.LUA.Lexer;
-using TickLUA.Compilers.LUA.Parser.Expressions;
 using TickLUA.Compilers.LUA.Parser.Statements;
 
 namespace TickLUA.Compilers.LUA.Parser
@@ -22,8 +21,8 @@ namespace TickLUA.Compilers.LUA.Parser
                 //    return new ClassDefinitionStatement(false, lexer);
                 //case TokenType.Semicolon:
                 //    return new EmptyStatement();
-                //case TokenType.If:
-                //    return new IfStatement(lexer);
+                case TokenType.If:
+                    return new IfStatement(lexer);
                 //case TokenType.While:
                 //    return new WhileLoopStatement(lexer);
                 //case TokenType.Do:

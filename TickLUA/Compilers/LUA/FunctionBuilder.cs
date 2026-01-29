@@ -15,6 +15,8 @@ namespace TickLUA.Compilers.LUA
 
         private BlockFrame TopBlock => blocks[blocks.Count - 1];
 
+        public int InstructionCount => instructions.Count;
+
         public LuaFunction Finish()
         {
             var func = new LuaFunction(
@@ -34,6 +36,18 @@ namespace TickLUA.Compilers.LUA
         {
             instructions.Add(instruction);
             return instructions.Count - 1;
+        }
+
+        /// <summary>
+        /// Set instruction in the bytecode at given address.
+        /// Must be within <see cref="InstructionCount"/>range.
+        /// </summary>
+        /// <returns>Old instruction at <paramref name="address"/></returns>
+        public uint SetInstruction(int address, uint instruction)
+        {
+            uint old_inst = instructions[address];
+            instructions[address] = instruction;
+            return old_inst;
         }
 
         public ushort AddConstant(LuaObject constant)

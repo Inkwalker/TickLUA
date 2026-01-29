@@ -3,15 +3,11 @@ using TickLUA.Compilers.LUA.Lexer;
 
 namespace TickLUA.Compilers.LUA.Parser.Statements
 {
-    /// <summary>
-    /// A root function of a lua file.
-    /// Used as an entry point for the parser.
-    /// </summary>
-    internal class ChunkStatement : Statement
+    internal class BlockStatement : Statement
     {
         private List<Statement> statements;
 
-        public ChunkStatement(LuaLexer lexer)
+        public BlockStatement(LuaLexer lexer)
         {
             statements = new List<Statement>();
 

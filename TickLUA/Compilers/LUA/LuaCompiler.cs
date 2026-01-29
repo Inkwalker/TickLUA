@@ -14,7 +14,7 @@ namespace TickLUA.Compilers.LUA
 
             var builder = new FunctionBuilder();
 
-            var chunk = new ChunkStatement(lexer);
+            var chunk = new BlockStatement(lexer);
 
             chunk.Compile(builder);
 

@@ -24,6 +24,10 @@ namespace TickLUA.Compilers.LUA.Parser
             }
         }
 
+        /// <summary>
+        /// Compile expression
+        /// </summary>
+        /// <returns>Index of result register. -1 if no result</returns>
         public abstract byte CompileRead(FunctionBuilder builder);
 
         public static Expression Create(LuaLexer lexer)

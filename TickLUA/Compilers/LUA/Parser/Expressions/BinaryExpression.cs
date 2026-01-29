@@ -298,6 +298,8 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
                 right.ReleaseRegisters(builder);
                 left.ReleaseRegisters(builder);
+
+                return (byte)ResultRegister;
             }
             return 0;
         }
