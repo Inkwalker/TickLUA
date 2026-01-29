@@ -37,7 +37,8 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 switch (operation)
                 {
                     case OperationType.Negate:
-                        throw new CompilationException($"Not implemented unary operator '-'", 1, 1);
+                        builder.AddInstruction(Instruction.UNM((byte)ResultRegister, reg_val));
+                        break;
                     case OperationType.Not:
                         builder.AddInstruction(Instruction.NOT((byte)ResultRegister, reg_val));
                         break;

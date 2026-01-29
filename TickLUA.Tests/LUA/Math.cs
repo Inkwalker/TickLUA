@@ -106,5 +106,20 @@
             Utils.AssertFloatResult(vm, 32, 0);
             Utils.AssertFloatResult(vm, 25, 1);
         }
+
+        [Test]
+        public void UnaryMinus()
+        {
+            var source =
+                @"local x = 2
+                  local y = 5.5
+                  local r1 = -x
+                  local r2 = -y
+                  return r1, r2";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, -2, 0);
+            Utils.AssertFloatResult(vm, -5.5f, 1);
+        }
     }
 }

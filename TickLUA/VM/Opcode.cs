@@ -87,7 +87,11 @@
         /// A - result reg, B - left val reg, C - right val reg
         /// </summary>
         IDIV,
-        //UNM,
+        /// <summary>
+        /// Unary minus.
+        /// A - result reg, B - source reg
+        /// </summary>
+        UNM,
         /// <summary>
         /// Logical NOT.
         /// A - result reg, B - source reg

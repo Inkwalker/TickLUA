@@ -20,8 +20,6 @@ namespace TickLUA_Tests.Instructions
             bytecode.Instructions.Add(Instruction.ADD(2, 0, 1));
             bytecode.Instructions.Add(Instruction.RETURN(2, 1));
 
-            bytecode.RegisterCount = 3;
-
             var vm = Utils.Run(bytecode, 4);
 
             Utils.AssertIntegerResult(vm, 42);
@@ -36,8 +34,6 @@ namespace TickLUA_Tests.Instructions
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 12));
             bytecode.Instructions.Add(Instruction.SUB(2, 0, 1));
             bytecode.Instructions.Add(Instruction.RETURN(2, 1));
-
-            bytecode.RegisterCount = 3;
 
             var vm = Utils.Run(bytecode, 4);
 
@@ -54,8 +50,6 @@ namespace TickLUA_Tests.Instructions
             bytecode.Instructions.Add(Instruction.MUL(2, 0, 1));
             bytecode.Instructions.Add(Instruction.RETURN(2, 1));
 
-            bytecode.RegisterCount = 3;
-
             var vm = Utils.Run(bytecode, 4);
 
             Utils.AssertIntegerResult(vm, 12);
@@ -70,8 +64,6 @@ namespace TickLUA_Tests.Instructions
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 5));
             bytecode.Instructions.Add(Instruction.MOD(2, 0, 1));
             bytecode.Instructions.Add(Instruction.RETURN(2, 1));
-
-            bytecode.RegisterCount = 3;
 
             var vm = Utils.Run(bytecode, 4);
 
@@ -88,8 +80,6 @@ namespace TickLUA_Tests.Instructions
             bytecode.Instructions.Add(Instruction.POW(2, 0, 1));
             bytecode.Instructions.Add(Instruction.RETURN(2, 1));
 
-            bytecode.RegisterCount = 3;
-
             var vm = Utils.Run(bytecode, 4);
 
             Utils.AssertFloatResult(vm, 64);
@@ -104,8 +94,6 @@ namespace TickLUA_Tests.Instructions
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 2));
             bytecode.Instructions.Add(Instruction.DIV(2, 0, 1));
             bytecode.Instructions.Add(Instruction.RETURN(2, 1));
-
-            bytecode.RegisterCount = 3;
 
             var vm = Utils.Run(bytecode, 4);
 
@@ -122,11 +110,26 @@ namespace TickLUA_Tests.Instructions
             bytecode.Instructions.Add(Instruction.IDIV(2, 0, 1));
             bytecode.Instructions.Add(Instruction.RETURN(2, 1));
 
-            bytecode.RegisterCount = 3;
-
             var vm = Utils.Run(bytecode, 4);
 
             Utils.AssertIntegerResult(vm, 3);
+        }
+
+        [Test]
+        public void UNM()
+        {
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>() { new NumberObject(3.14f) }, 2);
+
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 12));
+            bytecode.Instructions.Add(Instruction.LOAD_CONST(1, 0));
+            bytecode.Instructions.Add(Instruction.UNM(0, 0));
+            bytecode.Instructions.Add(Instruction.UNM(1, 1));
+            bytecode.Instructions.Add(Instruction.RETURN(0, 2));
+
+            var vm = Utils.Run(bytecode, 5);
+
+            Utils.AssertIntegerResult(vm, -12, 0);
+            Utils.AssertFloatResult(vm, -3.14f, 1);
         }
     }
 }

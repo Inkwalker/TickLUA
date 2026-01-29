@@ -168,6 +168,7 @@
         internal static uint LT(byte reg_a, byte reg_b, bool expected) => New(Opcode.LT, reg_a, reg_b, (byte)(expected ? 1 : 0));
         internal static uint LE(byte reg_a, byte reg_b, bool expected) => New(Opcode.LE, reg_a, reg_b, (byte)(expected ? 1 : 0));
         internal static uint NOT(byte dest_reg, byte reg_source) => New(Opcode.NOT, dest_reg, reg_source, 0);
+        internal static uint UNM(byte dest_reg, byte reg_source) => New(Opcode.UNM, dest_reg, reg_source, 0);
 
         #endregion
     }

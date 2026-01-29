@@ -1,4 +1,5 @@
-﻿using TickLUA.VM.Objects;
+﻿using System.Runtime.CompilerServices;
+using TickLUA.VM.Objects;
 
 namespace TickLUA.VM.Handlers
 {
@@ -67,16 +68,27 @@ namespace TickLUA.VM.Handlers
             SetRegA(frame, instruction, NumberObject.IntDiv(l,r));
         }
 
+        internal static void UNM(TickVM vm, StackFrame frame, uint instruction)
+        {
+            // TODO: type checks
+            var v = GetRegB(frame, instruction);
+
+            SetRegA(frame, instruction, -v);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SetRegA(StackFrame frame, uint instruction, NumberObject value)
         {
             int a = Instruction.GetA(instruction);
             frame.Registers[a] = value;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NumberObject GetRegB(StackFrame frame, uint instruction)
         {
             int b = Instruction.GetB(instruction);
             return frame.Registers[b] as NumberObject;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NumberObject GetRegC(StackFrame frame, uint instruction)
         {
             int c = Instruction.GetC(instruction);
