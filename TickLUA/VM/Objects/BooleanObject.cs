@@ -18,7 +18,7 @@
 
         public override BooleanObject ToBooleanObject() => this;
 
-        public static BooleanObject operator !(BooleanObject o) => (bool)o? True : False;
+        public static BooleanObject operator !(BooleanObject o) => (bool)o? False : True;
 
         public static explicit operator NumberObject(BooleanObject value) => new NumberObject((bool)value ? 1 : 0);
 

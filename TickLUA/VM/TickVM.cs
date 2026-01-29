@@ -21,6 +21,7 @@ namespace TickLUA.VM
             { Opcode.LOAD_FALSE,      HandlersCore.LOAD_FALSE },
             { Opcode.LOAD_FALSE_SKIP, HandlersCore.LOAD_FALSE_SKIP },
             { Opcode.LOAD_NIL,        HandlersCore.LOAD_NIL },
+            { Opcode.JMP,             HandlersCore.JMP },
             // Math operations
             { Opcode.ADD,             HandlersMath.ADD },
             { Opcode.SUB,             HandlersMath.SUB },
@@ -31,12 +32,13 @@ namespace TickLUA.VM
             { Opcode.IDIV,            HandlersMath.IDIV },
             // Function operations
             { Opcode.RETURN,          HandlersCore.RETURN },
-            // Jumps
-            { Opcode.JMP,             HandlersJumps.JMP },
-            { Opcode.TEST,            HandlersJumps.TEST },
-            { Opcode.EQ,              HandlersJumps.EQ },
-            { Opcode.LT,              HandlersJumps.LT },
-            { Opcode.LE,              HandlersJumps.LE },
+            // Logic
+            { Opcode.TEST,            HandlersLogic.TEST },
+            { Opcode.TESTSET,         HandlersLogic.TESTSET },
+            { Opcode.EQ,              HandlersLogic.EQ },
+            { Opcode.LT,              HandlersLogic.LT },
+            { Opcode.LE,              HandlersLogic.LE },
+            {Opcode.NOT,              HandlersLogic.NOT },
         };
 
         private readonly InstructionHandler[] instructionHandlers;

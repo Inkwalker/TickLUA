@@ -210,7 +210,15 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             switch (op)
             {
                 case BinaryOperation.LogicOr:
+                    builder.AddInstruction(Instruction.TESTSET(reg_res, reg_l, true));
+                    builder.AddInstruction(Instruction.JMP(1));
+                    builder.AddInstruction(Instruction.MOVE(reg_res, reg_r));
+                    return;
                 case BinaryOperation.LogicAnd:
+                    builder.AddInstruction(Instruction.TESTSET(reg_res, reg_l, false));
+                    builder.AddInstruction(Instruction.JMP(1));
+                    builder.AddInstruction(Instruction.MOVE(reg_res, reg_r));
+                    return;
                 case BinaryOperation.Less:
                     builder.AddInstruction(Instruction.LT(reg_l, reg_r, false));
                     builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res));
@@ -242,6 +250,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                     builder.AddInstruction(Instruction.LOAD_TRUE(reg_res));
                     return;
                 case BinaryOperation.Concat:
+                    throw new CompilationException($"Not implemented binary operator '..'", 1, 1);
                 case BinaryOperation.Add:
                     builder.AddInstruction(Instruction.ADD(reg_res, reg_l, reg_r));
                     return;

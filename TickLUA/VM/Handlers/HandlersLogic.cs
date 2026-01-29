@@ -2,14 +2,8 @@
 
 namespace TickLUA.VM.Handlers
 {
-    internal static class HandlersJumps
+    internal static class HandlersLogic
     {
-        internal static void JMP(TickVM vm, StackFrame frame, uint instruction)
-        {
-            int delta = Instruction.GetAxSigned(instruction);
-            frame.PC += delta;
-        }
-
         internal static void TEST(TickVM vm, StackFrame frame, uint instruction)
         {
             int reg = Instruction.GetA(instruction);
@@ -20,6 +14,24 @@ namespace TickLUA.VM.Handlers
             if ((bool)obj.ToBooleanObject() != expected)
             {
                 frame.PC++;
+            }
+        }
+
+        internal static void TESTSET(TickVM vm, StackFrame frame, uint instruction)
+        {
+            int dest_reg = Instruction.GetA(instruction);
+            int test_reg = Instruction.GetB(instruction);
+            bool expected = Instruction.GetC(instruction) != 0;
+
+            var test_obj = frame.Registers[test_reg];
+
+            if ((bool)test_obj.ToBooleanObject() != expected)
+            {
+                frame.PC++;
+            }
+            else
+            {
+                frame.Registers[dest_reg] = test_obj;
             }
         }
 
@@ -84,6 +96,15 @@ namespace TickLUA.VM.Handlers
             {
                 frame.PC++;
             }
+        }
+
+        internal static void NOT(TickVM vm, StackFrame frame, uint instruction)
+        {
+            int a = Instruction.GetA(instruction);
+            int b = Instruction.GetB(instruction);
+            var obj = frame.Registers[b];
+
+            frame.Registers[a] = !obj.ToBooleanObject();
         }
     }
 }

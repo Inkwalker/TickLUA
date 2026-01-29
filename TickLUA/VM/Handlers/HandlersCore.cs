@@ -83,5 +83,11 @@ namespace TickLUA.VM.Handlers
 
             frame.SetResults(a, b - 1);
         }
+
+        internal static void JMP(TickVM vm, StackFrame frame, uint instruction)
+        {
+            int delta = Instruction.GetAxSigned(instruction);
+            frame.PC += delta;
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using TickLUA.Compilers.LUA.Lexer;
+using TickLUA.VM;
 using TickLUA.VM.Objects;
 
 namespace TickLUA.Compilers.LUA.Parser.Expressions
@@ -33,20 +34,18 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 // so allocate a new one that can be deallocated safely
                 ResultRegister = builder.AllocateRegisters(1);
 
-                //if (operation == OperationType.Negate)
-                //{
-                //    code += Instruction.Unm();
-                //}
-                //if (operation == OperationType.Not)
-                //{
-                //    code += Instruction.Not();
-                //}
-                //if (operation == OperationType.Len)
-                //{
-                //    code += Instruction.Len();
-                //}
-
-                // TODO: add unary operation instructions
+                switch (operation)
+                {
+                    case OperationType.Negate:
+                        throw new CompilationException($"Not implemented unary operator '-'", 1, 1);
+                    case OperationType.Not:
+                        builder.AddInstruction(Instruction.NOT((byte)ResultRegister, reg_val));
+                        break;
+                    case OperationType.Len:
+                        throw new CompilationException($"Not implemented binary operator '#'", 1, 1);
+                    default:
+                        throw new CompilationException($"Unexpected unary operator", 1, 1);
+                }
             }
 
             return (byte)ResultRegister;

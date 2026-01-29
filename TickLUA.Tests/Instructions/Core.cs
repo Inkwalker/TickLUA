@@ -117,5 +117,20 @@ namespace TickLUA_Tests.Instructions
 
             Utils.AssertIntegerResult(vm, 42);
         }
+
+        [Test]
+        public void JMP()
+        {
+            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
+
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
+            bytecode.Instructions.Add(Instruction.JMP(1));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(0, 32));
+            bytecode.Instructions.Add(Instruction.RETURN(0, 1));
+
+            var vm = Utils.Run(bytecode, 4);
+
+            Utils.AssertIntegerResult(vm, 42);
+        }
     }
 }
