@@ -138,6 +138,48 @@
             return (byte)opcode;
         }
 
+        internal static string ToString(uint instruction)
+        {
+            Opcode opcode = GetOpcode(instruction);
+
+            switch (opcode)
+            {
+                case Opcode.NOP:
+                    return opcode.ToString();
+                case Opcode.LOAD_TRUE:
+                case Opcode.LOAD_FALSE:
+                case Opcode.LOAD_FALSE_SKIP:
+                    return $"{opcode} {GetA(instruction)}";
+                case Opcode.MOVE:
+                case Opcode.LOAD_NIL:
+                case Opcode.NOT:
+                case Opcode.UNM:
+                case Opcode.TEST:
+                    return $"{opcode} {GetA(instruction)} {GetB(instruction)}";
+                case Opcode.LOAD_CONST:
+                case Opcode.RETURN:
+                    return $"{opcode} {GetA(instruction)} {GetBx(instruction)}";
+                case Opcode.LOAD_INT:
+                    return $"{opcode} {GetA(instruction)} {GetBxSigned(instruction)}";
+                case Opcode.ADD:
+                case Opcode.SUB:
+                case Opcode.MUL:
+                case Opcode.DIV: 
+                case Opcode.MOD:
+                case Opcode.POW:
+                case Opcode.IDIV:
+                case Opcode.TESTSET:
+                case Opcode.LE:
+                case Opcode.LT:
+                case Opcode.EQ:
+                    return $"{opcode} {GetA(instruction)} {GetB(instruction)} {GetC(instruction)}";
+                case Opcode.JMP:
+                    return $"{opcode} {GetAxSigned(instruction)}";
+                default:
+                    return $"{opcode} {GetA(instruction)} {GetB(instruction)} {GetC(instruction)}";
+            }
+        }
+
         #region Factory methods
 
         internal static uint NOP() => New(Opcode.NOP);

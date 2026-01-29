@@ -8,6 +8,8 @@ namespace TickLUA_Tests.LUA
         public static TickVM Run(string code, int tick_limit)
         {
             var luaFunction = LuaCompiler.Compile(code);
+
+            PrintBytecode(luaFunction);
             
             return Run(luaFunction, tick_limit);
         }
@@ -65,6 +67,15 @@ namespace TickLUA_Tests.LUA
             Assert.NotNull(vm.ExecutionResult);
             Assert.IsTrue(vm.ExecutionResult.Length > result_index);
             Assert.IsInstanceOf<NilObject>(vm.ExecutionResult[result_index]);
+        }
+
+        public static void PrintBytecode(LuaFunction func)
+        {
+            Console.WriteLine("Bytecode:");
+            foreach (var inst in func.Instructions)
+            {
+                Console.WriteLine(Instruction.ToString(inst));
+            }
         }
     }
 }
