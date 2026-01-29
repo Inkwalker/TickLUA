@@ -44,9 +44,9 @@
         public void ReturnMultiCopy()
         {
             string source = @"
-                a = 1
-                b = 2
-                c = 3
+                local a = 1
+                local b = 2
+                local c = 3
                 return c, b, a";
 
             var vm = Utils.Run(source, 100);

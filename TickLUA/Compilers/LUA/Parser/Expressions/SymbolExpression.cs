@@ -7,7 +7,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
     {
         private string name;
 
-        public bool IsLocal { get; set; } = true;
+        public bool IsLocal { get; set; } = false;
 
         public SymbolExpression(string name)
         {

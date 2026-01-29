@@ -14,6 +14,19 @@
         }
 
         [Test]
+        public void Assignment_Local()
+        {
+            string source = @"
+                local a = 5
+                a = 10
+                a = 15
+                return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 15);
+        }
+
+        [Test]
         public void AssignmentAdd()
         {
             string source = @"
