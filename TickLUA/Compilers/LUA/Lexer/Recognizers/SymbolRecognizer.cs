@@ -17,9 +17,9 @@
 
             if (!HasRemainingCharacters(source, literal.Length)) return false;
 
-            int start_position = source.Position;
-            int line = source.Line;
-            int column = source.Column;
+            int start_position = source.StrPosition;
+            int line = source.CursorPosition.line;
+            int column = source.CursorPosition.column;
 
             char c = source.Peek();
             for (int i = 0; i < literal.Length; i++)
@@ -28,7 +28,7 @@
                 c = source.Next();
             }
 
-            token = new Token(tokenType) { Content = source.Substring(start_position), Line = line, Column = column };
+            token = new Token(tokenType, line, column) { Content = source.Substring(start_position) };
 
             return true;
         }

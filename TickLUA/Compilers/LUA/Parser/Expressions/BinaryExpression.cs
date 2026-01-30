@@ -155,6 +155,11 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             this.left = left;
             this.right = right;
             this.operation = op;
+
+            var start_pos = left.SourceRange.from;
+            var end_pos = right.SourceRange.to;
+
+            SourceRange = new SourceRange(start_pos, end_pos);
         }
 
         public BinaryExpression(Expression left, Expression right, Token token)
@@ -162,6 +167,11 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             this.left = left;
             this.right = right;
             this.operation = ParseBinaryOperator(token);
+
+            var start_pos = left.SourceRange.from;
+            var end_pos = right.SourceRange.to;
+
+            SourceRange = new SourceRange(start_pos, end_pos);
         }
 
         private static BinaryOperation ParseBinaryOperator(Token token)
@@ -201,7 +211,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 case TokenType.OP_Pow:
                     return BinaryOperation.Pow;
                 default:
-                    throw new CompilationException($"Unexpected binary operator '{token.Content}'", token.Line, token.Column);
+                    throw new CompilationException($"Unexpected binary operator '{token.Content}'", token.Position);
             }
         }
 

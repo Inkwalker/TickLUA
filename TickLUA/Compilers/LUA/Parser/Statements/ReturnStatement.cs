@@ -8,11 +8,9 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
     {
         private List<Expression> values;
 
-        private int line;
-
         public ReturnStatement(LuaLexer lexer)
         {
-            line = lexer.Current.Line;
+            var start_pos = lexer.Current.Position;
             AssertTokenNext(lexer, TokenType.Return);
 
             values = new List<Expression>();
@@ -24,6 +22,9 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
                 if (lexer.Current.Type == TokenType.Coma) lexer.Next();
             }
+            var end_pos = lexer.Current.Position;
+
+            SourceRange = new SourceRange(start_pos, end_pos);
         }
 
         public override void Compile(FunctionBuilder builder)

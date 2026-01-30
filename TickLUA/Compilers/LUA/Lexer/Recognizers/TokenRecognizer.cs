@@ -25,7 +25,7 @@
             {
                 return true;
             }
-            return source.Position + count <= source.Length;
+            return source.StrPosition + count <= source.Length;
         }
     }
 }

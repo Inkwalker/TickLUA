@@ -4,13 +4,11 @@
     {
         public override bool Read(SourceCode source, out Token token)
         {
-            //TODO: add support for hex notation and exponents
-
             token = null;
 
-            int start_pos = source.Position;
-            int line = source.Line;
-            int column = source.Column;
+            int start_pos = source.StrPosition;
+            int line = source.CursorPosition.line;
+            int column = source.CursorPosition.column;
 
             char c = source.Peek();
             char prev = ' ';
@@ -45,7 +43,7 @@
                 }
                 else if (IsXChar(c))
                 {
-                    if ((start_pos - source.Position != 1) && prev != '0')
+                    if ((start_pos - source.StrPosition != 1) && prev != '0')
                         break;
                     isHex = true;
                 }
@@ -61,9 +59,9 @@
                 c = source.Next();
             }
 
-            if (source.Position > start_pos)
+            if (source.StrPosition > start_pos)
             {
-                token = new Token(TokenType.Number) { Content = source.Substring(start_pos), Line = line, Column = column };
+                token = new Token(TokenType.Number, line, column) { Content = source.Substring(start_pos) };
                 return true;
             }
 

@@ -7,6 +7,8 @@
         public AdjustmentExpression(Expression expr)
         {
             this.expr = expr;
+
+            SourceRange = expr.SourceRange;
         }
 
         public override byte CompileRead(FunctionBuilder builder)

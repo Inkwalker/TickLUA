@@ -177,13 +177,13 @@ namespace TickLUA.Compilers.LUA.Parser
                     Expression e = Create(lexer);
                     e = new AdjustmentExpression(e);
                     if (lexer.Current.Type != TokenType.BRK_ROUND_Right)
-                        throw new CompilationException("Unclosed '('", lexer.Current.Line, lexer.Current.Column);
+                        throw new CompilationException("Unclosed '('", lexer.Current.Position);
                     lexer.Next();
                     return e;
                 case TokenType.Name:
                     return new SymbolExpression(lexer);
                 default:
-                    throw new CompilationException($"Unexpected symbol near '{T.Content}'", T.Line, T.Column);
+                    throw new CompilationException($"Unexpected symbol near '{T.Content}'", T.Position);
             }
         }
     }

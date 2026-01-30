@@ -20,6 +20,11 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 this.expression = new LiteralExpression(-num.Value);
                 this.operation = OperationType.None;
             }
+
+            var start_pos = token.Position;
+            var end_pos = expression.SourceRange.to;
+
+            SourceRange = new SourceRange(start_pos, end_pos);
         }
 
         public override byte CompileRead(FunctionBuilder builder)

@@ -12,5 +12,11 @@ namespace TickLUA.Compilers
             Line = l;
             Column = ch;
         }
+
+        public CompilationException(string message, SourcePosition pos) : base(message)
+        {
+            Line = pos.line;
+            Column = pos.column;
+        }
     }
 }

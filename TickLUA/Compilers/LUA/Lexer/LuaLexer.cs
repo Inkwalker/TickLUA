@@ -31,15 +31,15 @@ namespace TickLUA.Compilers.LUA.Lexer
 
         private Token ReadNextToken(bool peek = false)
         {
-            int read_start = source.Position;
+            int read_start = source.StrPosition;
 
             while (!source.EoF)
             {
-                int start_pos = source.Position;
+                int start_pos = source.StrPosition;
 
                 foreach (var recognizer in recognizers)
                 {
-                    int pos = source.Position;
+                    int pos = source.StrPosition;
 
                     if (recognizer.Read(source, out Token token))
                         if (token != null)
@@ -55,14 +55,14 @@ namespace TickLUA.Compilers.LUA.Lexer
                     if (source.EoF) break;
                 }
 
-                if (source.Position == start_pos)
+                if (source.StrPosition == start_pos)
                 {
-                    throw new System.Exception($"Unknown character at: ln{source.Line}, ch{source.Column}");
+                    throw new CompilationException($"Unknown character", source.CursorPosition);
                 }
             }
 
             if (peek) source.Revert(read_start);
-            return new Token(TokenType.EOF) { Content = "<eof>", Line = source.Line };
+            return new Token(TokenType.EOF, source.CursorPosition) { Content = "<eof>" };
         }
 
         private TokenRecognizer[] recognizers =

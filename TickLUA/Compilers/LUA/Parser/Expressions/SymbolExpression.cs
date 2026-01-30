@@ -16,8 +16,14 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
         public SymbolExpression(LuaLexer lexer)
         {
+            var start_pos = lexer.Current.Position;
+
             name = lexer.Current.Content;
             lexer.Next();
+
+            var end_pos = start_pos + name.Length;
+
+            SourceRange = new SourceRange(start_pos, end_pos);
         }
 
         // Compile as read operation

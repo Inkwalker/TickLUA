@@ -12,7 +12,6 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
         private BinaryOperation operation;
 
         private bool local;
-        private int line;
 
         public AssignmentStatement(Expression first_var, LuaLexer lexer)
         {
@@ -21,10 +20,12 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             if (first_var is LValueExpression v)
                 variables.Add(v);
             else
-                throw new CompilationException($"Attempt to assign a value to {first_var}", lexer.Current.Line, lexer.Current.Column);
+                throw new CompilationException($"Attempt to assign a value to {first_var}", lexer.Current.Position);
 
             values = new List<Expression>();
             local = false;
+
+            var start_pos = first_var.SourceRange.from;
 
             if (lexer.Current.Type == TokenType.Coma)
             {
@@ -32,12 +33,14 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 ParsePrimaryVars(lexer);
             }
 
-            line = lexer.Current.Line;
-
             operation = GetOp(lexer.Current.Type);
             lexer.Next();
 
             ParseValues(lexer);
+
+            var end_pos = lexer.Current.Position;
+
+            SourceRange = new SourceRange(start_pos, end_pos);
         }
 
         public AssignmentStatement(bool local, LuaLexer lexer)
@@ -46,17 +49,21 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             values = new List<Expression>();
             this.local = local;
 
+            var start_pos = lexer.Current.Position;
+
             if (local)
                 ParseLocalVars(lexer);
             else
                 ParsePrimaryVars(lexer);
 
-            line = lexer.Current.Line;
-
             operation = GetOp(lexer.Current.Type);
             lexer.Next();
 
             ParseValues(lexer);
+
+            var end_pos = lexer.Current.Position;
+
+            SourceRange = new SourceRange(start_pos, end_pos);
         }
 
         private void ParseValues(LuaLexer lexer)
@@ -82,7 +89,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                     variable.IsLocal = true;
                     variables.Add(variable);
                 }
-                else throw new CompilationException("Only names are allowed for local assignments", lexer.Current.Line, lexer.Current.Column);
+                else throw new CompilationException("Only names are allowed for local assignments", lexer.Current.Position);
             }
             while (lexer.Current.Type == TokenType.Coma);
         }
@@ -96,7 +103,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 if (variable is LValueExpression v)
                     variables.Add(v);
                 else
-                    throw new CompilationException($"Can't assign value to {variable}", lexer.Current.Line, lexer.Current.Column);
+                    throw new CompilationException($"Can't assign value to {variable}", lexer.Current.Position);
             }
             while (lexer.Current.Type == TokenType.Coma);
         }

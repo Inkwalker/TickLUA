@@ -38,6 +38,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         public LiteralExpression(LuaLexer lexer)
         {
             var t = lexer.Current;
+            var start_pos = t.Position;
 
             switch (t.Type)
             {
@@ -57,13 +58,17 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                     Value = NilObject.Nil;
                     break;
                 default:
-                    throw new CompilationException("Literal type mismatch", t.Line, t.Column);
+                    throw new CompilationException("Literal type mismatch", t.Position);
             }
 
             if (Value == null)
-                throw new CompilationException($"Unknown literal format near '{t.Content}'",  t.Line, t.Column);
+                throw new CompilationException($"Unknown literal format near '{t.Content}'", t.Position);
 
             lexer.Next();
+
+            var end_pos = start_pos + t.Content.Length;
+
+            SourceRange = new SourceRange(start_pos, end_pos);
         }
 
         private static float ParseNumber(Token t)
@@ -87,7 +92,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             }
             catch
             {
-                throw new CompilationException("Literal type error", t.Line, t.Column);
+                throw new CompilationException("Literal type error", t.Position);
             }
         }
 

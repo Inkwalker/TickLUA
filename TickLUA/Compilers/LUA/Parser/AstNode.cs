@@ -1,10 +1,11 @@
 ﻿using TickLUA.Compilers.LUA.Lexer;
-using TickLUA.VM;
 
 namespace TickLUA.Compilers.LUA.Parser
 {
     internal abstract class AstNode
     {
+        public SourceRange SourceRange { get; protected set; }
+
         protected static void AssertToken(Token token, params TokenType[] expected)
         {
             foreach (TokenType type in expected)
@@ -12,7 +13,7 @@ namespace TickLUA.Compilers.LUA.Parser
                 if (token.Type == type) return;
             }
 
-            throw new CompilationException($"Unexpected symbol near '{token.Content}'", token.Line, token.Column);
+            throw new CompilationException($"Unexpected symbol near '{token.Content}'", token.Position);
         }
 
         protected static void AssertTokenNext(LuaLexer lexer, params TokenType[] expected)

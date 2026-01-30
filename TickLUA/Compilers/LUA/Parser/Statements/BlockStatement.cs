@@ -11,6 +11,8 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
         {
             statements = new List<Statement>();
 
+            var start_pos = lexer.Current.Position;
+
             while (true)
             {
                 Token t = lexer.Current;
@@ -19,6 +21,10 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 Statement s = Create(lexer);
                 statements.Add(s);
             }
+
+            var end_pos = lexer.Current.Position;
+
+            SourceRange = new SourceRange(start_pos, end_pos);
         }
 
         public override void Compile(FunctionBuilder builder)

@@ -1,22 +1,26 @@
-﻿namespace TickLUA.Compilers
+﻿using System.Collections.Generic;
+
+namespace TickLUA.Compilers
 {
     internal class SourceCode
     {
         public string Str { get; }
 
-        public int Position { get; private set; }
-        public int Line { get; private set; }
-        public int Column { get; private set; }
+        public int StrPosition { get; private set; }
+        public SourcePosition CursorPosition { get; private set; }
 
-        public bool EoF => Position >= Str.Length;
+        public bool EoF => StrPosition >= Str.Length;
         public int Length => Str.Length;
+
+        private List<int> line_length = new List<int>();
 
         public SourceCode(string str)
         {
             Str = str;
-            Position = 0;
-            Line = 1;
-            Column = 1;
+            StrPosition = 0;
+            CursorPosition = new SourcePosition(1, 1);
+
+            line_length.Add(0);
         }
 
         /// <summary>
@@ -26,15 +30,16 @@
         /// <param name="pos"></param>
         public void Revert(int pos)
         {
-            while (Position > pos)
+            while (StrPosition > pos)
             {
-                Position--;
-                Column--;
+                StrPosition--;
+                CursorPosition -= 1;
 
-                if (Str[Position] == '\n')
+                if (Str[StrPosition] == '\n')
                 {
-                    Line--;
-                    Column = 1;
+                    int l = CursorPosition.line - 1;
+                    int c = line_length[l];
+                    CursorPosition = new SourcePosition(l, c);
                 }
             }
         }
@@ -44,24 +49,31 @@
         /// </summary>
         public char Next()
         {
-            if (Str[Position] == '\n')
+            if (Str[StrPosition] == '\n')
             {
-                Line++;
-                Column = 0;
+                if (line_length.Count < CursorPosition.line + 1)
+                    line_length.Add(CursorPosition.column);
+                else
+                    line_length[CursorPosition.column - 1] = CursorPosition.column;
+
+                CursorPosition = CursorPosition.NewLine();
             }
-            Position++;
-            Column++;
-            return EoF ? ' ' : Str[Position];
+            else
+            {
+                CursorPosition += 1;
+            }
+            StrPosition++;
+            return EoF ? ' ' : Str[StrPosition];
         }
 
         /// <summary>
         /// Get next character without advancing cursor position
         /// </summary>
-        public char Peek() => EoF ? ' ' : Str[Position];
+        public char Peek() => EoF ? ' ' : Str[StrPosition];
 
         /// <summary>
         /// Get a substring starting from <paramref name="start"/> to current cursor position
         /// </summary>
-        public string Substring(int start) => Str.Substring(start, Position - start);
+        public string Substring(int start) => Str.Substring(start, StrPosition - start);
     }
 }

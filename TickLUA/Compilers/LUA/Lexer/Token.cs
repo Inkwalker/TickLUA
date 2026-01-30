@@ -5,26 +5,30 @@
         public TokenType Type { get; private set; }
         public string Content { get; set; }
 
-        public int Line { get; set; }
-        public int Column { get; set; }
+        public SourcePosition Position { get; private set; }
 
         public Token(TokenType type)
         {
             Type = type;
-            Line = 1;
-            Column = 1;
+            Position = new SourcePosition(1, 1);
         }
 
         public Token(TokenType type, int line, int col)
         {
             Type = type;
-            Line = line;
-            Column = col;
+            Position = new SourcePosition(line, col);
         }
+
+        public Token(TokenType type, SourcePosition pos)
+        {
+            Type = type;
+            Position = pos;
+        }
+
 
         public override string ToString()
         {
-            return $"Token: {Type} | {Content} [ln:{Line},ch:{Column}]";
+            return $"Token: {Type} | {Content} [ln:{Position.line},ch:{Position.column}]";
         }
 
         public bool IsEndOfBlock()

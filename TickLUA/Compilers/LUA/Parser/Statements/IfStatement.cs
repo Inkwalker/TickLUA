@@ -11,6 +11,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
         public IfStatement(LuaLexer lexer)
         {
+            var start_pos = lexer.Current.Position;
             AssertTokenNext(lexer, TokenType.If, TokenType.Elseif);
 
             expression = Expression.Create(lexer);
@@ -34,7 +35,10 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 lexer.Next();
             }
             else 
-                throw new CompilationException($"Unexpected symbol near {lexer.Current}. 'end' was expected", lexer.Current.Line, lexer.Current.Column);
+                throw new CompilationException($"Unexpected symbol near {lexer.Current}. 'end' was expected", lexer.Current.Position);
+            var end_pos = lexer.Current.Position;
+
+            SourceRange = new SourceRange(start_pos, end_pos); 
         }
 
         public override void Compile(FunctionBuilder builder)

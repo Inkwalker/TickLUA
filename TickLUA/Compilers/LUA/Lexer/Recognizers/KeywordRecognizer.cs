@@ -18,15 +18,15 @@
             if (!HasRemainingCharacters(source, literal.Length)) return false;
 
             //Check what's after the keyword. If it's longer than expected then it's a wrong keyword.
-            if (source.Position + literal.Length < source.Length)
+            if (source.StrPosition + literal.Length < source.Length)
             {
-                var next_c = source.Str[source.Position + literal.Length];
+                var next_c = source.Str[source.StrPosition + literal.Length];
                 if (IsLetterOrDigit(next_c)) return false;
             }
 
-            int line = source.Line;
-            int column = source.Column;
-            int start_pos = source.Position;
+            int line = source.CursorPosition.line;
+            int column = source.CursorPosition.column;
+            int start_pos = source.StrPosition;
 
             char c = source.Peek();
             for (int i = 0; i < literal.Length; i++)
@@ -36,7 +36,7 @@
                 c = source.Next();
             }
 
-            token = new Token(tokenType) { Content = source.Substring(start_pos), Line = line, Column = column };
+            token = new Token(tokenType, line, column) { Content = source.Substring(start_pos) };
 
             return true;
         }
