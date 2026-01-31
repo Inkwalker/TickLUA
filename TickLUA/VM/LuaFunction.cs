@@ -5,19 +5,27 @@ namespace TickLUA.VM
 {
     public class LuaFunction
     {
-        public List<uint> Instructions { get; }
-        public List<LuaObject> Constants { get; }
+        internal List<Instruction> Instructions { get; }
+        internal List<LuaObject> Constants { get; }
         public List<LuaFunction> NestedFunctions { get; } = new List<LuaFunction>();
-        public int RegisterCount { get; set; }
+        internal int RegisterCount { get; set; }
 
-        public LuaFunction(
-            IEnumerable<uint> instructions,
+        internal LuaFunction(
+            IEnumerable<Instruction> instructions,
             IEnumerable<LuaObject> constants,
             int registerCount
         )
         {
-            Instructions = new List<uint>(instructions);
+            Instructions = new List<Instruction>(instructions);
             Constants = new List<LuaObject>(constants);
+
+            RegisterCount = registerCount;
+        }
+
+        internal LuaFunction(int registerCount)
+        {
+            Instructions = new List<Instruction>();
+            Constants = new List<LuaObject>();
 
             RegisterCount = registerCount;
         }

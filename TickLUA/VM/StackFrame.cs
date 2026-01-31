@@ -21,9 +21,9 @@ namespace TickLUA.VM
             Registers = new LuaObject[function.RegisterCount];
         }
 
-        public uint Step()
+        public Instruction Step()
         {
-            uint instruction = Function.Instructions[PC];
+            var instruction = Function.Instructions[PC];
             PC += 1;
             return instruction;
         }

@@ -4,10 +4,10 @@ namespace TickLUA.VM.Handlers
 {
     internal static class HandlersLogic
     {
-        internal static void TEST(TickVM vm, StackFrame frame, uint instruction)
+        internal static void TEST(TickVM vm, StackFrame frame, Instruction instruction)
         {
-            int reg = Instruction.GetA(instruction);
-            bool expected = Instruction.GetB(instruction) != 0;
+            int reg       = instruction.A;
+            bool expected = instruction.B != 0;
 
             var obj = frame.Registers[reg];
 
@@ -17,11 +17,11 @@ namespace TickLUA.VM.Handlers
             }
         }
 
-        internal static void TESTSET(TickVM vm, StackFrame frame, uint instruction)
+        internal static void TESTSET(TickVM vm, StackFrame frame, Instruction instruction)
         {
-            int dest_reg = Instruction.GetA(instruction);
-            int test_reg = Instruction.GetB(instruction);
-            bool expected = Instruction.GetC(instruction) != 0;
+            int dest_reg  = instruction.A;
+            int test_reg  = instruction.B;
+            bool expected = instruction.C != 0;
 
             var test_obj = frame.Registers[test_reg];
 
@@ -35,11 +35,11 @@ namespace TickLUA.VM.Handlers
             }
         }
 
-        internal static void EQ(TickVM vm, StackFrame frame, uint instruction)
+        internal static void EQ(TickVM vm, StackFrame frame, Instruction instruction)
         {
-            int reg_a = Instruction.GetA(instruction);
-            int reg_b = Instruction.GetB(instruction);
-            bool expected = Instruction.GetC(instruction) != 0;
+            int reg_a     = instruction.A;
+            int reg_b     = instruction.B;
+            bool expected = instruction.C != 0;
 
             var obj_a = frame.Registers[reg_a];
             var obj_b = frame.Registers[reg_b];
@@ -50,11 +50,11 @@ namespace TickLUA.VM.Handlers
             }
         }
 
-        internal static void LT(TickVM vm, StackFrame frame, uint instruction)
+        internal static void LT(TickVM vm, StackFrame frame, Instruction instruction)
         {
-            int reg_a = Instruction.GetA(instruction);
-            int reg_b = Instruction.GetB(instruction);
-            bool expected = Instruction.GetC(instruction) != 0;
+            int reg_a     = instruction.A;
+            int reg_b     = instruction.B;
+            bool expected = instruction.C != 0;
 
             var obj_a = frame.Registers[reg_a];
             var obj_b = frame.Registers[reg_b];
@@ -74,11 +74,11 @@ namespace TickLUA.VM.Handlers
             }
         }
 
-        internal static void LE(TickVM vm, StackFrame frame, uint instruction)
+        internal static void LE(TickVM vm, StackFrame frame, Instruction instruction)
         {
-            int reg_a = Instruction.GetA(instruction);
-            int reg_b = Instruction.GetB(instruction);
-            bool expected = Instruction.GetC(instruction) != 0;
+            int reg_a     = instruction.A;
+            int reg_b     = instruction.B;
+            bool expected = instruction.C != 0;
 
             var obj_a = frame.Registers[reg_a];
             var obj_b = frame.Registers[reg_b];
@@ -98,10 +98,10 @@ namespace TickLUA.VM.Handlers
             }
         }
 
-        internal static void NOT(TickVM vm, StackFrame frame, uint instruction)
+        internal static void NOT(TickVM vm, StackFrame frame, Instruction instruction)
         {
-            int a = Instruction.GetA(instruction);
-            int b = Instruction.GetB(instruction);
+            int a = instruction.A;
+            int b = instruction.B;
             var obj = frame.Registers[b];
 
             frame.Registers[a] = !obj.ToBooleanObject();

@@ -13,7 +13,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void NOP()
         {
-            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
+            var bytecode = new LuaFunction(1);
             bytecode.Instructions.Add(Instruction.NOP());
             bytecode.Instructions.Add(Instruction.NOP());
             bytecode.Instructions.Add(Instruction.NOP());
@@ -35,7 +35,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void LOAD_CONST()
         {
-            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
+            var bytecode = new LuaFunction(1);
 
             bytecode.Instructions.Add(Instruction.LOAD_CONST(0, 0));
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
@@ -50,7 +50,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void LOAD_INT()
         {
-            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
+            var bytecode = new LuaFunction(1);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
@@ -63,7 +63,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void LOAD_BOOL()
         {
-            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 2);
+            var bytecode = new LuaFunction(2);
 
             bytecode.Instructions.Add(Instruction.LOAD_BOOL(0, true));
             bytecode.Instructions.Add(Instruction.LOAD_BOOL(1, false));
@@ -78,7 +78,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void LOAD_FALSE_SKIP()
         {
-            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
+            var bytecode = new LuaFunction(1);
 
             bytecode.Instructions.Add(Instruction.LOAD_FALSE_SKIP(0));
             bytecode.Instructions.Add(Instruction.LOAD_TRUE(0));
@@ -92,7 +92,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void LOAD_NIL()
         {
-            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
+            var bytecode = new LuaFunction(1);
 
             bytecode.Instructions.Add(Instruction.LOAD_TRUE(0));
             bytecode.Instructions.Add(Instruction.LOAD_NIL(0));
@@ -106,7 +106,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void MOVE()
         {
-            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 2);
+            var bytecode = new LuaFunction(2);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 2));
@@ -121,7 +121,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void JMP()
         {
-            var bytecode = new LuaFunction(new List<uint>(), new List<LuaObject>(), 1);
+            var bytecode = new LuaFunction(1);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
             bytecode.Instructions.Add(Instruction.JMP(1));

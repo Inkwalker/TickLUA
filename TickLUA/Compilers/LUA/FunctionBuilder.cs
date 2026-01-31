@@ -6,7 +6,7 @@ namespace TickLUA.Compilers.LUA
 {
     internal class FunctionBuilder
     {
-        private List<uint> instructions = new List<uint>();
+        private List<Instruction> instructions = new List<Instruction>();
         private List<LuaObject> constants = new List<LuaObject>();
 
         private List<BlockFrame> blocks = new List<BlockFrame>();
@@ -32,7 +32,7 @@ namespace TickLUA.Compilers.LUA
         /// Add instruction to the bytecode.
         /// </summary>
         /// <returns>Address of the instruction in the bytecode</returns>
-        public int AddInstruction(uint instruction)
+        public int AddInstruction(Instruction instruction)
         {
             instructions.Add(instruction);
             return instructions.Count - 1;
@@ -43,9 +43,9 @@ namespace TickLUA.Compilers.LUA
         /// Must be within <see cref="InstructionCount"/>range.
         /// </summary>
         /// <returns>Old instruction at <paramref name="address"/></returns>
-        public uint SetInstruction(int address, uint instruction)
+        public Instruction SetInstruction(int address, Instruction instruction)
         {
-            uint old_inst = instructions[address];
+            var old_inst = instructions[address];
             instructions[address] = instruction;
             return old_inst;
         }

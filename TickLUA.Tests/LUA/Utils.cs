@@ -74,7 +74,7 @@ namespace TickLUA_Tests.LUA
             Console.WriteLine("Bytecode:");
             foreach (var inst in func.Instructions)
             {
-                Console.WriteLine(Instruction.ToString(inst));
+                Console.WriteLine(inst.ToString());
             }
         }
     }

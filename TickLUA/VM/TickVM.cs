@@ -8,7 +8,7 @@ namespace TickLUA.VM
 {
     public class TickVM
     {
-        internal delegate void InstructionHandler(TickVM vm, StackFrame frame, uint instruction);
+        internal delegate void InstructionHandler(TickVM vm, StackFrame frame, Instruction instruction);
 
         private readonly Dictionary<Opcode, InstructionHandler> instructionSet = new Dictionary<Opcode, InstructionHandler>
         {
@@ -86,9 +86,9 @@ namespace TickLUA.VM
             }
         }
 
-        private void Execute(StackFrame frame, uint instruction)
+        private void Execute(StackFrame frame, Instruction instruction)
         {
-            uint opcode = Instruction.GetOpcodeI(instruction);
+            int opcode = (int)instruction.Opcode;
             instructionHandlers[opcode](this, frame, instruction);
         }
 

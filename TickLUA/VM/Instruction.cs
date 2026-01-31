@@ -1,67 +1,45 @@
 ﻿namespace TickLUA.VM
 {
-    // instruction layout:
-    // +--------+--------+--------+--------+
-    // |   C    |   B    |   A    | OPCODE |
-    // |        Bx       |   A    | OPCODE |
-    // +--------+--------+--------+--------+
-    // 32       24       16       8        0
-
-    internal static class Instruction
+    internal struct Instruction
     {
-        internal static Opcode GetOpcode(uint instruction)
-        {
-            return (Opcode)(instruction & 0xFF);
-        }
+        // instruction layout:
+        // +--------+--------+--------+--------+
+        // |   C    |   B    |   A    | OPCODE |
+        // |        Bx       |   A    | OPCODE |
+        // +--------+--------+--------+--------+
+        // 32       24       16       8        0
+        private uint raw;
 
-        internal static uint GetOpcodeI(uint instruction)
-        {
-            return instruction & 0xFF;
-        }
 
-        internal static byte GetA(uint instruction)
-        {
-            return (byte)((instruction >> 8) & 0xFF);
-        }
+        public Opcode Opcode => (Opcode)(raw & 0xFF);
 
-        internal static uint GetAx(uint instruction)
-        {
-            return instruction >> 8;
-        }
+        public byte A => (byte)((raw >> 8) & 0xFF);
 
-        internal static int GetAxSigned(uint instruction)
+        public uint Ax => raw >> 8;
+
+        public int AxSigned
         {
-            uint ax = instruction >> 8;
-            if ((ax & 0x800000) != 0)
+            get
             {
-                // negative number
-                return (int)(ax | 0xFF000000);
-            }
-            else
-            {
-                return (int)ax;
+                uint ax = raw >> 8;
+                if ((ax & 0x800000) != 0)
+                {
+                    // negative number
+                    return (int)(ax | 0xFF000000);
+                }
+                else
+                {
+                    return (int)ax;
+                }
             }
         }
+        public byte B => (byte)((raw >> 16) & 0xFF);
 
-        internal static byte GetB(uint instruction)
-        {
-            return (byte)((instruction >> 16) & 0xFF);
-        }
+        public byte C => (byte)((raw >> 24) & 0xFF);
 
-        internal static byte GetC(uint instruction)
-        {
-            return (byte)((instruction >> 24) & 0xFF);
-        }
+        public ushort Bx => (ushort)((raw >> 16) & 0xFFFF);
 
-        internal static ushort GetBx(uint instruction)
-        {
-            return (ushort)((instruction >> 16) & 0xFFFF);
-        }
-
-        internal static short GetBxSigned(uint instruction)
-        {
-            return (short)((instruction >> 16) & 0xFFFF);
-        }
+        public short BxSigned => (short)((raw >> 16) & 0xFFFF);
 
         /// <summary>
         /// Creates a new instruction with three 8-bit unsigned arguments.
@@ -71,9 +49,9 @@
         /// <param name="b">The second 8-bit value to encode.</param>
         /// <param name="c">The third 8-bit value to encode.</param>
         /// <returns>A 32-bit unsigned integer representing the instruction.</returns>
-        internal static uint New(Opcode opcode, byte a, byte b, byte c)
+        public Instruction(Opcode opcode, byte a, byte b, byte c)
         {
-            return (uint)((byte)opcode | (a << 8) | (b << 16) | (c << 24));
+            raw = (uint)((byte)opcode | (a << 8) | (b << 16) | (c << 24));
         }
 
         /// <summary>
@@ -83,9 +61,9 @@
         /// <param name="a">The 8-bit value to encode.</param>
         /// <param name="sbx">The 16-bit signed value to encode.</param>
         /// <returns>A 32-bit unsigned integer representing the instruction.</returns>
-        internal static uint New(Opcode opcode, byte a, short sbx)
+        public Instruction(Opcode opcode, byte a, short sbx)
         {
-            return (uint)((byte)opcode | (a << 8) | (sbx << 16));
+            raw = (uint)((byte)opcode | (a << 8) | (sbx << 16));
         }
 
         /// <summary>
@@ -95,9 +73,9 @@
         /// <param name="a">The 8-bit value to encode.</param>
         /// <param name="sbx">The 16-bit unsigned value to encode.</param>
         /// <returns>A 32-bit unsigned integer representing the instruction.</returns>
-        internal static uint New(Opcode opcode, byte a, ushort bx)
+        public Instruction(Opcode opcode, byte a, ushort bx)
         {
-            return (uint)((byte)opcode | (a << 8) | (bx << 16));
+            raw = (uint)((byte)opcode | (a << 8) | (bx << 16));
         }
 
         /// <summary>
@@ -109,9 +87,9 @@
         /// <remarks>
         /// Argument range is not checked. Make sure the provided value fits in 24 bits.
         /// </remarks>
-        internal static uint New(Opcode opcode, uint ax)
+        public Instruction(Opcode opcode, uint ax)
         {
-            return (byte)opcode | (ax << 8);
+            raw = (byte)opcode | (ax << 8);
         }
 
         /// <summary>
@@ -123,9 +101,9 @@
         /// <remarks>
         /// Argument range is not checked. Make sure the provided value fits in 24 bits.
         /// </remarks>
-        internal static uint New(Opcode opcode, int sax)
+        public Instruction(Opcode opcode, int sax)
         {
-            return (byte)opcode | (uint)(sax << 8);
+            raw = (byte)opcode | (uint)(sax << 8);
         }
 
         /// <summary>
@@ -133,14 +111,14 @@
         /// </summary>
         /// <param name="opcode">The opcode of the instruction.</param>
         /// <returns>A 32-bit unsigned integer representing the instruction.</returns>
-        internal static uint New(Opcode opcode)
+        public Instruction(Opcode opcode)
         {
-            return (byte)opcode;
+            raw = (byte)opcode;
         }
 
-        internal static string ToString(uint instruction)
+        public override string ToString()
         {
-            Opcode opcode = GetOpcode(instruction);
+            var opcode = Opcode;
 
             switch (opcode)
             {
@@ -149,22 +127,22 @@
                 case Opcode.LOAD_TRUE:
                 case Opcode.LOAD_FALSE:
                 case Opcode.LOAD_FALSE_SKIP:
-                    return $"{opcode} {GetA(instruction)}";
+                    return $"{opcode} {A}";
                 case Opcode.MOVE:
                 case Opcode.LOAD_NIL:
                 case Opcode.NOT:
                 case Opcode.UNM:
                 case Opcode.TEST:
-                    return $"{opcode} {GetA(instruction)} {GetB(instruction)}";
+                    return $"{opcode} {A} {B}";
                 case Opcode.LOAD_CONST:
                 case Opcode.RETURN:
-                    return $"{opcode} {GetA(instruction)} {GetBx(instruction)}";
+                    return $"{opcode} {A} {Bx}";
                 case Opcode.LOAD_INT:
-                    return $"{opcode} {GetA(instruction)} {GetBxSigned(instruction)}";
+                    return $"{opcode} {A} {BxSigned}";
                 case Opcode.ADD:
                 case Opcode.SUB:
                 case Opcode.MUL:
-                case Opcode.DIV: 
+                case Opcode.DIV:
                 case Opcode.MOD:
                 case Opcode.POW:
                 case Opcode.IDIV:
@@ -172,45 +150,45 @@
                 case Opcode.LE:
                 case Opcode.LT:
                 case Opcode.EQ:
-                    return $"{opcode} {GetA(instruction)} {GetB(instruction)} {GetC(instruction)}";
+                    return $"{opcode} {A} {B} {C}";
                 case Opcode.JMP:
-                    return $"{opcode} {GetAxSigned(instruction)}";
+                    return $"{opcode} {AxSigned}";
                 default:
-                    return $"{opcode} {GetA(instruction)} {GetB(instruction)} {GetC(instruction)}";
+                    return $"{opcode} {A} {B} {C}";
             }
         }
 
         #region Factory methods
 
-        internal static uint NOP() => New(Opcode.NOP);
-        internal static uint MOVE(byte dest_reg, byte src_reg) => New(Opcode.MOVE, dest_reg, src_reg, 0);
-        internal static uint LOAD_CONST(byte dest_reg, ushort const_index) => New(Opcode.LOAD_CONST, dest_reg, (short)const_index);
-        internal static uint LOAD_INT(byte dest_reg, short integer) => New(Opcode.LOAD_INT, dest_reg, integer);
-        internal static uint LOAD_TRUE(byte dest_reg) => New(Opcode.LOAD_TRUE, dest_reg, 0, 0);
-        internal static uint LOAD_FALSE(byte dest_reg) => New(Opcode.LOAD_FALSE, dest_reg, 0, 0);
-        internal static uint LOAD_FALSE_SKIP(byte dest_reg) => New(Opcode.LOAD_FALSE_SKIP, dest_reg, 0, 0);
-        internal static uint LOAD_BOOL(byte dest_reg, bool value) => value ? LOAD_TRUE(dest_reg) : LOAD_FALSE(dest_reg);
-        internal static uint LOAD_NIL(byte start_reg, byte count = 1) => New(Opcode.LOAD_NIL, start_reg, count, 0);
-        internal static uint ADD(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.ADD, dest_reg, left_reg, right_reg);
-        internal static uint SUB(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.SUB, dest_reg, left_reg, right_reg);
-        internal static uint MUL(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.MUL, dest_reg, left_reg, right_reg);
-        internal static uint MOD(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.MOD, dest_reg, left_reg, right_reg);
-        internal static uint POW(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.POW, dest_reg, left_reg, right_reg);
-        internal static uint DIV(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.DIV, dest_reg, left_reg, right_reg);
-        internal static uint IDIV(byte dest_reg, byte left_reg, byte right_reg) => New(Opcode.IDIV, dest_reg, left_reg, right_reg);
-        internal static uint RETURN(byte start_reg, int count)
+        internal static Instruction NOP() => new Instruction(Opcode.NOP);
+        internal static Instruction MOVE(byte dest_reg, byte src_reg) => new Instruction(Opcode.MOVE, dest_reg, src_reg, 0);
+        internal static Instruction LOAD_CONST(byte dest_reg, ushort const_index) => new Instruction(Opcode.LOAD_CONST, dest_reg, (short)const_index);
+        internal static Instruction LOAD_INT(byte dest_reg, short integer) => new Instruction(Opcode.LOAD_INT, dest_reg, integer);
+        internal static Instruction LOAD_TRUE(byte dest_reg) => new Instruction(Opcode.LOAD_TRUE, dest_reg, 0, 0);
+        internal static Instruction LOAD_FALSE(byte dest_reg) => new Instruction(Opcode.LOAD_FALSE, dest_reg, 0, 0);
+        internal static Instruction LOAD_FALSE_SKIP(byte dest_reg) => new Instruction(Opcode.LOAD_FALSE_SKIP, dest_reg, 0, 0);
+        internal static Instruction LOAD_BOOL(byte dest_reg, bool value) => value ? LOAD_TRUE(dest_reg) : LOAD_FALSE(dest_reg);
+        internal static Instruction LOAD_NIL(byte start_reg, byte count = 1) => new Instruction(Opcode.LOAD_NIL, start_reg, count, 0);
+        internal static Instruction ADD(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.ADD, dest_reg, left_reg, right_reg);
+        internal static Instruction SUB(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.SUB, dest_reg, left_reg, right_reg);
+        internal static Instruction MUL(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.MUL, dest_reg, left_reg, right_reg);
+        internal static Instruction MOD(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.MOD, dest_reg, left_reg, right_reg);
+        internal static Instruction POW(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.POW, dest_reg, left_reg, right_reg);
+        internal static Instruction DIV(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.DIV, dest_reg, left_reg, right_reg);
+        internal static Instruction IDIV(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.IDIV, dest_reg, left_reg, right_reg);
+        internal static Instruction RETURN(byte start_reg, int count)
         {
             int c = count < -1 ? -1 : count;
-            return New(Opcode.RETURN, start_reg, (ushort)(c + 1));
+            return new Instruction(Opcode.RETURN, start_reg, (ushort)(c + 1));
         }
-        internal static uint JMP(int offset) => New(Opcode.JMP, offset);
-        internal static uint TEST(byte reg, bool expected) => New(Opcode.TEST, reg, (byte)(expected ? 1 : 0));
-        internal static uint TESTSET(byte dest_reg, byte test_reg, bool expected) => New(Opcode.TESTSET, dest_reg, test_reg, (byte)(expected ? 1 : 0));
-        internal static uint EQ(byte reg_a, byte reg_b, bool expected) => New(Opcode.EQ, reg_a, reg_b, (byte)(expected ? 1 : 0));
-        internal static uint LT(byte reg_a, byte reg_b, bool expected) => New(Opcode.LT, reg_a, reg_b, (byte)(expected ? 1 : 0));
-        internal static uint LE(byte reg_a, byte reg_b, bool expected) => New(Opcode.LE, reg_a, reg_b, (byte)(expected ? 1 : 0));
-        internal static uint NOT(byte dest_reg, byte reg_source) => New(Opcode.NOT, dest_reg, reg_source, 0);
-        internal static uint UNM(byte dest_reg, byte reg_source) => New(Opcode.UNM, dest_reg, reg_source, 0);
+        internal static Instruction JMP(int offset) => new Instruction(Opcode.JMP, offset);
+        internal static Instruction TEST(byte reg, bool expected) => new Instruction(Opcode.TEST, reg, (byte)(expected ? 1 : 0));
+        internal static Instruction TESTSET(byte dest_reg, byte test_reg, bool expected) => new Instruction(Opcode.TESTSET, dest_reg, test_reg, (byte)(expected ? 1 : 0));
+        internal static Instruction EQ(byte reg_a, byte reg_b, bool expected) => new Instruction(Opcode.EQ, reg_a, reg_b, (byte)(expected ? 1 : 0));
+        internal static Instruction LT(byte reg_a, byte reg_b, bool expected) => new Instruction(Opcode.LT, reg_a, reg_b, (byte)(expected ? 1 : 0));
+        internal static Instruction LE(byte reg_a, byte reg_b, bool expected) => new Instruction(Opcode.LE, reg_a, reg_b, (byte)(expected ? 1 : 0));
+        internal static Instruction NOT(byte dest_reg, byte reg_source) => new Instruction(Opcode.NOT, dest_reg, reg_source, 0);
+        internal static Instruction UNM(byte dest_reg, byte reg_source) => new Instruction(Opcode.UNM, dest_reg, reg_source, 0);
 
         #endregion
     }
