@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using TickLUA.Compilers.LUA.Lexer;
 using TickLUA.Compilers.LUA.Parser.Expressions;
+using TickLUA.VM;
 
 namespace TickLUA.Compilers.LUA.Parser.Statements
 {
@@ -33,10 +35,20 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 ParsePrimaryVars(lexer);
             }
 
+            if (variables.Count > 1) 
+                AssertToken(lexer.Current, TokenType.OP_Assignment);
+            
             operation = GetOp(lexer.Current.Type);
+
             lexer.Next();
 
-            ParseValues(lexer);
+            if (operation == BinaryOperation.Invalid)
+                ParseValues(lexer);
+            else
+            {
+                var value = Expression.Create(lexer);
+                values.Add(value);
+            }
 
             var end_pos = lexer.Current.Position;
 
@@ -56,10 +68,19 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             else
                 ParsePrimaryVars(lexer);
 
+            if (local)
+                AssertToken(lexer.Current, TokenType.OP_Assignment);
+
             operation = GetOp(lexer.Current.Type);
             lexer.Next();
 
-            ParseValues(lexer);
+            if (operation == BinaryOperation.Invalid)
+                ParseValues(lexer);
+            else
+            {
+                var value = Expression.Create(lexer);
+                values.Add(value);
+            }
 
             var end_pos = lexer.Current.Position;
 
@@ -127,7 +148,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
         public override void Compile(FunctionBuilder builder)
         {
-            if (values.Count == 1 && variables.Count == 1) //code optimization
+            if (operation != BinaryOperation.Invalid)
             {
                 var bin_op = ApplyOperation(variables[0], values[0]);
 
@@ -138,24 +159,25 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
                 builder.DeallocateRegisters(reg_result);
             }
-            //else
-            //{
-            //    for (int i = 0; i < values.Count; i++)
-            //    {
-            //        if (i < variables.Count)
-            //        {
-            //            var value = ApplyOperation(variables[i] as Expression, values[i]);
-            //            value.Compile(context, code);
-            //        }
-            //    }
-            //    code += Instruction.MakeTuple(Math.Min(variables.Count, values.Count));
-            //    for (int i = 0; i < variables.Count; i++)
-            //    {
-            //        code += Instruction.Dupe();
-            //        code += Instruction.TupleIndex(i);
-            //        variables[i].CompileStore(context, code, local);
-            //    }
-            //}
+            else
+            {
+                int max = Math.Max(values.Count, variables.Count);
+                ushort line = (ushort)SourceRange.from.line;
+
+                for (int i = 0; i < max; i++)
+                {
+                    byte reg = builder.AllocateRegisters(1);
+                    if (i < values.Count)
+                        values[i].CompileRead(builder, reg);
+                    else
+                        builder.AddInstruction(Instruction.LOAD_NIL(reg), line);
+
+                    if (i < variables.Count)
+                        variables[i].CompileWrite(builder, reg);
+
+                    builder.DeallocateRegisters(reg);
+                }
+            }
         }
 
         private Expression ApplyOperation(Expression variable, Expression value)
