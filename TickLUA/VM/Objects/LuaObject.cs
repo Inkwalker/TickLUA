@@ -51,7 +51,5 @@
         //public abstract StringObject ToStringObject();
 
         public static bool NullOrNil(LuaObject obj) => obj == null || obj == NilObject.Nil;
-
-
     }
 }

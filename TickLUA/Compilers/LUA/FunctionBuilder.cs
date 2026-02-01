@@ -57,7 +57,7 @@ namespace TickLUA.Compilers.LUA
         {
             for (int i = 0; i < constants.Count; i++)
             {
-                if (constants[i] == constant) return (ushort)i;
+                if (constants[i].Equals(constant)) return (ushort)i;
             }
 
             constants.Add(constant);

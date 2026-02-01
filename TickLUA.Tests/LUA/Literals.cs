@@ -1,4 +1,6 @@
 ﻿using TickLUA.Compilers;
+using TickLUA.Compilers.LUA;
+using TickLUA_Tests.Instructions;
 
 namespace TickLUA_Tests.LUA
 {
@@ -104,6 +106,29 @@ namespace TickLUA_Tests.LUA
 
             var vm = Utils.Run(source, 100);
             Utils.AssertNilResult(vm);
+        }
+
+        [Test]
+        public void ConstantsReuse()
+        {
+            var source =
+                @"local x = 5
+                  local y = 5
+                  local z = 5
+                  return x, y, z";
+
+            var luaFunction = LuaCompiler.Compile(source);
+            Utils.PrintBytecode(luaFunction);
+
+            Assert.That(luaFunction.Constants.Count, Is.LessThanOrEqualTo(1));
+
+            var vm = Utils.Run(luaFunction, 100);
+
+            Utils.AssertIntegerResult(vm, 5, 0);
+            Utils.AssertIntegerResult(vm, 5, 1);
+            Utils.AssertIntegerResult(vm, 5, 2);
+
+
         }
     }
 }
