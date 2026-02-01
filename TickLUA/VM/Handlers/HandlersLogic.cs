@@ -108,3 +108,17 @@ namespace TickLUA.VM.Handlers
         }
     }
 }
+
+namespace TickLUA.VM
+{
+    internal partial struct Instruction
+    {
+        internal static Instruction TEST(byte reg, bool expected) => new Instruction(Opcode.TEST, reg, (byte)(expected ? 1 : 0));
+        internal static Instruction TESTSET(byte dest_reg, byte test_reg, bool expected) => new Instruction(Opcode.TESTSET, dest_reg, test_reg, (byte)(expected ? 1 : 0));
+        internal static Instruction EQ(byte reg_a, byte reg_b, bool expected) => new Instruction(Opcode.EQ, reg_a, reg_b, (byte)(expected ? 1 : 0));
+        internal static Instruction LT(byte reg_a, byte reg_b, bool expected) => new Instruction(Opcode.LT, reg_a, reg_b, (byte)(expected ? 1 : 0));
+        internal static Instruction LE(byte reg_a, byte reg_b, bool expected) => new Instruction(Opcode.LE, reg_a, reg_b, (byte)(expected ? 1 : 0));
+        internal static Instruction NOT(byte dest_reg, byte reg_source) => new Instruction(Opcode.NOT, dest_reg, reg_source, 0);
+
+    }
+}

@@ -91,3 +91,25 @@ namespace TickLUA.VM.Handlers
         }
     }
 }
+
+namespace TickLUA.VM
+{
+    internal partial struct Instruction
+    {
+        internal static Instruction NOP() => new Instruction(Opcode.NOP);
+        internal static Instruction MOVE(byte dest_reg, byte src_reg) => new Instruction(Opcode.MOVE, dest_reg, src_reg, 0);
+        internal static Instruction LOAD_CONST(byte dest_reg, ushort const_index) => new Instruction(Opcode.LOAD_CONST, dest_reg, (short)const_index);
+        internal static Instruction LOAD_INT(byte dest_reg, short integer) => new Instruction(Opcode.LOAD_INT, dest_reg, integer);
+        internal static Instruction LOAD_TRUE(byte dest_reg) => new Instruction(Opcode.LOAD_TRUE, dest_reg, 0, 0);
+        internal static Instruction LOAD_FALSE(byte dest_reg) => new Instruction(Opcode.LOAD_FALSE, dest_reg, 0, 0);
+        internal static Instruction LOAD_FALSE_SKIP(byte dest_reg) => new Instruction(Opcode.LOAD_FALSE_SKIP, dest_reg, 0, 0);
+        internal static Instruction LOAD_BOOL(byte dest_reg, bool value) => value ? LOAD_TRUE(dest_reg) : LOAD_FALSE(dest_reg);
+        internal static Instruction LOAD_NIL(byte start_reg, byte count = 1) => new Instruction(Opcode.LOAD_NIL, start_reg, count, 0);
+        internal static Instruction RETURN(byte start_reg, int count)
+        {
+            int c = count < -1 ? -1 : count;
+            return new Instruction(Opcode.RETURN, start_reg, (ushort)(c + 1));
+        }
+        internal static Instruction JMP(int offset) => new Instruction(Opcode.JMP, offset);
+    }
+}

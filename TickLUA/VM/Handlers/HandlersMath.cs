@@ -96,3 +96,19 @@ namespace TickLUA.VM.Handlers
         }
     }
 }
+
+namespace TickLUA.VM
+{
+    internal partial struct Instruction
+    {
+        internal static Instruction ADD(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.ADD, dest_reg, left_reg, right_reg);
+        internal static Instruction SUB(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.SUB, dest_reg, left_reg, right_reg);
+        internal static Instruction MUL(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.MUL, dest_reg, left_reg, right_reg);
+        internal static Instruction MOD(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.MOD, dest_reg, left_reg, right_reg);
+        internal static Instruction POW(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.POW, dest_reg, left_reg, right_reg);
+        internal static Instruction DIV(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.DIV, dest_reg, left_reg, right_reg);
+        internal static Instruction IDIV(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.IDIV, dest_reg, left_reg, right_reg);
+
+        internal static Instruction UNM(byte dest_reg, byte reg_source) => new Instruction(Opcode.UNM, dest_reg, reg_source, 0);
+    }
+}
