@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using TickLUA.Compilers.LUA.Lexer;
-using TickLUA.Compilers.LUA.Parser.Expressions;
 
-namespace TickLUA.Compilers.LUA.Parser
+namespace TickLUA.Compilers.LUA.Parser.Expressions
 {
     /// <summary>
     /// Base class for all expressions.
@@ -10,25 +9,10 @@ namespace TickLUA.Compilers.LUA.Parser
     /// </summary>
     internal abstract class Expression : AstNode
     {
-        public int ResultRegister { get; protected set; } = -1;
-
-        /// <summary>
-        /// Release all temporary registers used by this expression.
-        /// </summary>
-        public virtual void ReleaseRegisters(FunctionBuilder builder)
-        {
-            if (ResultRegister != -1)
-            {
-                builder.DeallocateRegisters((byte)ResultRegister, 1);
-                ResultRegister = -1;
-            }
-        }
-
         /// <summary>
         /// Compile expression
         /// </summary>
-        /// <returns>Index of result register. -1 if no result</returns>
-        public abstract byte CompileRead(FunctionBuilder builder);
+        public abstract void CompileRead(FunctionBuilder builder, byte reg_result);
 
         public static Expression Create(LuaLexer lexer)
         {

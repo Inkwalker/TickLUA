@@ -287,41 +287,30 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             }
         }
 
-        public override byte CompileRead(FunctionBuilder builder)
+        public override void CompileRead(FunctionBuilder builder, byte reg_result)
         {
             if (operation != BinaryOperation.Invalid)
             {
-                var reg_r = right.CompileRead(builder);
-                var reg_l = left.CompileRead(builder);
+                var reg_r = builder.AllocateRegisters(1);
+                var reg_l = builder.AllocateRegisters(1);
 
-                byte reg_res = builder.AllocateRegisters(1);
+                right.CompileRead(builder, reg_r);
+                left.CompileRead(builder, reg_l);
 
                 ushort line = (ushort)SourceRange.from.line;
 
                 WriteInstructions(
                     builder,
-                    operation, 
-                    reg_res, 
+                    operation,
+                    reg_result, 
                     reg_l,
                     reg_r,
                     line
                 );
 
-                ResultRegister = reg_res;
-
-                right.ReleaseRegisters(builder);
-                left.ReleaseRegisters(builder);
-
-                return (byte)ResultRegister;
+                builder.DeallocateRegisters(reg_r);
+                builder.DeallocateRegisters(reg_l);
             }
-            return 0;
-        }
-
-        public override void ReleaseRegisters(FunctionBuilder builder)
-        {
-            if (ResultRegister < 0) return;
-
-            builder.DeallocateRegisters((byte)ResultRegister, 1);
         }
 
         class Node

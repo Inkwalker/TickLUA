@@ -130,11 +130,13 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             if (values.Count == 1 && variables.Count == 1) //code optimization
             {
                 var bin_op = ApplyOperation(variables[0], values[0]);
-                var reg_result = bin_op.CompileRead(builder);
+
+                byte reg_result = builder.AllocateRegisters(1);
+                bin_op.CompileRead(builder, reg_result);
 
                 variables[0].CompileWrite(builder, reg_result);
 
-                bin_op.ReleaseRegisters(builder);
+                builder.DeallocateRegisters(reg_result);
             }
             //else
             //{
@@ -154,11 +156,6 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             //        variables[i].CompileStore(context, code, local);
             //    }
             //}
-
-            foreach (var v in values)
-            {
-                v.ReleaseRegisters(builder);
-            }
         }
 
         private Expression ApplyOperation(Expression variable, Expression value)

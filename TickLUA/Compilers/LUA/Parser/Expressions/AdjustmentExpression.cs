@@ -11,17 +11,9 @@
             SourceRange = expr.SourceRange;
         }
 
-        public override byte CompileRead(FunctionBuilder builder)
+        public override void CompileRead(FunctionBuilder builder, byte reg_result)
         {
-            ResultRegister = expr.CompileRead(builder);
-
-            return (byte)ResultRegister;
-        }
-
-        public override void ReleaseRegisters(FunctionBuilder builder)
-        {
-            ResultRegister = -1;
-            expr.ReleaseRegisters(builder);
+            expr.CompileRead(builder, reg_result);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using TickLUA.Compilers.LUA.Lexer;
+using TickLUA.Compilers.LUA.Parser.Expressions;
 using TickLUA.VM;
 
 namespace TickLUA.Compilers.LUA.Parser.Statements
@@ -47,13 +48,16 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
         public override void Compile(FunctionBuilder builder)
         {
-            byte reg_result = expression.CompileRead(builder);
+            byte reg_result = builder.AllocateRegisters(1);
+            expression.CompileRead(builder, reg_result);
             ushort line = (ushort)SourceRange.from.line;
 
             builder.AddInstruction(Instruction.TEST(reg_result, false), line);
             int main_jump_addr = builder.AddInstruction(Instruction.NOP(), line); //placeholder for jump over main statement
 
-            expression.ReleaseRegisters(builder); //expression is tested. We can reuse it's registers
+            //expression is tested. We can reuse it's register
+            builder.DeallocateRegisters(reg_result);
+
             mainStatement.Compile(builder);
 
             int main_exit_addr = builder.InstructionCount - 1;

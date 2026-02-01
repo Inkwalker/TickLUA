@@ -27,10 +27,12 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         }
 
         // Compile as read operation
-        public override byte CompileRead(FunctionBuilder builder)
+        public override void CompileRead(FunctionBuilder builder, byte reg_result)
         {
-            ResultRegister = builder.ResolveVariable(name);
-            return (byte)ResultRegister;
+            int reg_var = builder.ResolveVariable(name);
+
+            // We always copy from a variable register to eliminate accidental overwrites with temp values.
+            builder.AddInstruction(Instruction.MOVE(reg_result, (byte)reg_var), (ushort)SourceRange.from.line);
         }
 
         public override void CompileWrite(FunctionBuilder builder, byte reg_value)
@@ -47,12 +49,6 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             ushort line = (ushort)SourceRange.from.line;
 
             builder.AddInstruction(Instruction.MOVE((byte)register, reg_value), line);
-        }
-
-        public override void ReleaseRegisters(FunctionBuilder builder)
-        {
-            // Symbols do not own their registers
-            ResultRegister = -1;
         }
     }
 }

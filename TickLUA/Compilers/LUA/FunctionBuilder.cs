@@ -84,7 +84,7 @@ namespace TickLUA.Compilers.LUA
             return (byte)index;
         }
 
-        public void DeallocateRegisters(byte start_reg, int count)
+        public void DeallocateRegisters(byte start_reg, int count = 1)
         {
             var block = TopBlock;
 

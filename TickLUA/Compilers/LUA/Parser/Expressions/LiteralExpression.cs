@@ -135,32 +135,28 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             throw new FormatException("Invalid hex digit: " + c);
         }
 
-        public override byte CompileRead(FunctionBuilder builder)
+        public override void CompileRead(FunctionBuilder builder, byte reg_result)
         {
-            ResultRegister = builder.AllocateRegisters(1);
-
             ushort line = (ushort)SourceRange.from.line;
 
             if (Value is BooleanObject boolObj)
             {
                 // LOAD_BOOL
-                builder.AddInstruction(Instruction.LOAD_BOOL((byte)ResultRegister, (bool)boolObj), line);
-                return (byte)ResultRegister;
+                builder.AddInstruction(Instruction.LOAD_BOOL(reg_result, (bool)boolObj), line);
+                return;
             }
             if (Value is NilObject)
             {
                 // LOAD_NIL
-                builder.AddInstruction(Instruction.LOAD_NIL((byte)ResultRegister), line);
-                return (byte)ResultRegister;
+                builder.AddInstruction(Instruction.LOAD_NIL(reg_result), line);
+                return;
             }
 
             //TODO: Optimize for small integers
 
             // LOAD_CONST
             ushort index = builder.AddConstant(Value);
-            builder.AddInstruction(Instruction.LOAD_CONST((byte)ResultRegister, index), line);
-
-            return (byte)ResultRegister;
+            builder.AddInstruction(Instruction.LOAD_CONST(reg_result, index), line);
         }
     }
 }

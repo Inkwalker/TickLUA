@@ -1,7 +1,7 @@
 ﻿using TickLUA.Compilers.LUA.Lexer;
-using TickLUA.Compilers.LUA.Parser.Statements;
+using TickLUA.Compilers.LUA.Parser.Expressions;
 
-namespace TickLUA.Compilers.LUA.Parser
+namespace TickLUA.Compilers.LUA.Parser.Statements
 {
     internal abstract class Statement : AstNode
     {

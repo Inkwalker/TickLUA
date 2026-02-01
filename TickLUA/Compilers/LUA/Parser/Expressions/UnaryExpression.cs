@@ -27,27 +27,21 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             SourceRange = new SourceRange(start_pos, end_pos);
         }
 
-        public override byte CompileRead(FunctionBuilder builder)
+        public override void CompileRead(FunctionBuilder builder, byte reg_result)
         {
-            byte reg_val = expression.CompileRead(builder);
+            expression.CompileRead(builder, reg_result);
 
-            if (operation == OperationType.None)
-                ResultRegister = reg_val;
-            else
+            if (operation != OperationType.None)
             {
-                // we don't know if it's named register or not
-                // so allocate a new one that can be deallocated safely
-                ResultRegister = builder.AllocateRegisters(1);
-
                 ushort line = (ushort)SourceRange.from.line;
 
                 switch (operation)
                 {
                     case OperationType.Negate:
-                        builder.AddInstruction(Instruction.UNM((byte)ResultRegister, reg_val), line);
+                        builder.AddInstruction(Instruction.UNM(reg_result, reg_result), line);
                         break;
                     case OperationType.Not:
-                        builder.AddInstruction(Instruction.NOT((byte)ResultRegister, reg_val), line);
+                        builder.AddInstruction(Instruction.NOT(reg_result, reg_result), line);
                         break;
                     case OperationType.Len:
                         throw new CompilationException($"Not implemented binary operator '#'", line, 1);
@@ -55,21 +49,6 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                         throw new CompilationException($"Unexpected unary operator", line, 1);
                 }
             }
-
-            return (byte)ResultRegister;
-        }
-
-        public override void ReleaseRegisters(FunctionBuilder builder)
-        {
-            if (ResultRegister > -1)
-            {
-                // None operation doesn't allocate
-                if (operation != OperationType.None) 
-                    builder.DeallocateRegisters((byte)ResultRegister, 1);
-
-                ResultRegister = -1;
-            }
-            expression.ReleaseRegisters(builder);
         }
 
         private static OperationType ParseOperation(Token token)

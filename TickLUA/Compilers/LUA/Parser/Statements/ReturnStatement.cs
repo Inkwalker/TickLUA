@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using TickLUA.Compilers.LUA.Lexer;
+using TickLUA.Compilers.LUA.Parser.Expressions;
 using TickLUA.VM;
 
 namespace TickLUA.Compilers.LUA.Parser.Statements
@@ -38,35 +39,24 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 return;
             }
 
-            List<byte> regs = new List<byte>(values.Count);
+            byte reg_start = builder.AllocateRegisters(values.Count);
 
             for (int i = 0; i < values.Count; i++)
             {
-                byte reg = values[i].CompileRead(builder);
-                regs.Add(reg);
+                byte reg = (byte)(reg_start + i);
+                values[i].CompileRead(builder, reg);
             }
 
-            if (!IsConsecutiveRegisters(regs))
-            {
-                var new_start_reg = builder.AllocateRegisters(regs.Count);
-                for (int i = 0; i < regs.Count; i++)
-                {
-                    byte new_reg = (byte)(new_start_reg + i);
-                    builder.AddInstruction(Instruction.MOVE(new_reg, regs[i]), line);
-                    regs[i] = new_reg;
-                }
-            }
-
-            builder.AddInstruction(Instruction.RETURN(regs[0], regs.Count), line);
+            builder.AddInstruction(Instruction.RETURN(reg_start, values.Count), line);
         }
 
-        private static bool IsConsecutiveRegisters(List<byte> regs)
-        {
-            for (int i = 1; i < regs.Count; i++)
-            {
-                if (regs[i] != regs[i - 1] + 1) return false;
-            }
-            return true;
-        }
+        //private static bool IsConsecutiveRegisters(List<byte> regs)
+        //{
+        //    for (int i = 1; i < regs.Count; i++)
+        //    {
+        //        if (regs[i] != regs[i - 1] + 1) return false;
+        //    }
+        //    return true;
+        //}
     }
 }
