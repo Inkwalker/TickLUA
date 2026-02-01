@@ -139,16 +139,18 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         {
             ResultRegister = builder.AllocateRegisters(1);
 
+            ushort line = (ushort)SourceRange.from.line;
+
             if (Value is BooleanObject boolObj)
             {
                 // LOAD_BOOL
-                builder.AddInstruction(Instruction.LOAD_BOOL((byte)ResultRegister, (bool)boolObj));
+                builder.AddInstruction(Instruction.LOAD_BOOL((byte)ResultRegister, (bool)boolObj), line);
                 return (byte)ResultRegister;
             }
             if (Value is NilObject)
             {
                 // LOAD_NIL
-                builder.AddInstruction(Instruction.LOAD_NIL((byte)ResultRegister));
+                builder.AddInstruction(Instruction.LOAD_NIL((byte)ResultRegister), line);
                 return (byte)ResultRegister;
             }
 
@@ -156,7 +158,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
             // LOAD_CONST
             ushort index = builder.AddConstant(Value);
-            builder.AddInstruction(Instruction.LOAD_CONST((byte)ResultRegister, index));
+            builder.AddInstruction(Instruction.LOAD_CONST((byte)ResultRegister, index), line);
 
             return (byte)ResultRegister;
         }

@@ -29,10 +29,12 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
         public override void Compile(FunctionBuilder builder)
         {
+            ushort line = (ushort)SourceRange.from.line;
+
             if (values.Count == 0)
             {
                 // Return nothing
-                builder.AddInstruction(Instruction.RETURN(0, 0));
+                builder.AddInstruction(Instruction.RETURN(0, 0), line);
                 return;
             }
 
@@ -50,12 +52,12 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 for (int i = 0; i < regs.Count; i++)
                 {
                     byte new_reg = (byte)(new_start_reg + i);
-                    builder.AddInstruction(Instruction.MOVE(new_reg, regs[i]));
+                    builder.AddInstruction(Instruction.MOVE(new_reg, regs[i]), line);
                     regs[i] = new_reg;
                 }
             }
 
-            builder.AddInstruction(Instruction.RETURN(regs[0], regs.Count));
+            builder.AddInstruction(Instruction.RETURN(regs[0], regs.Count), line);
         }
 
         private static bool IsConsecutiveRegisters(List<byte> regs)

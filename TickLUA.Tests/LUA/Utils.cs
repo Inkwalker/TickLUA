@@ -72,9 +72,11 @@ namespace TickLUA_Tests.LUA
         public static void PrintBytecode(LuaFunction func)
         {
             Console.WriteLine("Bytecode:");
-            foreach (var inst in func.Instructions)
+            for (int i = 0; i < func.Instructions.Count; i++)
             {
-                Console.WriteLine(inst.ToString());
+                if (func.Meta != null)
+                    Console.Write($"{func.Meta.Lines[i]}   ");
+                Console.WriteLine(func.Instructions[i].ToString());
             }
         }
     }

@@ -8,6 +8,7 @@ namespace TickLUA.Compilers.LUA
     {
         private List<Instruction> instructions = new List<Instruction>();
         private List<LuaObject> constants = new List<LuaObject>();
+        private LuaFunction.Metadata metadata = new LuaFunction.Metadata();
 
         private List<BlockFrame> blocks = new List<BlockFrame>();
 
@@ -22,6 +23,7 @@ namespace TickLUA.Compilers.LUA
             var func = new LuaFunction(
                 instructions,
                 constants,
+                metadata,
                 allocator.MaxRegisters
             );
 
@@ -32,9 +34,10 @@ namespace TickLUA.Compilers.LUA
         /// Add instruction to the bytecode.
         /// </summary>
         /// <returns>Address of the instruction in the bytecode</returns>
-        public int AddInstruction(Instruction instruction)
+        public int AddInstruction(Instruction instruction, ushort line)
         {
             instructions.Add(instruction);
+            metadata.Lines.Add(line);
             return instructions.Count - 1;
         }
 

@@ -39,18 +39,20 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 // so allocate a new one that can be deallocated safely
                 ResultRegister = builder.AllocateRegisters(1);
 
+                ushort line = (ushort)SourceRange.from.line;
+
                 switch (operation)
                 {
                     case OperationType.Negate:
-                        builder.AddInstruction(Instruction.UNM((byte)ResultRegister, reg_val));
+                        builder.AddInstruction(Instruction.UNM((byte)ResultRegister, reg_val), line);
                         break;
                     case OperationType.Not:
-                        builder.AddInstruction(Instruction.NOT((byte)ResultRegister, reg_val));
+                        builder.AddInstruction(Instruction.NOT((byte)ResultRegister, reg_val), line);
                         break;
                     case OperationType.Len:
-                        throw new CompilationException($"Not implemented binary operator '#'", 1, 1);
+                        throw new CompilationException($"Not implemented binary operator '#'", line, 1);
                     default:
-                        throw new CompilationException($"Unexpected unary operator", 1, 1);
+                        throw new CompilationException($"Unexpected unary operator", line, 1);
                 }
             }
 

@@ -153,11 +153,11 @@ namespace TickLUA_Tests.Instructions
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 42));
 
             // If reg[0] <= reg[1], execute the next instruction (should execute it)
-            bytecode.Instructions.Add(Instruction.LT(0, 1, true));
+            bytecode.Instructions.Add(Instruction.LE(0, 1, true));
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 64));
 
             // If reg[0] > reg[1], execute the next instruction (should execute it)
-            bytecode.Instructions.Add(Instruction.LT(0, 1, false));
+            bytecode.Instructions.Add(Instruction.LE(0, 1, false));
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 42));
 
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));

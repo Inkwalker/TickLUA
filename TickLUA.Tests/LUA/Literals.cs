@@ -79,15 +79,7 @@ namespace TickLUA_Tests.LUA
                   local y = 2.5p-1
                   local z = 3.5.4";
 
-            try 
-            {                 
-                var vm = Utils.Run(source, 100);
-                Assert.Fail("Expected exception not thrown");
-            } 
-            catch (CompilationException ex) 
-            {
-                Assert.Pass();
-            }
+            Assert.Catch<CompilationException>(() => Utils.Run(source, 100), null);
         }
 
         [Test]

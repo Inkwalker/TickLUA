@@ -44,7 +44,9 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             if (register == -1)
                 throw new CompilationException($"Undefined variable '{name}'", 1, 1); //TODO: line/column
 
-            builder.AddInstruction(Instruction.MOVE((byte)register, reg_value));
+            ushort line = (ushort)SourceRange.from.line;
+
+            builder.AddInstruction(Instruction.MOVE((byte)register, reg_value), line);
         }
 
         public override void ReleaseRegisters(FunctionBuilder builder)

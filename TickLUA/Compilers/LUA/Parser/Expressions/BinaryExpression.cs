@@ -215,75 +215,75 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             }
         }
 
-        private static void WriteInstructions(FunctionBuilder builder, BinaryOperation op, byte reg_res, byte reg_l, byte reg_r)
+        private static void WriteInstructions(FunctionBuilder builder, BinaryOperation op, byte reg_res, byte reg_l, byte reg_r, ushort line)
         {
             switch (op)
             {
                 case BinaryOperation.LogicOr:
-                    builder.AddInstruction(Instruction.TESTSET(reg_res, reg_l, true));
-                    builder.AddInstruction(Instruction.JMP(1));
-                    builder.AddInstruction(Instruction.MOVE(reg_res, reg_r));
+                    builder.AddInstruction(Instruction.TESTSET(reg_res, reg_l, true), line);
+                    builder.AddInstruction(Instruction.JMP(1), line);
+                    builder.AddInstruction(Instruction.MOVE(reg_res, reg_r), line);
                     return;
                 case BinaryOperation.LogicAnd:
-                    builder.AddInstruction(Instruction.TESTSET(reg_res, reg_l, false));
-                    builder.AddInstruction(Instruction.JMP(1));
-                    builder.AddInstruction(Instruction.MOVE(reg_res, reg_r));
+                    builder.AddInstruction(Instruction.TESTSET(reg_res, reg_l, false), line);
+                    builder.AddInstruction(Instruction.JMP(1), line);
+                    builder.AddInstruction(Instruction.MOVE(reg_res, reg_r), line);
                     return;
                 case BinaryOperation.Less:
-                    builder.AddInstruction(Instruction.LT(reg_l, reg_r, false));
-                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res));
-                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res));
+                    builder.AddInstruction(Instruction.LT(reg_l, reg_r, false), line);
+                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res), line);
+                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res), line);
                     return;
                 case BinaryOperation.Greater:
-                    builder.AddInstruction(Instruction.LE(reg_l, reg_r, true));
-                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res));
-                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res));
+                    builder.AddInstruction(Instruction.LE(reg_l, reg_r, true), line);
+                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res), line);
+                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res), line);
                     return;
                 case BinaryOperation.LessEq:
-                    builder.AddInstruction(Instruction.LE(reg_l, reg_r, false));
-                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res));
-                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res));
+                    builder.AddInstruction(Instruction.LE(reg_l, reg_r, false), line);
+                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res), line);
+                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res), line);
                     return;
                 case BinaryOperation.GreaterEq:
-                    builder.AddInstruction(Instruction.LT(reg_l, reg_r, true));
-                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res));
-                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res));
+                    builder.AddInstruction(Instruction.LT(reg_l, reg_r, true), line);
+                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res), line);
+                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res), line);
                     return;
                 case BinaryOperation.NotEquals:
-                    builder.AddInstruction(Instruction.EQ(reg_l, reg_r, true));
-                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res));
-                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res));
+                    builder.AddInstruction(Instruction.EQ(reg_l, reg_r, true), line);
+                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res), line);
+                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res), line);
                     return;
                 case BinaryOperation.Equals:
-                    builder.AddInstruction(Instruction.EQ(reg_l, reg_r, false));
-                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res));
-                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res));
+                    builder.AddInstruction(Instruction.EQ(reg_l, reg_r, false), line);
+                    builder.AddInstruction(Instruction.LOAD_FALSE_SKIP(reg_res), line);
+                    builder.AddInstruction(Instruction.LOAD_TRUE(reg_res), line);
                     return;
                 case BinaryOperation.Concat:
                     throw new CompilationException($"Not implemented binary operator '..'", 1, 1);
                 case BinaryOperation.Add:
-                    builder.AddInstruction(Instruction.ADD(reg_res, reg_l, reg_r));
+                    builder.AddInstruction(Instruction.ADD(reg_res, reg_l, reg_r), line);
                     return;
                 case BinaryOperation.Sub:
-                    builder.AddInstruction(Instruction.SUB(reg_res, reg_l, reg_r)); 
+                    builder.AddInstruction(Instruction.SUB(reg_res, reg_l, reg_r), line); 
                     return;
                 case BinaryOperation.Mul:
-                    builder.AddInstruction(Instruction.MUL(reg_res, reg_l, reg_r));
+                    builder.AddInstruction(Instruction.MUL(reg_res, reg_l, reg_r), line);
                     return;
                 case BinaryOperation.Div:
-                    builder.AddInstruction(Instruction.DIV(reg_res, reg_l, reg_r));
+                    builder.AddInstruction(Instruction.DIV(reg_res, reg_l, reg_r), line);
                     return;
                 case BinaryOperation.iDiv:
-                    builder.AddInstruction(Instruction.IDIV(reg_res, reg_l, reg_r));
+                    builder.AddInstruction(Instruction.IDIV(reg_res, reg_l, reg_r), line);
                     return;
                 case BinaryOperation.Mod:
-                    builder.AddInstruction(Instruction.MOD(reg_res, reg_l, reg_r));
+                    builder.AddInstruction(Instruction.MOD(reg_res, reg_l, reg_r), line);
                     return;
                 case BinaryOperation.Pow:
-                    builder.AddInstruction(Instruction.POW(reg_res, reg_l, reg_r));
+                    builder.AddInstruction(Instruction.POW(reg_res, reg_l, reg_r), line);
                     return;
                 default:
-                    throw new CompilationException($"Unexpected binary operator", 1, 1);
+                    throw new CompilationException($"Unexpected binary operator", line, 1);
             }
         }
 
@@ -296,12 +296,15 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
                 byte reg_res = builder.AllocateRegisters(1);
 
+                ushort line = (ushort)SourceRange.from.line;
+
                 WriteInstructions(
                     builder,
                     operation, 
                     reg_res, 
                     reg_l,
-                    reg_r 
+                    reg_r,
+                    line
                 );
 
                 ResultRegister = reg_res;
