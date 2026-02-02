@@ -41,6 +41,26 @@
         /// A - start reg, Bx - number of registers to set to nil
         /// </summary>
         LOAD_NIL,
+        /// <summary>
+        /// Create new table object.
+        /// A - target reg
+        /// </summary>
+        NEW_TABLE,
+        /// <summary>
+        /// Set field of a table.
+        /// A - table reg, B - key constant, C - value reg
+        /// </summary>
+        SET_FIELD,
+        /// <summary>
+        /// Set value of an array.
+        /// A - table reg, B - start register, C - number elements to set
+        /// </summary>
+        SET_LIST,
+        /// <summary>
+        /// Set key value pair of a table.
+        /// A - table reg, B - key reg, C - value reg
+        /// </summary>
+        SET_TABLE,
 
         //GETUPVAL,
         //GETGLOBAL,
@@ -48,8 +68,6 @@
         //SETTABUP,
         //SETUPVAL,
         //SETGLOBAL,
-        //SETTABLE,
-        //NEWTABLE,
         //SELF,
 
         /// <summary>

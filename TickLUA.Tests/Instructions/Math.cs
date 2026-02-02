@@ -1,5 +1,4 @@
 using TickLUA.VM.Objects;
-using TickLUA_Tests.LUA;
 
 namespace TickLUA_Tests.Instructions
 {

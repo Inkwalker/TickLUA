@@ -1,7 +1,7 @@
 ﻿using TickLUA.Compilers.LUA;
 using TickLUA.VM.Objects;
 
-namespace TickLUA_Tests.LUA
+namespace TickLUA_Tests
 {
     internal static class Utils
     {
@@ -67,6 +67,25 @@ namespace TickLUA_Tests.LUA
             Assert.NotNull(vm.ExecutionResult);
             Assert.IsTrue(vm.ExecutionResult.Length > result_index);
             Assert.IsInstanceOf<NilObject>(vm.ExecutionResult[result_index]);
+        }
+
+        public static void AssertTableResult(TickVM vm, int result_index = 0)
+        {
+            Assert.NotNull(vm.ExecutionResult);
+            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.IsInstanceOf<TableObject>(vm.ExecutionResult[result_index]);
+        }
+
+        public static void AssertTableResult(TickVM vm, LuaObject key, LuaObject value, int result_index = 0)
+        {
+            Assert.NotNull(vm.ExecutionResult);
+            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.IsInstanceOf<TableObject>(vm.ExecutionResult[result_index]);
+
+            var table = (TableObject)vm.ExecutionResult[result_index];
+
+            Assert.IsTrue(table.Contains(key));
+            Assert.That(table[key], Is.EqualTo(value));
         }
 
         public static void PrintBytecode(LuaFunction func)

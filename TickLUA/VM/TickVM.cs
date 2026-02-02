@@ -39,7 +39,12 @@ namespace TickLUA.VM
             { Opcode.EQ,              HandlersLogic.EQ },
             { Opcode.LT,              HandlersLogic.LT },
             { Opcode.LE,              HandlersLogic.LE },
-            {Opcode.NOT,              HandlersLogic.NOT },
+            { Opcode.NOT,             HandlersLogic.NOT },
+            // Tables
+            { Opcode.NEW_TABLE,       HandlersTable.NEW_TABLE },
+            { Opcode.SET_LIST,        HandlersTable.SET_LIST },
+            { Opcode.SET_TABLE,       HandlersTable.SET_TABLE },
+            { Opcode.SET_FIELD,       HandlersTable.SET_FIELD },
         };
 
         private readonly InstructionHandler[] instructionHandlers;
