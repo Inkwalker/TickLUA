@@ -45,6 +45,8 @@ namespace TickLUA.VM
             { Opcode.SET_LIST,        HandlersTable.SET_LIST },
             { Opcode.SET_TABLE,       HandlersTable.SET_TABLE },
             { Opcode.SET_FIELD,       HandlersTable.SET_FIELD },
+            { Opcode.GET_TABLE,       HandlersTable.GET_TABLE },
+            { Opcode.GET_FIELD,       HandlersTable.GET_FIELD },
         };
 
         private readonly InstructionHandler[] instructionHandlers;

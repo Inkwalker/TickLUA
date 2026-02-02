@@ -52,6 +52,11 @@
         /// </summary>
         SET_FIELD,
         /// <summary>
+        /// Get field of a table
+        /// A - result reg, B - table reg, C - key constant
+        /// </summary>
+        GET_FIELD,
+        /// <summary>
         /// Set value of an array.
         /// A - table reg, B - start register, C - number elements to set
         /// </summary>
@@ -61,10 +66,15 @@
         /// A - table reg, B - key reg, C - value reg
         /// </summary>
         SET_TABLE,
+        /// <summary>
+        /// Get value from a table by key
+        /// A - result reg, B - table reg, C - key reg
+        /// </summary>
+        GET_TABLE,
+
 
         //GETUPVAL,
         //GETGLOBAL,
-        //GETTABLE,
         //SETTABUP,
         //SETUPVAL,
         //SETGLOBAL,
@@ -164,7 +174,6 @@
         //FORPREP,
         //TFORCALL,
         //TFORLOOP,
-        //SETLIST,
         //CLOSE,
         //CLOSURE,
         //VARARG

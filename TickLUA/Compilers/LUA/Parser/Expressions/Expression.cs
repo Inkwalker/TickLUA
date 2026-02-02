@@ -125,14 +125,14 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                     //        lexer.Next();
                     //    }
                     //    break;
-                    //case TokenType.BRK_SQR_Left:
-                    //    {
-                    //        lexer.Next();
-                    //        Expression index = Create(lexer);
-                    //        AssertTokenNext(lexer, TokenType.BRK_SQR_Right);
-                    //        e = new IndexExpression(e, index);
-                    //    }
-                    //    break;
+                    case TokenType.BRK_SQR_Left:
+                        {
+                            lexer.Next();
+                            Expression index = Create(lexer);
+                            AssertTokenNext(lexer, TokenType.BRK_SQR_Right);
+                            e = new IndexExpression(e, index);
+                        }
+                        break;
                     //case TokenType.Colon:
                     //    {
                     //        lexer.Next();

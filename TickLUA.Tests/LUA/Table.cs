@@ -55,5 +55,29 @@ namespace TickLUA_Tests.LUA
             Utils.AssertTableResult(vm, new NumberObject(10), new NumberObject(1));
             Utils.AssertTableResult(vm, new NumberObject(2), new NumberObject(6));
         }
+
+        [Test]
+        public void Index_Set()
+        {
+            string source = @"
+            local a = {}
+            a[5] = 42
+            return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertTableResult(vm, new NumberObject(5), new NumberObject(42));
+        }
+
+        [Test]
+        public void Index_Get()
+        {
+            string source = @"
+            local a = {10, 15, 20}
+            local x = a[2]
+            return x";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 15);
+        }
     }
 }

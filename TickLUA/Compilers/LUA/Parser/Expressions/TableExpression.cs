@@ -13,6 +13,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
         public TableExpression(LuaLexer lexer)
         {
+            var start_pos = lexer.Current.Position;
             AssertTokenNext(lexer, TokenType.BRK_CUR_Left);
 
             args = new List<TableArgumentNode>();
@@ -38,7 +39,10 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 if (lexer.Current.Type == TokenType.Coma || lexer.Current.Type == TokenType.Semicolon) lexer.Next();
             }
 
+            var end_pos = lexer.Current.Position;
             AssertTokenNext(lexer, TokenType.BRK_CUR_Right);
+
+            SourceRange = new SourceRange(start_pos, end_pos);
         }
 
         private void ParseArrayField(LuaLexer lexer)
