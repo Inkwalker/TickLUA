@@ -103,6 +103,22 @@ namespace TickLUA.VM.Handlers
             else
                 throw new RuntimeException("Not a table");
         }
+
+        internal static void LEN(TickVM vm, StackFrame frame, Instruction instruction)
+        {
+            byte a = instruction.A; // result
+            byte b = instruction.B; // value
+
+            var obj = frame.Registers[b] as IHasLen;
+            if (obj != null)
+            {
+                var len = obj.Len();
+
+                frame.Registers[a] = len;
+            }
+            else
+                throw new RuntimeException("Not a table or a string");
+        }
     }
 }
 
@@ -116,5 +132,6 @@ namespace TickLUA.VM
         internal static Instruction SET_FIELD(byte reg_table, byte const_key, byte reg_value) => new Instruction(Opcode.SET_FIELD, reg_table, const_key, reg_value);
         internal static Instruction GET_FIELD(byte reg_result, byte reg_table, byte const_key) => new Instruction(Opcode.GET_FIELD, reg_result, reg_table, const_key);
         internal static Instruction SET_LIST(byte reg_table, byte start_reg, byte num_reg) => new Instruction(Opcode.SET_LIST, reg_table, start_reg, num_reg);
+        internal static Instruction LEN(byte reg_result, byte reg_source) => new Instruction(Opcode.LEN, reg_result, reg_source, 0);
     }
 }

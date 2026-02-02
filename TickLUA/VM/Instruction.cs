@@ -127,12 +127,14 @@
                 case Opcode.LOAD_TRUE:
                 case Opcode.LOAD_FALSE:
                 case Opcode.LOAD_FALSE_SKIP:
+                case Opcode.NEW_TABLE:
                     return $"{opcode} {A}";
                 case Opcode.MOVE:
                 case Opcode.LOAD_NIL:
                 case Opcode.NOT:
                 case Opcode.UNM:
                 case Opcode.TEST:
+                case Opcode.LEN:
                     return $"{opcode} {A} {B}";
                 case Opcode.LOAD_CONST:
                 case Opcode.RETURN:

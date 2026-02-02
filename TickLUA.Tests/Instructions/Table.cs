@@ -101,5 +101,22 @@ namespace TickLUA_Tests.Instructions
 
             Utils.AssertIntegerResult(vm, 5);
         }
+
+        [Test]
+        public void LEN()
+        {
+            var bytecode = new LuaFunction(4);
+
+            bytecode.Instructions.Add(Instruction.NEW_TABLE(0));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(1, 5));
+            bytecode.Instructions.Add(Instruction.LOAD_INT(2, 6));
+            bytecode.Instructions.Add(Instruction.SET_LIST(0, 1, 2));
+            bytecode.Instructions.Add(Instruction.LEN(3, 0));
+            bytecode.Instructions.Add(Instruction.RETURN(3, 1));
+
+            var vm = Utils.Run(bytecode, 6);
+
+            Utils.AssertIntegerResult(vm, 2);
+        }
     }
 }

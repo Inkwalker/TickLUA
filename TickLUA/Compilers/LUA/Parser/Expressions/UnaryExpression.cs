@@ -44,7 +44,8 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                         builder.AddInstruction(Instruction.NOT(reg_result, reg_result), line);
                         break;
                     case OperationType.Len:
-                        throw new CompilationException($"Not implemented binary operator '#'", line, 1);
+                        builder.AddInstruction(Instruction.LEN(reg_result, reg_result), line);
+                        break;
                     default:
                         throw new CompilationException($"Unexpected unary operator", line, 1);
                 }

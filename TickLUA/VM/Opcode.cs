@@ -125,7 +125,11 @@
         /// A - result reg, B - source reg
         /// </summary>
         NOT,
-        //LEN,
+        /// <summary>
+        /// Length operation.
+        /// A - result reg, B - source reg
+        /// </summary>
+        LEN,
         //CONCAT,
 
         /// <summary>

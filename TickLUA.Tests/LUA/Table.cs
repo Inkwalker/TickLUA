@@ -79,5 +79,17 @@ namespace TickLUA_Tests.LUA
             var vm = Utils.Run(source, 100);
             Utils.AssertIntegerResult(vm, 15);
         }
+
+        [Test]
+        public void Len()
+        {
+            string source = @"
+            local a = {10, 15, 20}
+            local x = #a
+            return x";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 3);
+        }
     }
 }
