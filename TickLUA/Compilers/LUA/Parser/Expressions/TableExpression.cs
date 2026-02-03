@@ -57,9 +57,8 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             Expression key = null;
             if (lexer.Current.Type == TokenType.Name)
             {
-                //key = new LiteralExpression(lexer.Current.Content);
-                //lexer.Next();
-                throw new System.NotImplementedException("String keys are not implemented");
+                key = new LiteralExpression(lexer.Current.Content);
+                lexer.Next();
             }
             else if (lexer.Current.Type == TokenType.BRK_SQR_Left)
             {
@@ -135,11 +134,11 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 Value = value;
             }
 
-            //public TableArgumentNode(string key, Expression value)
-            //{
-            //    Key = new LiteralExpression(key);
-            //    Value = value;
-            //}
+            public TableArgumentNode(string key, Expression value)
+            {
+                Key = new LiteralExpression(key);
+                Value = value;
+            }
 
             public TableArgumentNode(Expression key, Expression value)
             {

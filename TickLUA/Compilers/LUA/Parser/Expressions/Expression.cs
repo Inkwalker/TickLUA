@@ -117,14 +117,14 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
                 switch (T.Type)
                 {
-                    //case TokenType.Dot:
-                    //    {
-                    //        lexer.Next();
-                    //        AssertToken(lexer.Current, TokenType.Name);
-                    //        e = new IndexExpression(e, lexer.Current.Content);
-                    //        lexer.Next();
-                    //    }
-                    //    break;
+                    case TokenType.Dot:
+                        {
+                            lexer.Next();
+                            AssertToken(lexer.Current, TokenType.Name);
+                            e = new IndexExpression(e, lexer.Current.Content);
+                            lexer.Next();
+                        }
+                        break;
                     case TokenType.BRK_SQR_Left:
                         {
                             lexer.Next();

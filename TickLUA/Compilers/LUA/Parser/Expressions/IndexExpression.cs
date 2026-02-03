@@ -7,11 +7,11 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         private Expression variable;
         private Expression index;
 
-        //public IndexExpression(Expression variable, string index)
-        //{
-        //    this.variable = variable;
-        //    this.index = new LiteralExpression(index);
-        //}
+        public IndexExpression(Expression variable, string index)
+        {
+            this.variable = variable;
+            this.index = new LiteralExpression(index);
+        }
 
         public IndexExpression(Expression variable, Expression index)
         {
