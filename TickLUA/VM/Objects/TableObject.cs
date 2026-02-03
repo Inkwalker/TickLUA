@@ -185,7 +185,7 @@ namespace TickLUA.VM.Objects
             return str.ToString();
         }
 
-        //public override StringObject ToStringObject() => new StringObject("[table]");
+        public override StringObject ToStringObject() => new StringObject("[table]");
 
         public NumberObject Len()
         {

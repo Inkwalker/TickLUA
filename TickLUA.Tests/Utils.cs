@@ -69,6 +69,16 @@ namespace TickLUA_Tests
             Assert.IsInstanceOf<NilObject>(vm.ExecutionResult[result_index]);
         }
 
+        public static void AssertStringResult(TickVM vm, string expected_value, int result_index = 0)
+        {
+            Assert.NotNull(vm.ExecutionResult);
+            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.IsInstanceOf<StringObject>(vm.ExecutionResult[result_index]);
+            var answer = (StringObject)vm.ExecutionResult[result_index];
+
+            Assert.That(answer.Value , Is.EqualTo(expected_value));
+        }
+
         public static void AssertTableResult(TickVM vm, int result_index = 0)
         {
             Assert.NotNull(vm.ExecutionResult);

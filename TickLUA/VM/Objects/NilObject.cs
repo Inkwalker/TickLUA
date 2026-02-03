@@ -11,7 +11,7 @@
 
         public override BooleanObject ToBooleanObject() => BooleanObject.False;
 
-        //public override StringObject ToStringObject() => new StringObject("[nil]");
+        public override StringObject ToStringObject() => new StringObject("[nil]");
 
         public static implicit operator BooleanObject(NilObject nil) => BooleanObject.False;
     }

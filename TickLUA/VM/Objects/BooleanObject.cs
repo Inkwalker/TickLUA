@@ -17,6 +17,7 @@
         }
 
         public override BooleanObject ToBooleanObject() => this;
+        public override StringObject ToStringObject() => new StringObject(ToString());
 
         public static BooleanObject operator !(BooleanObject o) => (bool)o? False : True;
 

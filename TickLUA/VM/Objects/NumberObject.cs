@@ -38,7 +38,7 @@ namespace TickLUA.VM.Objects
             return Value.ToString();
         }
 
-        //public override StringObject ToStringObject() => new StringObject(Value.ToString());
+        public override StringObject ToStringObject() => new StringObject(Value.ToString());
 
         public static NumberObject IntDiv(NumberObject l, NumberObject r) => new NumberObject((float)Math.Floor(l.Value / r.Value));
         public static NumberObject Pow(NumberObject l, NumberObject r) => new NumberObject((float)Math.Pow(l.Value, r.Value));

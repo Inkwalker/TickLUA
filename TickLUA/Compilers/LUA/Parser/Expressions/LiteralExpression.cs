@@ -25,10 +25,10 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             Value = BooleanObject.FromBool(value);
         }
 
-        //public LiteralExpression(string value)
-        //{
-        //    Value = new StringObject(value);
-        //}
+        public LiteralExpression(string value)
+        {
+            Value = new StringObject(value);
+        }
 
         public LiteralExpression(LuaObject obj)
         {
@@ -45,9 +45,9 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 case TokenType.Number:
                     Value = new NumberObject(ParseNumber(t));
                     break;
-                //case TokenType.String:
-                //    Value = new StringObject(t.Content);
-                //    break;
+                case TokenType.String:
+                    Value = new StringObject(t.Content);
+                    break;
                 case TokenType.True:
                     Value = BooleanObject.True;
                     break;

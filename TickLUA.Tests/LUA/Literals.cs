@@ -109,6 +109,17 @@ namespace TickLUA_Tests.LUA
         }
 
         [Test]
+        public void String()
+        {
+            var source =
+                @"local x = 'hello world'
+                  return x";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertStringResult(vm, "hello world");
+        }
+
+        [Test]
         public void ConstantsReuse()
         {
             var source =

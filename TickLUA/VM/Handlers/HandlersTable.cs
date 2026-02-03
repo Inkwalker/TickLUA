@@ -35,7 +35,7 @@ namespace TickLUA.VM.Handlers
             byte b = instruction.B; // table
             byte c = instruction.C; // key
 
-            var table = frame.Registers[b] as TableObject;
+            var table = frame.Registers[b] as IIndexable;
             if (table != null)
             {
                 var key = frame.Registers[c];
@@ -43,7 +43,7 @@ namespace TickLUA.VM.Handlers
                 frame.Registers[a] = table[key];
             }
             else
-                throw new RuntimeException("Not a table");
+                throw new RuntimeException("Not a table or a string");
         }
 
         internal static void SET_FIELD(TickVM vm, StackFrame frame, Instruction instruction)
@@ -70,7 +70,7 @@ namespace TickLUA.VM.Handlers
             byte b = instruction.B; // table
             byte c = instruction.C; // key const
 
-            var table = frame.Registers[b] as TableObject;
+            var table = frame.Registers[b] as IIndexable;
             if (table != null)
             {
                 var key = frame.Constants[c];
@@ -78,7 +78,7 @@ namespace TickLUA.VM.Handlers
                 frame.Registers[a] = table[key];
             }
             else
-                throw new RuntimeException("Not a table");
+                throw new RuntimeException("Not a table or a sting");
         }
 
         internal static void SET_LIST(TickVM vm, StackFrame frame, Instruction instruction)
