@@ -121,5 +121,20 @@
             Utils.AssertIntegerResult(vm, -2, 0);
             Utils.AssertFloatResult(vm, -5.5f, 1);
         }
+
+        [Test]
+        public void Concatenation()
+        {
+            var source =
+                @"local x = 'hello '
+                  local y = 'world'
+                  local r1 = x..y
+                  local r2 = y..x
+                  return r1, r2";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertStringResult(vm, "hello world", 0);
+            Utils.AssertStringResult(vm, "worldhello ", 1);
+        }
     }
 }

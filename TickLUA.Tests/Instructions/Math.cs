@@ -115,6 +115,24 @@ namespace TickLUA_Tests.Instructions
         }
 
         [Test]
+        public void CONCAT()
+        {
+            var bytecode = new LuaFunction(3);
+
+            bytecode.Constants.Add(new StringObject("hello "));
+            bytecode.Constants.Add(new StringObject("world"));
+
+            bytecode.Instructions.Add(Instruction.LOAD_CONST(0, 0));
+            bytecode.Instructions.Add(Instruction.LOAD_CONST(1, 1));
+            bytecode.Instructions.Add(Instruction.CONCAT(2, 0, 1));
+            bytecode.Instructions.Add(Instruction.RETURN(2, 1));
+
+            var vm = Utils.Run(bytecode, 4);
+
+            Utils.AssertStringResult(vm, "hello world");
+        }
+
+        [Test]
         public void UNM()
         {
             var bytecode = new LuaFunction(2);

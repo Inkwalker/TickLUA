@@ -68,6 +68,19 @@ namespace TickLUA.VM.Handlers
             SetRegA(frame, instruction, NumberObject.IntDiv(l,r));
         }
 
+        internal static void CONCAT(TickVM vm, StackFrame frame, Instruction instruction)
+        {
+            // TODO: type checks
+            var reg_res = instruction.A;
+            var reg_l   = instruction.B;
+            var reg_r   = instruction.C;
+
+            var l = frame.Registers[reg_l] as StringObject;
+            var r = frame.Registers[reg_r] as StringObject;
+
+            frame.Registers[reg_res] = l + r;
+        }
+
         internal static void UNM(TickVM vm, StackFrame frame, Instruction instruction)
         {
             // TODO: type checks
@@ -108,6 +121,8 @@ namespace TickLUA.VM
         internal static Instruction POW(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.POW, dest_reg, left_reg, right_reg);
         internal static Instruction DIV(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.DIV, dest_reg, left_reg, right_reg);
         internal static Instruction IDIV(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.IDIV, dest_reg, left_reg, right_reg);
+
+        internal static Instruction CONCAT(byte dest_reg, byte left_reg, byte right_reg) => new Instruction(Opcode.CONCAT, dest_reg, left_reg, right_reg);
 
         internal static Instruction UNM(byte dest_reg, byte reg_source) => new Instruction(Opcode.UNM, dest_reg, reg_source, 0);
     }

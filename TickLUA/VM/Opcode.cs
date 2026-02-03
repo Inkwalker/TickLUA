@@ -130,7 +130,11 @@
         /// A - result reg, B - source reg
         /// </summary>
         LEN,
-        //CONCAT,
+        /// <summary>
+        /// String concatenation operation.
+        /// A - result reg, B -left val reg, C - right val reg
+        /// </summary>
+        CONCAT,
 
         /// <summary>
         /// Relative jump. 

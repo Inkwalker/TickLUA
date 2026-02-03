@@ -30,6 +30,7 @@ namespace TickLUA.VM
             { Opcode.POW,             HandlersMath.POW },
             { Opcode.DIV,             HandlersMath.DIV },
             { Opcode.IDIV,            HandlersMath.IDIV },
+            { Opcode.CONCAT,          HandlersMath.CONCAT },
             { Opcode.UNM,             HandlersMath.UNM },
             // Function operations
             { Opcode.RETURN,          HandlersCore.RETURN },

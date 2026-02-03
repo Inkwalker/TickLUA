@@ -260,7 +260,8 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                     builder.AddInstruction(Instruction.LOAD_TRUE(reg_res), line);
                     return;
                 case BinaryOperation.Concat:
-                    throw new CompilationException($"Not implemented binary operator '..'", 1, 1);
+                    builder.AddInstruction(Instruction.CONCAT(reg_res, reg_l, reg_r), line);
+                    break;
                 case BinaryOperation.Add:
                     builder.AddInstruction(Instruction.ADD(reg_res, reg_l, reg_r), line);
                     return;
