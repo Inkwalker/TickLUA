@@ -23,8 +23,8 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 //    return new EmptyStatement();
                 case TokenType.If:
                     return new IfStatement(lexer);
-                //case TokenType.While:
-                //    return new WhileLoopStatement(lexer);
+                case TokenType.While:
+                    return new WhileLoopStatement(lexer);
                 //case TokenType.Do:
                 //    return new ScopeStatement(lexer);
                 //case TokenType.For:
