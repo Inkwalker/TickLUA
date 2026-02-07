@@ -29,8 +29,8 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 //    return new ScopeStatement(lexer);
                 //case TokenType.For:
                 //    return ForLoopStatement.Create(lexer);
-                //case TokenType.Repeat:
-                //    return new RepeatLoopStatement(lexer);
+                case TokenType.Repeat:
+                    return new RepeatLoopStatement(lexer);
                 //case TokenType.Function:
                 //    return new FunctionDefinitionStatement(false, lexer);
                 case TokenType.Local:
