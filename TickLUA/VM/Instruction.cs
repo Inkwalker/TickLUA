@@ -140,6 +140,8 @@
                 case Opcode.RETURN:
                     return $"{opcode} {A} {Bx}";
                 case Opcode.LOAD_INT:
+                case Opcode.FORLOOP:
+                case Opcode.FORPREP:
                     return $"{opcode} {A} {BxSigned}";
                 case Opcode.ADD:
                 case Opcode.SUB:

@@ -27,8 +27,8 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                     return new WhileLoopStatement(lexer);
                 //case TokenType.Do:
                 //    return new ScopeStatement(lexer);
-                //case TokenType.For:
-                //    return ForLoopStatement.Create(lexer);
+                case TokenType.For:
+                    return ForLoopStatement.Create(lexer);
                 case TokenType.Repeat:
                     return new RepeatLoopStatement(lexer);
                 //case TokenType.Function:

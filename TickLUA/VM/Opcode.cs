@@ -178,8 +178,18 @@
         /// </summary>
         RETURN,
 
-        //FORLOOP,
-        //FORPREP,
+        /// <summary>
+        /// Numeric for loop condition test and increment.
+        /// A - init value reg, A + 1 - limit reg, A + 2 - step reg, A + 3 - external state reg, sBx - relative jump
+        /// </summary>
+        FORLOOP,
+
+        /// <summary>
+        /// Numeric for loop preparation.
+        /// A - init value reg, A + 1 - limit reg, A + 2 - step reg, A + 3 - external state reg, sBx - relative jump to test instruction
+        /// </summary>
+        FORPREP,
+
         //TFORCALL,
         //TFORLOOP,
         //CLOSE,

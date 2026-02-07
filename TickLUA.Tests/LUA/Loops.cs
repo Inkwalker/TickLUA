@@ -33,5 +33,53 @@
             var vm = Utils.Run(source, 150);
             Utils.AssertIntegerResult(vm, 11, 0);
         }
+
+        [Test]
+        public void NumericForLoop_Positive()
+        {
+            string source = @"
+                local a = 0
+
+                for i = 1, 10, 1 do
+                    a = a + i
+                end
+
+                return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 55, 0);
+        }
+
+        [Test]
+        public void NumericForLoop_Negative()
+        {
+            string source = @"
+                local a = 0
+
+                for i = 10, 1, -1 do
+                    a = a + i
+                end
+
+                return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 55, 0);
+        }
+
+        [Test]
+        public void NumericForLoop_Default()
+        {
+            string source = @"
+                local a = 0
+
+                for i = 1, 10 do
+                    a = a + i
+                end
+
+                return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 55, 0);
+        }
     }
 }
