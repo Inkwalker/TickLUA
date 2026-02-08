@@ -13,10 +13,10 @@ namespace TickLUA.VM.Handlers
             int reg_step  = reg_init + 2;
             int jmp = instruction.BxSigned;
 
-            var obj_init = (NumberObject)frame.Registers[reg_init];
-            var obj_step = (NumberObject)frame.Registers[reg_step];
+            var obj_init = (NumberObject)frame.Registers[reg_init].Value;
+            var obj_step = (NumberObject)frame.Registers[reg_step].Value;
 
-            frame.Registers[reg_init] = obj_init - obj_step;
+            frame.Registers[reg_init].Value = obj_init - obj_step;
             frame.PC += jmp;
         }
 
@@ -28,9 +28,9 @@ namespace TickLUA.VM.Handlers
             int reg_ext   = reg_int + 3;
             int jmp = instruction.BxSigned;
 
-            var obj_int   = (NumberObject)frame.Registers[reg_int];
-            var obj_limit = (NumberObject)frame.Registers[reg_limit];
-            var obj_step  = (NumberObject)frame.Registers[reg_step];
+            var obj_int   = (NumberObject)frame.Registers[reg_int].Value;
+            var obj_limit = (NumberObject)frame.Registers[reg_limit].Value;
+            var obj_step  = (NumberObject)frame.Registers[reg_step].Value;
 
             obj_int = obj_int + obj_step;
 
@@ -38,8 +38,8 @@ namespace TickLUA.VM.Handlers
 
             if (condition)
             {
-                frame.Registers[reg_int] = obj_int;
-                frame.Registers[reg_ext] = obj_int;
+                frame.Registers[reg_int].Value = obj_int;
+                frame.Registers[reg_ext].Value = obj_int;
                 frame.PC += jmp;
             }
 

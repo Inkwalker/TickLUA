@@ -15,7 +15,7 @@ namespace TickLUA.VM.Handlers
             byte b = instruction.B;
 
             // Move value from register b to register a
-            frame.Registers[a] = frame.Registers[b];
+            frame.Registers[a].Value = frame.Registers[b].Value;
         }
 
         internal static void LOAD_CONST(TickVM vm, StackFrame frame, Instruction instruction)
@@ -24,7 +24,7 @@ namespace TickLUA.VM.Handlers
             ushort bx = instruction.Bx;
 
             // Load constant at index bx into register a
-            frame.Registers[a] = frame.Constants[bx];
+            frame.Registers[a].Value = frame.Constants[bx];
         }
 
         internal static void LOAD_INT(TickVM vm, StackFrame frame, Instruction instruction)
@@ -33,7 +33,7 @@ namespace TickLUA.VM.Handlers
             short b = instruction.BxSigned;
 
             // Load integer b into register a
-            frame.Registers[a] = new NumberObject(b);
+            frame.Registers[a].Value = new NumberObject(b);
         }
 
         internal static void LOAD_TRUE(TickVM vm, StackFrame frame, Instruction instruction)
@@ -41,7 +41,7 @@ namespace TickLUA.VM.Handlers
             byte a = instruction.A;
 
             // Load boolean true into register a
-            frame.Registers[a] = BooleanObject.True;
+            frame.Registers[a].Value = BooleanObject.True;
         }
 
         internal static void LOAD_FALSE(TickVM vm, StackFrame frame, Instruction instruction)
@@ -49,7 +49,7 @@ namespace TickLUA.VM.Handlers
             byte a = instruction.A;
 
             // Load boolean false into register a
-            frame.Registers[a] = BooleanObject.False;
+            frame.Registers[a].Value = BooleanObject.False;
         }
 
         internal static void LOAD_FALSE_SKIP(TickVM vm, StackFrame frame, Instruction instruction)
@@ -57,7 +57,7 @@ namespace TickLUA.VM.Handlers
             byte a = instruction.A;
 
             // Load boolean false into register a and skip next instruction
-            frame.Registers[a] = BooleanObject.False;
+            frame.Registers[a].Value = BooleanObject.False;
             frame.PC++;
         }
 
@@ -70,7 +70,7 @@ namespace TickLUA.VM.Handlers
 
             for (int i = 0; i < b; i++)
             {
-                frame.Registers[a + i] = NilObject.Nil;
+                frame.Registers[a + i].Value = NilObject.Nil;
             }
         }
 
@@ -88,6 +88,26 @@ namespace TickLUA.VM.Handlers
         {
             int delta = instruction.AxSigned;
             frame.PC += delta;
+        }
+
+        internal static void CLOSURE(TickVM vm, StackFrame frame, Instruction instruction)
+        {
+            int reg_result = instruction.A;
+            int func_index = instruction.Bx;
+
+            var func = frame.Function.NestedFunctions[func_index];
+            var upvalues = new RegisterCell[func.Upvalues.Count];
+
+            for (int i = 0; i < upvalues.Length; i++)
+            {
+                var def = func.Upvalues[i];
+                if (def.IsLocal)
+                    upvalues[i] = frame.Registers[def.Index];
+                else
+                    upvalues[i] = frame.Upvalues[def.Index];
+            }
+
+            frame.Registers[reg_result].Value = new ClosureObject(upvalues);
         }
     }
 }
@@ -111,5 +131,7 @@ namespace TickLUA.VM
             return new Instruction(Opcode.RETURN, start_reg, (ushort)(c + 1));
         }
         internal static Instruction JMP(int offset) => new Instruction(Opcode.JMP, offset);
+
+        internal static Instruction CLOSURE(byte dest_reg, ushort func_index) => new Instruction(Opcode.CLOSURE, dest_reg, func_index);
     }
 }

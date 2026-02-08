@@ -193,7 +193,12 @@
         //TFORCALL,
         //TFORLOOP,
         //CLOSE,
-        //CLOSURE,
+
+        /// <summary>
+        /// Create closure object form <see cref="LuaFunction"/>
+        /// A - result reg, Bx - function index
+        /// </summary>
+        CLOSURE,
         //VARARG
     }
 }

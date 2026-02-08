@@ -9,6 +9,7 @@ namespace TickLUA.Compilers.LUA
         private List<Instruction> instructions = new List<Instruction>();
         private List<LuaObject> constants = new List<LuaObject>();
         private LuaFunction.Metadata metadata = new LuaFunction.Metadata();
+        private List<LuaFunction.UpvalueDef> upvalues = new List<LuaFunction.UpvalueDef>();
 
         private List<BlockFrame> blocks = new List<BlockFrame>();
 
@@ -23,6 +24,7 @@ namespace TickLUA.Compilers.LUA
             var func = new LuaFunction(
                 instructions,
                 constants,
+                upvalues,
                 metadata,
                 allocator.MaxRegisters
             );

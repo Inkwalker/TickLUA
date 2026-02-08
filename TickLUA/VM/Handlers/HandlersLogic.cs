@@ -9,7 +9,7 @@ namespace TickLUA.VM.Handlers
             int reg       = instruction.A;
             bool expected = instruction.B != 0;
 
-            var obj = frame.Registers[reg];
+            var obj = frame.Registers[reg].Value;
 
             if ((bool)obj.ToBooleanObject() != expected)
             {
@@ -23,7 +23,7 @@ namespace TickLUA.VM.Handlers
             int test_reg  = instruction.B;
             bool expected = instruction.C != 0;
 
-            var test_obj = frame.Registers[test_reg];
+            var test_obj = frame.Registers[test_reg].Value;
 
             if ((bool)test_obj.ToBooleanObject() != expected)
             {
@@ -31,7 +31,7 @@ namespace TickLUA.VM.Handlers
             }
             else
             {
-                frame.Registers[dest_reg] = test_obj;
+                frame.Registers[dest_reg].Value = test_obj;
             }
         }
 
@@ -41,8 +41,8 @@ namespace TickLUA.VM.Handlers
             int reg_b     = instruction.B;
             bool expected = instruction.C != 0;
 
-            var obj_a = frame.Registers[reg_a];
-            var obj_b = frame.Registers[reg_b];
+            var obj_a = frame.Registers[reg_a].Value;
+            var obj_b = frame.Registers[reg_b].Value;
 
             if ((obj_a == obj_b) != expected)
             {
@@ -56,8 +56,8 @@ namespace TickLUA.VM.Handlers
             int reg_b     = instruction.B;
             bool expected = instruction.C != 0;
 
-            var obj_a = frame.Registers[reg_a];
-            var obj_b = frame.Registers[reg_b];
+            var obj_a = frame.Registers[reg_a].Value;
+            var obj_b = frame.Registers[reg_b].Value;
 
             var number_a = obj_a as NumberObject;
             var number_b = obj_b as NumberObject;
@@ -80,8 +80,8 @@ namespace TickLUA.VM.Handlers
             int reg_b     = instruction.B;
             bool expected = instruction.C != 0;
 
-            var obj_a = frame.Registers[reg_a];
-            var obj_b = frame.Registers[reg_b];
+            var obj_a = frame.Registers[reg_a].Value;
+            var obj_b = frame.Registers[reg_b].Value;
 
             var number_a = obj_a as NumberObject;
             var number_b = obj_b as NumberObject;
@@ -102,9 +102,9 @@ namespace TickLUA.VM.Handlers
         {
             int a = instruction.A;
             int b = instruction.B;
-            var obj = frame.Registers[b];
+            var obj = frame.Registers[b].Value;
 
-            frame.Registers[a] = !obj.ToBooleanObject();
+            frame.Registers[a].Value = !obj.ToBooleanObject();
         }
     }
 }

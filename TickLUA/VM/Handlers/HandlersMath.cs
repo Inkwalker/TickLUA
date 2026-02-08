@@ -75,10 +75,10 @@ namespace TickLUA.VM.Handlers
             var reg_l   = instruction.B;
             var reg_r   = instruction.C;
 
-            var l = frame.Registers[reg_l] as StringObject;
-            var r = frame.Registers[reg_r] as StringObject;
+            var l = frame.Registers[reg_l].Value as StringObject;
+            var r = frame.Registers[reg_r].Value as StringObject;
 
-            frame.Registers[reg_res] = l + r;
+            frame.Registers[reg_res].Value = l + r;
         }
 
         internal static void UNM(TickVM vm, StackFrame frame, Instruction instruction)
@@ -93,19 +93,19 @@ namespace TickLUA.VM.Handlers
         private static void SetRegA(StackFrame frame, Instruction instruction, NumberObject value)
         {
             int a = instruction.A;
-            frame.Registers[a] = value;
+            frame.Registers[a].Value = value;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NumberObject GetRegB(StackFrame frame, Instruction instruction)
         {
             int b = instruction.B;
-            return frame.Registers[b] as NumberObject;
+            return frame.Registers[b].Value as NumberObject;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NumberObject GetRegC(StackFrame frame, Instruction instruction)
         {
             int c = instruction.C;
-            return frame.Registers[c] as NumberObject;
+            return frame.Registers[c].Value as NumberObject;
         }
     }
 }

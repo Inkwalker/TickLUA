@@ -6,7 +6,7 @@ namespace TickLUA.VM
 {
     internal class StackFrame
     {
-        public LuaObject[] Registers { get; }
+        public RegisterCell[] Registers { get; }
         public IReadOnlyList<LuaObject> Constants => Function.Constants;
 
         public LuaFunction Function { get; private set; }
@@ -14,11 +14,17 @@ namespace TickLUA.VM
 
         public bool IsFinished => PC >= Function.Instructions.Count;
         public LuaObject[] Results { get; private set; }
+        public RegisterCell[] Upvalues { get; }
 
-        public StackFrame(LuaFunction function) 
-        { 
+        public StackFrame(LuaFunction function, RegisterCell[] upvalues)
+        {
             Function = function;
-            Registers = new LuaObject[function.RegisterCount];
+            Registers = new RegisterCell[function.RegisterCount];
+
+            for (int i = 0; i < Registers.Length; i++)
+                Registers[i] = new RegisterCell();
+
+            Upvalues = upvalues;
         }
 
         public Instruction Step()
@@ -46,7 +52,11 @@ namespace TickLUA.VM
                 count = Registers.Length - start_reg;
 
             Results = new LuaObject[count];
-            Array.Copy(Registers, start_reg, Results, 0, count);
+
+            for (int i = 0; i < count; i++)
+            {
+                Results[i] = Registers[i + start_reg].Value;
+            }
         }
     }
 }

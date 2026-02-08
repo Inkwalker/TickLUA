@@ -64,8 +64,11 @@ namespace TickLUA.VM
         public TickVM(LuaFunction bytecode)
         {
             instructionHandlers = LoadInstructionSet();
-            
-            CallFunction(bytecode);
+
+            // TODO: add _ENV upvalue here
+            var upvalues = new RegisterCell[0];
+
+            CallFunction(bytecode, upvalues);
         }
 
         private InstructionHandler[] LoadInstructionSet()
@@ -104,9 +107,9 @@ namespace TickLUA.VM
             instructionHandlers[opcode](this, frame, instruction);
         }
 
-        private void CallFunction(LuaFunction function)
+        private void CallFunction(LuaFunction function, RegisterCell[] upvalues)
         {
-            var frame = new StackFrame(function);
+            var frame = new StackFrame(function, upvalues);
             callStack.Push(frame);
         }
     }
