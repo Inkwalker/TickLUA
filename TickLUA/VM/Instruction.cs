@@ -135,9 +135,12 @@
                 case Opcode.UNM:
                 case Opcode.TEST:
                 case Opcode.LEN:
+                case Opcode.GET_UPVAL:
+                case Opcode.SET_UPVAL:
                     return $"{opcode} {A} {B}";
                 case Opcode.LOAD_CONST:
                 case Opcode.RETURN:
+                case Opcode.CLOSURE:
                     return $"{opcode} {A} {Bx}";
                 case Opcode.LOAD_INT:
                 case Opcode.FORLOOP:

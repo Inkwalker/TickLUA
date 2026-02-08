@@ -109,6 +109,24 @@ namespace TickLUA.VM.Handlers
 
             frame.Registers[reg_result].Value = new ClosureObject(upvalues);
         }
+
+        internal static void GET_UPVAL(TickVM vm, StackFrame frame, Instruction instruction)
+        {
+            int reg_dest     = instruction.A;
+            int upval_source = instruction.B;
+
+            var value = frame.Upvalues[upval_source].Value;
+            frame.Registers[reg_dest].Value = value;
+        }
+
+        internal static void SET_UPVAL(TickVM vm, StackFrame frame, Instruction instruction)
+        {
+            int reg_source = instruction.A;
+            int upval_dest = instruction.B;
+
+            var value = frame.Registers[reg_source].Value;
+            frame.Upvalues[upval_dest].Value =value;
+        }
     }
 }
 
@@ -133,5 +151,7 @@ namespace TickLUA.VM
         internal static Instruction JMP(int offset) => new Instruction(Opcode.JMP, offset);
 
         internal static Instruction CLOSURE(byte dest_reg, ushort func_index) => new Instruction(Opcode.CLOSURE, dest_reg, func_index);
+        internal static Instruction GET_UPVAL(byte dest_reg, byte source_upval) => new Instruction(Opcode.GET_UPVAL, dest_reg, source_upval, 0);
+        internal static Instruction SET_UPVAL(byte source_reg, byte dest_upval) => new Instruction(Opcode.SET_UPVAL, source_reg, dest_upval, 0);
     }
 }

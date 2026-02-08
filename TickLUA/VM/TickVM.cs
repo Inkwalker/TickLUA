@@ -32,7 +32,10 @@ namespace TickLUA.VM
             { Opcode.IDIV,            HandlersMath.IDIV },
             { Opcode.CONCAT,          HandlersMath.CONCAT },
             { Opcode.UNM,             HandlersMath.UNM },
-            // Function operations
+            // Functions
+            { Opcode.GET_UPVAL,        HandlersCore.GET_UPVAL },
+            { Opcode.SET_UPVAL,        HandlersCore.SET_UPVAL },
+            { Opcode.CLOSURE,         HandlersCore.CLOSURE },
             { Opcode.RETURN,          HandlersCore.RETURN },
             // Logic
             { Opcode.TEST,            HandlersLogic.TEST },

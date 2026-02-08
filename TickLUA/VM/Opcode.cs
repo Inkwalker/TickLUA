@@ -72,11 +72,19 @@
         /// </summary>
         GET_TABLE,
 
+        /// <summary>
+        /// Copy value from an upvalue to a register.
+        /// A - target reg, B - source upvalue
+        /// </summary>
+        GET_UPVAL,
+        /// <summary>
+        /// Copy value from a register to an upvalue.
+        /// A - source reg, B - target upvalue
+        /// </summary>
+        SET_UPVAL,
 
-        //GETUPVAL,
         //GETGLOBAL,
         //SETTABUP,
-        //SETUPVAL,
         //SETGLOBAL,
         //SELF,
 
