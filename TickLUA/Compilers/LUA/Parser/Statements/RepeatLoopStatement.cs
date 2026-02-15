@@ -28,20 +28,21 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
         public override void Compile(FunctionBuilder builder)
         {
             // condition expr
-            byte reg_expr = builder.AllocateRegisters(1);
             int addr_start = builder.InstructionCount;
 
             block.Compile(builder);
 
-            condition.CompileRead(builder, reg_expr);
 
             // condition test
+            byte reg_expr = builder.AllocateRegisters(1);
+            condition.CompileRead(builder, reg_expr);
+
             builder.AddInstruction(Instruction.TEST(reg_expr, false), (ushort)SourceRange.from.line);
             int addr_loop_jmp = builder.InstructionCount;
             // jump back
             builder.AddInstruction(Instruction.JMP(addr_start - addr_loop_jmp - 1), (ushort)SourceRange.from.line);
 
-            builder.DeallocateRegisters(reg_expr);
+            builder.FreeRegisters(1);
         }
     }
 }

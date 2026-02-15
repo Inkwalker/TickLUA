@@ -107,7 +107,6 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 if (lexer.Current.Type == TokenType.Name)
                 {
                     var variable = new SymbolExpression(lexer);
-                    variable.IsLocal = true;
                     variables.Add(variable);
                 }
                 else throw new CompilationException("Only names are allowed for local assignments", lexer.Current.Position);
@@ -152,17 +151,26 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             {
                 var bin_op = ApplyOperation(variables[0], values[0]);
 
+                if (local)
+                    variables[0].PreallocateRegister(builder);
+
                 byte reg_result = builder.AllocateRegisters(1);
                 bin_op.CompileRead(builder, reg_result);
 
                 variables[0].CompileWrite(builder, reg_result);
 
-                builder.DeallocateRegisters(reg_result);
+                builder.FreeRegisters(1);
             }
             else
             {
                 int max = Math.Max(values.Count, variables.Count);
                 ushort line = (ushort)SourceRange.from.line;
+
+                if (local)
+                {
+                    for (int i = 0; i < variables.Count; i++)
+                        variables[i].PreallocateRegister(builder);
+                }
 
                 for (int i = 0; i < max; i++)
                 {
@@ -175,7 +183,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                     if (i < variables.Count)
                         variables[i].CompileWrite(builder, reg);
 
-                    builder.DeallocateRegisters(reg);
+                    builder.FreeRegisters(1);
                 }
             }
         }

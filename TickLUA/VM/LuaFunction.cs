@@ -11,6 +11,7 @@ namespace TickLUA.VM
         internal List<UpvalueDef> Upvalues { get; }
         public List<LuaFunction> NestedFunctions { get; } = new List<LuaFunction>();
         public Metadata Meta { get; }
+        public int InstructionCount => Instructions.Count;
 
         internal LuaFunction(
             IEnumerable<Instruction> instructions,

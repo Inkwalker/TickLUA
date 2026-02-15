@@ -93,8 +93,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                     arg.Value.CompileRead(builder, reg_val);
                     builder.AddInstruction(Instruction.SET_TABLE(reg_result, reg_key, reg_val), (ushort)arg.Key.SourceRange.from.line);
                     
-                    builder.DeallocateRegisters(reg_key);
-                    builder.DeallocateRegisters(reg_val);
+                    builder.FreeRegisters(2);
                 }
                 else
                 {
@@ -106,7 +105,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             if (array_size > 0)
             {
                 builder.AddInstruction(Instruction.SET_LIST(reg_result, start_reg, (byte)array_size), (ushort)SourceRange.from.line);
-                builder.DeallocateRegisters(start_reg, array_size);
+                builder.FreeRegisters(array_size);
             }
         }
 

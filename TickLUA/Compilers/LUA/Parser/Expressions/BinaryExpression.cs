@@ -309,8 +309,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                     line
                 );
 
-                builder.DeallocateRegisters(reg_r);
-                builder.DeallocateRegisters(reg_l);
+                builder.FreeRegisters(2);
             }
         }
 

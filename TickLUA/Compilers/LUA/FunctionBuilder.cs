@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using TickLUA.VM;
 using TickLUA.VM.Objects;
 
@@ -6,41 +7,46 @@ namespace TickLUA.Compilers.LUA
 {
     internal class FunctionBuilder
     {
-        private List<Instruction> instructions = new List<Instruction>();
-        private List<LuaObject> constants = new List<LuaObject>();
-        private LuaFunction.Metadata metadata = new LuaFunction.Metadata();
-        private List<LuaFunction.UpvalueDef> upvalues = new List<LuaFunction.UpvalueDef>();
+        private LuaFunction function;
 
-        private List<BlockFrame> blocks = new List<BlockFrame>();
+        private IndexableStack<BlockFrame> blocks;
 
-        private RegisterAllocator allocator = new RegisterAllocator();
+        private List<FunctionBuilder> nested_builders = new List<FunctionBuilder>();
 
-        private BlockFrame TopBlock => blocks[blocks.Count - 1];
+        public int InstructionCount => function.InstructionCount;
+        public FunctionBuilder Parent { get; private set; } = null;
+        public int MaxRegisters { get; private set; }
 
-        public int InstructionCount => instructions.Count;
+        public FunctionBuilder(FunctionBuilder parent = null)
+        {
+            Parent = parent;
+
+            function = new LuaFunction(0);
+            blocks = new IndexableStack<BlockFrame>();
+        }
 
         public LuaFunction Finish()
         {
-            var func = new LuaFunction(
-                instructions,
-                constants,
-                upvalues,
-                metadata,
-                allocator.MaxRegisters
-            );
+            function.RegisterCount = MaxRegisters;
 
-            return func;
+            foreach (var c in nested_builders)
+            {
+                function.NestedFunctions.Add(c.Finish());
+            }
+
+            return function;
         }
 
         /// <summary>
         /// Add instruction to the bytecode.
         /// </summary>
+        /// <param name="line">Source code line number for debugging purposes</param>
         /// <returns>Address of the instruction in the bytecode</returns>
         public int AddInstruction(Instruction instruction, ushort line)
         {
-            instructions.Add(instruction);
-            metadata.Lines.Add(line);
-            return instructions.Count - 1;
+            function.Instructions.Add(instruction);
+            function.Meta.Lines.Add(line);
+            return InstructionCount - 1;
         }
 
         /// <summary>
@@ -50,20 +56,20 @@ namespace TickLUA.Compilers.LUA
         /// <returns>Old instruction at <paramref name="address"/></returns>
         public Instruction SetInstruction(int address, Instruction instruction)
         {
-            var old_inst = instructions[address];
-            instructions[address] = instruction;
+            var old_inst = function.Instructions[address];
+            function.Instructions[address] = instruction;
             return old_inst;
         }
 
         public ushort AddConstant(LuaObject constant)
         {
-            for (int i = 0; i < constants.Count; i++)
+            for (int i = 0; i < function.Constants.Count; i++)
             {
-                if (constants[i].Equals(constant)) return (ushort)i;
+                if (function.Constants[i].Equals(constant)) return (ushort)i;
             }
 
-            constants.Add(constant);
-            int index = constants.Count - 1;
+            function.Constants.Add(constant);
+            int index = function.Constants.Count - 1;
 
             if (index > ushort.MaxValue)
                 // TODO: add source code location
@@ -72,49 +78,65 @@ namespace TickLUA.Compilers.LUA
             return (ushort)index;
         }
 
+        /// <summary>
+        /// Allocate registers for the variables in the current block.
+        /// </summary>
+        /// <exception cref="CompilationException">When allocated more than 255 registers</exception>
         public byte AllocateRegisters(int count)
         {
-            var index = allocator.Allocate(count);
-            var block = TopBlock;
-
-            for (int i = index; i < index + count; i++)
-                block.AllocatedRegisters.Add(i);
+            var block = blocks.Peek();
+            var index = block.Allocator.Allocate(count);
 
             if (index >= byte.MaxValue)
                 // TODO: add source code location
                 throw new CompilationException("Out of registers", 1, 1);
+
+            MaxRegisters = Math.Max(MaxRegisters, index + count);
+
             return (byte)index;
         }
 
-        public void DeallocateRegisters(byte start_reg, int count = 1)
+        /// <summary>
+        /// Free registers allocated in the current block.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">When trying to free more registers than allocated</exception>"
+        public void FreeRegisters(int count = 1)
         {
-            var block = TopBlock;
-
-            for (int i = start_reg; i < start_reg + count; i++)
-            {
-                block.AllocatedRegisters.Remove(i);
-            }
-
-            allocator.Deallocate(start_reg, count);
+            var block = blocks.Peek();
+            block.Allocator.Free(count);
         }
 
+        /// <summary>
+        /// Allocates a register for a variable and assigns it the specified name.
+        /// </summary>
+        /// <returns>The index of the allocated register</returns>
+        /// <exception cref="CompilationException">When allocated more than 255 registers</exception>"
         public byte AllocateVariable(string name)
         {
-            var index = allocator.Allocate(1);
-            var block = TopBlock;
-
-            block.AllocatedRegisters.Add(index);
-            block.LocalsLookup[name] = index;
-
-            if (index >= byte.MaxValue)
-                // TODO: add source code location
-                throw new CompilationException("Out of registers", 1, 1);
+            var index = AllocateRegisters(1);
+            NameRegister(index, name);
             return (byte)index;
         }
 
+        /// <summary>
+        /// Name a register allocated with the specified variable name.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">When the register index is out of bounds</exception>
         public void NameRegister(int index, string name)
         {
-            TopBlock.LocalsLookup[name] = index;
+            if (index < 0 || index >= MaxRegisters)
+                throw new ArgumentOutOfRangeException(nameof(index), "Register index is out of bounds");
+
+            for (int i = 0; i < blocks.Count; i++)
+            {
+                var block = blocks[i];
+
+                if (index >= block.Allocator.Offset)
+                {
+                    block.Allocator.NameRegister(index, name);
+                    break;
+                }
+            }
         }
 
         /// <summary>
@@ -123,109 +145,67 @@ namespace TickLUA.Compilers.LUA
         /// <returns>Register index or -1 if not defined in the function</returns>
         public int ResolveVariable(string name)
         {
-            for (int i = blocks.Count - 1; i >= 0; i--)
+            for (int i = 0; i < blocks.Count; i++)
             {
-                if (blocks[i].LocalsLookup.TryGetValue(name, out var reg))
+                var block = blocks[i];
+                int reg = block.Allocator.FindRegisterByName(name);
+                if (reg >= 0)
                     return reg;
             }
 
             return -1;
         }
 
+        public void MarkEscaping(int index)
+        {
+            if (index < 0 || index >= MaxRegisters)
+                throw new ArgumentOutOfRangeException(nameof(index), "Register index is out of bounds");
+
+            for (int i = 0; i < blocks.Count; i++)
+            {
+                var block = blocks[i];
+
+                if (index > block.Allocator.Offset)
+                    block.Allocator.MarkEscaping(index);
+            }
+        }
+
+        public bool BlockHasEscapingVars()
+        {
+            return blocks.Peek().Allocator.HasEscapingVars();
+        }
+
         public void BlockStart()
         {
-            blocks.Add(new BlockFrame());
+            int offset = 0;
+            if (blocks.Count > 0) 
+            {
+                var b = blocks.Peek();
+                offset = b.Allocator.Offset + b.Allocator.RegisterCount;
+            }
+            blocks.Push(new BlockFrame(offset));
         }
 
         public void BlockEnd()
         {
-            var frame = blocks[blocks.Count - 1];
+            blocks.Pop();
+        }
 
-            foreach (int reg in frame.AllocatedRegisters)
-                allocator.Deallocate(reg);
+        public FunctionBuilder CreateNestedFunction(out int func_index)
+        {
+            var nested = new FunctionBuilder(this);
+            nested_builders.Add(nested);
+            func_index = nested_builders.Count - 1;
+            return nested;
         }
 
         private class BlockFrame
         {
-            /// <summary>
-            /// Registers that are allocated for this block
-            /// </summary>
-            public HashSet<int> AllocatedRegisters = new HashSet<int>();
-            /// <summary>
-            /// Lookup table register indexes by variable name
-            /// </summary>
-            public Dictionary<string, int> LocalsLookup = new Dictionary<string, int>();
+            public BlockRegisterAllocator Allocator { get; }
 
-            public bool IsLocal(string name) => LocalsLookup.ContainsKey(name);
-        }
-
-        private class RegisterAllocator
-        {
-            private List<bool> in_use = new List<bool>();
-
-            public int MaxRegisters => in_use.Count;
-
-            /// <summary>
-            /// Allocate <paramref name="count"/> registers. All registers will be sequential.
-            /// </summary>
-            /// <returns>Index of the first allocated register</returns>
-            public int Allocate(int count = 1)
+            public BlockFrame(int register_offset)
             {
-                // check all previously allocated registers
-                // and try to reuse them
-                for (int i = 0; i < in_use.Count; i++)
-                {
-                    int last_used = AreNotInUse(i, count);
-                    if (last_used < 0)
-                    {
-                        SetInUse(i, count);
-                        return i;
-                    }
-                    else
-                    {
-                        i = last_used; // will be incremented on the next loop
-                        continue;
-                    }
-                }
-
-                // if we are here then all registers are in use
-                // add more
-
-                int index = in_use.Count;
-                SetInUse(index, count);
-                return index;
-            }
-
-            public void Deallocate(int reg_index, int count = 1)
-            {
-                for (int i = reg_index; i < reg_index + count; i++)
-                {
-                    if (i >= in_use.Count) return;
-                    in_use[i] = false;
-                }
-            }
-
-            private void SetInUse(int reg_index, int count)
-            {
-                for (int i = reg_index; i < reg_index + count; i++)
-                {
-                    if (i >= in_use.Count)
-                        in_use.Add(true);
-                    else
-                        in_use[i] = true;
-                }
-            }
-
-            // Returns first in use register index or -1 if all available
-            private int AreNotInUse(int reg_index, int count)
-            {
-                for (int i = reg_index; i < reg_index + count; i++)
-                {
-                    if (i >= in_use.Count) return -1;
-                    if (in_use[i]) return i;
-                }
-
-                return -1;
+                Allocator = new BlockRegisterAllocator(register_offset);
             }
         }
     }

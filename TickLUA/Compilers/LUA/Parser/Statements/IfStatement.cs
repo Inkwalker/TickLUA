@@ -56,7 +56,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             int main_jump_addr = builder.AddInstruction(Instruction.NOP(), line); //placeholder for jump over main statement
 
             //expression is tested. We can reuse it's register
-            builder.DeallocateRegisters(reg_result);
+            builder.FreeRegisters(1);
 
             mainStatement.Compile(builder);
 

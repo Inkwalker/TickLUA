@@ -7,8 +7,6 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
     {
         private string name;
 
-        public bool IsLocal { get; set; } = false;
-
         public SymbolExpression(string name)
         {
             this.name = name;
@@ -31,24 +29,30 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         {
             int reg_var = builder.ResolveVariable(name);
 
+            // TODO: upvalue support
+            if (reg_var == -1)
+                throw new CompilationException($"Undefined variable '{name}'", SourceRange.from);
+
             // We always copy from a variable register to eliminate accidental overwrites with temp values.
             builder.AddInstruction(Instruction.MOVE(reg_result, (byte)reg_var), (ushort)SourceRange.from.line);
         }
 
         public override void CompileWrite(FunctionBuilder builder, byte reg_value)
         {
-            int register;
-            if (IsLocal)
-                register = builder.AllocateVariable(name);
-            else
-                register = builder.ResolveVariable(name);
+            int register = builder.ResolveVariable(name);
 
+            // TODO: upvalue support
             if (register == -1)
-                throw new CompilationException($"Undefined variable '{name}'", 1, 1); //TODO: line/column
+                throw new CompilationException($"Undefined variable '{name}'", SourceRange.from);
 
             ushort line = (ushort)SourceRange.from.line;
 
             builder.AddInstruction(Instruction.MOVE((byte)register, reg_value), line);
+        }
+
+        public override byte PreallocateRegister(FunctionBuilder builder)
+        {
+            return builder.AllocateVariable(name);
         }
     }
 }

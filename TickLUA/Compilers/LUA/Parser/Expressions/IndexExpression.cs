@@ -31,26 +31,30 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         {
             byte reg_table = builder.AllocateRegisters(1);
             byte reg_key   = builder.AllocateRegisters(1);
+
             variable.CompileRead(builder, reg_table);
             index.CompileRead(builder, reg_key);
 
             builder.AddInstruction(Instruction.GET_TABLE(reg_result, reg_table, reg_key), (ushort)SourceRange.from.line);
             
-            builder.DeallocateRegisters(reg_table);
-            builder.DeallocateRegisters(reg_key);
+            builder.FreeRegisters(2);
         }
 
         public override void CompileWrite(FunctionBuilder builder, byte reg_value)
         {
             byte reg_table = builder.AllocateRegisters(1);
-            byte reg_key = builder.AllocateRegisters(1);
+            byte reg_key   = builder.AllocateRegisters(1);
             variable.CompileRead(builder, reg_table);
             index.CompileRead(builder, reg_key);
 
             builder.AddInstruction(Instruction.SET_TABLE(reg_table, reg_key, reg_value), (ushort)SourceRange.from.line);
 
-            builder.DeallocateRegisters(reg_table);
-            builder.DeallocateRegisters(reg_key);
+            builder.FreeRegisters(2);
+        }
+
+        public override byte PreallocateRegister(FunctionBuilder builder)
+        {
+            throw new CompilationException("Cannot preallocate register for index expression", SourceRange.from);
         }
     }
 }

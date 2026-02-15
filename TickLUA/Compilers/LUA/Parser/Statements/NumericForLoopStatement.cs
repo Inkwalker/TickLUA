@@ -55,7 +55,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             builder.AddInstruction(Instruction.FORLOOP(reg_int, (short)(addr_forprep - addr_forloop)), (ushort)SourceRange.from.line);
             builder.SetInstruction(addr_forprep, Instruction.FORPREP(reg_int, (short)(addr_forloop - addr_forprep - 1)));
 
-            builder.DeallocateRegisters(reg_int, 4);
+            //builder.FreeRegisters(4);
 
             builder.BlockEnd();
         }

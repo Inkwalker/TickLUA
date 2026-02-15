@@ -38,6 +38,8 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             // condition test
             builder.AddInstruction(Instruction.TEST(reg_expr, false), (ushort)SourceRange.from.line);
             int addr_exit_jmp = builder.AddInstruction(Instruction.NOP(), (ushort)SourceRange.from.line); // exit jump placeholder
+            
+            builder.FreeRegisters(1);
 
             // body
             block.Compile(builder);
@@ -50,7 +52,6 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             // set exit jump
             builder.SetInstruction(addr_exit_jmp, Instruction.JMP(addr_exit - addr_exit_jmp - 1));
 
-            builder.DeallocateRegisters(reg_expr);
         }
     }
 }
