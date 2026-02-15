@@ -49,20 +49,24 @@ namespace TickLUA.VM
         internal class UpvalueDef
         {
             public string Name { get; set; }
-            public bool IsLocal { get; set; }
+
+            /// <summary>
+            /// Is defined in the parent function as a local variable?
+            /// </summary>
+            public bool IsLocalToParent { get; set; }
             public byte Index { get; set; }
 
             public UpvalueDef(string name, bool isLocal, byte index)
             {
                 Name = name;
-                IsLocal = isLocal;
+                IsLocalToParent = isLocal;
                 Index = index;
             }
 
             public UpvalueDef(bool isLocal, byte index)
             {
                 Name = null;
-                IsLocal = isLocal;
+                IsLocalToParent = isLocal;
                 Index = index;
             }
         }

@@ -156,6 +156,40 @@ namespace TickLUA.Compilers.LUA
             return -1;
         }
 
+        public int ResloveUpvalue(string name)
+        {
+            // First check if the upvalue is already defined in the current function
+            for (int i = 0; i < function.Upvalues.Count; i++)
+            {
+                if (function.Upvalues[i].Name == name)
+                    return i;
+            }
+
+            // If not, try to resolve it in the parent function
+            if (Parent == null) return -1;
+
+            int reg = Parent.ResolveVariable(name);
+            if (reg >= 0)
+            {
+                Parent.MarkEscaping(reg);
+                function.Upvalues.Add(new LuaFunction.UpvalueDef(name, true, (byte)reg));
+                return function.Upvalues.Count - 1;
+            }
+            else
+            {
+                // If not found in the parent function, try to resolve it as an upvalue in the parent function
+                // And save the result as an upvalue in the current function
+                var pu = Parent.ResloveUpvalue(name);
+                if (pu >= 0)
+                {
+                    function.Upvalues.Add(new LuaFunction.UpvalueDef(name, false, (byte)pu));
+                    return function.Upvalues.Count - 1;
+                }
+            }
+
+            return -1;
+        }
+
         public void MarkEscaping(int index)
         {
             if (index < 0 || index >= MaxRegisters)

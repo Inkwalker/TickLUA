@@ -79,14 +79,7 @@ namespace TickLUA_Tests
             Assert.That(answer.Value , Is.EqualTo(expected_value));
         }
 
-        public static void AssertTableResult(TickVM vm, int result_index = 0)
-        {
-            Assert.NotNull(vm.ExecutionResult);
-            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
-            Assert.IsInstanceOf<TableObject>(vm.ExecutionResult[result_index]);
-        }
-
-        public static void AssertTableResult(TickVM vm, LuaObject key, LuaObject value, int result_index = 0)
+        public static TableObject AssertTableResult(TickVM vm, int result_index = 0)
         {
             Assert.NotNull(vm.ExecutionResult);
             Assert.IsTrue(vm.ExecutionResult.Length > result_index);
@@ -94,8 +87,26 @@ namespace TickLUA_Tests
 
             var table = (TableObject)vm.ExecutionResult[result_index];
 
+            return table;
+        }
+
+        public static void AssertTableResult(TickVM vm, LuaObject key, LuaObject value, int result_index = 0)
+        {
+            var table = AssertTableResult(vm, result_index);
+
             Assert.IsTrue(table.Contains(key));
             Assert.That(table[key], Is.EqualTo(value));
+        }
+
+        public static ClosureObject AssertClosureResult(TickVM vm, int result_index = 0)
+        {
+            Assert.NotNull(vm.ExecutionResult);
+            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.IsInstanceOf<ClosureObject>(vm.ExecutionResult[result_index]);
+
+            var closure = (ClosureObject)vm.ExecutionResult[result_index];
+
+            return closure;
         }
 
         public static void PrintBytecode(LuaFunction func)

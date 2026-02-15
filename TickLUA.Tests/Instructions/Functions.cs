@@ -26,11 +26,7 @@ namespace TickLUA_Tests.Instructions
 
             var vm = Utils.Run(outer, 3);
 
-            Assert.NotNull(vm.ExecutionResult);
-            Assert.IsTrue(vm.ExecutionResult.Length > 0);
-            Assert.IsInstanceOf<ClosureObject>(vm.ExecutionResult[0]);
-
-            var closure = (ClosureObject)vm.ExecutionResult[0];
+            var closure = Utils.AssertClosureResult(vm);
 
             Assert.That(closure.Upvalues[0].Value, Is.EqualTo(new NumberObject(42)));
         }

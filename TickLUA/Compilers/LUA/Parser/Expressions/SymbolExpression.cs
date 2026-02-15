@@ -27,27 +27,56 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         // Compile as read operation
         public override void CompileRead(FunctionBuilder builder, byte reg_result)
         {
+            ushort line = (ushort)SourceRange.from.line;
             int reg_var = builder.ResolveVariable(name);
 
-            // TODO: upvalue support
-            if (reg_var == -1)
-                throw new CompilationException($"Undefined variable '{name}'", SourceRange.from);
-
-            // We always copy from a variable register to eliminate accidental overwrites with temp values.
-            builder.AddInstruction(Instruction.MOVE(reg_result, (byte)reg_var), (ushort)SourceRange.from.line);
+            if (reg_var >= 0)
+            {
+                // local variable, just move it to the result register
+                builder.AddInstruction(Instruction.MOVE(reg_result, (byte)reg_var), line);
+            }
+            else
+            {
+                // try to resolve as upvalue
+                int upval_index = builder.ResloveUpvalue(name);
+                if (upval_index >= 0)
+                {
+                    builder.AddInstruction(Instruction.GET_UPVAL(reg_result, (byte)upval_index), line);
+                }
+                else
+                {
+                    // resolve as global variable
+                    throw new CompilationException($"Undefined variable '{name}'", SourceRange.from);
+                }
+            }
         }
 
         public override void CompileWrite(FunctionBuilder builder, byte reg_value)
         {
-            int register = builder.ResolveVariable(name);
-
-            // TODO: upvalue support
-            if (register == -1)
-                throw new CompilationException($"Undefined variable '{name}'", SourceRange.from);
-
             ushort line = (ushort)SourceRange.from.line;
 
-            builder.AddInstruction(Instruction.MOVE((byte)register, reg_value), line);
+            int reg_var = builder.ResolveVariable(name);
+
+            if (reg_var >= 0)
+            {
+                // local variable, just move the value to it
+                builder.AddInstruction(Instruction.MOVE((byte)reg_var, reg_value), line);
+            }
+            else
+            {
+                // try to resolve as upvalue
+                int upval_index = builder.ResloveUpvalue(name);
+                if (upval_index >= 0)
+                {
+                    builder.AddInstruction(Instruction.SET_UPVAL(reg_value, (byte)upval_index), line);
+                    return;
+                }
+                else
+                {
+                    // resolve as global variable
+                    throw new CompilationException($"Undefined variable '{name}'", SourceRange.from);
+                }
+            }
         }
 
         public override byte PreallocateRegister(FunctionBuilder builder)

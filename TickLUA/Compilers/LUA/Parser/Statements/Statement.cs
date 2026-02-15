@@ -31,14 +31,14 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                     return ForLoopStatement.Create(lexer);
                 case TokenType.Repeat:
                     return new RepeatLoopStatement(lexer);
-                //case TokenType.Function:
-                //    return new FunctionDefinitionStatement(false, lexer);
+                case TokenType.Function:
+                    return new FunctionDefinitionStatement(false, lexer);
                 case TokenType.Local:
                     lexer.Next();
                     switch (lexer.Current.Type)
                     {
-                        //case TokenType.Function: return new FunctionDefinitionStatement(true, lexer);
                         //case TokenType.Class: return new ClassDefinitionStatement(true, lexer);
+                        case TokenType.Function: return new FunctionDefinitionStatement(true, lexer);
                         default: return new AssignmentStatement(true, lexer);
                     }
                 case TokenType.Return:

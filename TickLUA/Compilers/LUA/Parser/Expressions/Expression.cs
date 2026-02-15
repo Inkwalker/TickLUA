@@ -100,8 +100,8 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 //    return new SymbolRefExpression(t, lcontext);
                 case TokenType.BRK_CUR_Left:
                     return new TableExpression(lexer);
-                //case TokenType.Function:
-                //    return new FunctionDefinitionExpression(lexer);
+                case TokenType.Function:
+                    return new FunctionDefinitionExpression(lexer);
                 default:
                     return PrimaryExp(lexer);
             }

@@ -101,7 +101,7 @@ namespace TickLUA.VM.Handlers
             for (int i = 0; i < upvalues.Length; i++)
             {
                 var def = func.Upvalues[i];
-                if (def.IsLocal)
+                if (def.IsLocalToParent)
                     upvalues[i] = frame.Registers[def.Index];
                 else
                     upvalues[i] = frame.Upvalues[def.Index];
