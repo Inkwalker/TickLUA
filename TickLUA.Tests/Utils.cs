@@ -1,5 +1,6 @@
 ﻿using TickLUA.Compilers.LUA;
 using TickLUA.VM.Objects;
+using TickLUA.VM.Tools;
 
 namespace TickLUA_Tests
 {
@@ -9,7 +10,7 @@ namespace TickLUA_Tests
         {
             var luaFunction = LuaCompiler.Compile(code);
 
-            PrintBytecode(luaFunction);
+            BytecodePrinter.ConsoleWrite(luaFunction, true);
             
             return Run(luaFunction, tick_limit);
         }
@@ -107,17 +108,6 @@ namespace TickLUA_Tests
             var closure = (ClosureObject)vm.ExecutionResult[result_index];
 
             return closure;
-        }
-
-        public static void PrintBytecode(LuaFunction func)
-        {
-            Console.WriteLine("Bytecode:");
-            for (int i = 0; i < func.Instructions.Count; i++)
-            {
-                if (func.Meta != null)
-                    Console.Write($"{func.Meta.Lines[i]}   ");
-                Console.WriteLine(func.Instructions[i].ToString());
-            }
         }
     }
 }

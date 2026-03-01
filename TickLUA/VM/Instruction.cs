@@ -118,51 +118,7 @@
 
         public override string ToString()
         {
-            var opcode = Opcode;
-
-            switch (opcode)
-            {
-                case Opcode.NOP:
-                    return opcode.ToString();
-                case Opcode.LOAD_TRUE:
-                case Opcode.LOAD_FALSE:
-                case Opcode.LOAD_FALSE_SKIP:
-                case Opcode.NEW_TABLE:
-                    return $"{opcode} {A}";
-                case Opcode.MOVE:
-                case Opcode.LOAD_NIL:
-                case Opcode.NOT:
-                case Opcode.UNM:
-                case Opcode.TEST:
-                case Opcode.LEN:
-                case Opcode.GET_UPVAL:
-                case Opcode.SET_UPVAL:
-                    return $"{opcode} {A} {B}";
-                case Opcode.LOAD_CONST:
-                case Opcode.RETURN:
-                case Opcode.CLOSURE:
-                    return $"{opcode} {A} {Bx}";
-                case Opcode.LOAD_INT:
-                case Opcode.FORLOOP:
-                case Opcode.FORPREP:
-                    return $"{opcode} {A} {BxSigned}";
-                case Opcode.ADD:
-                case Opcode.SUB:
-                case Opcode.MUL:
-                case Opcode.DIV:
-                case Opcode.MOD:
-                case Opcode.POW:
-                case Opcode.IDIV:
-                case Opcode.TESTSET:
-                case Opcode.LE:
-                case Opcode.LT:
-                case Opcode.EQ:
-                    return $"{opcode} {A} {B} {C}";
-                case Opcode.JMP:
-                    return $"{opcode} {AxSigned}";
-                default:
-                    return $"{opcode} {A} {B} {C}";
-            }
+            return $"{Opcode} {A} {B} {C}";
         }
     }
 }

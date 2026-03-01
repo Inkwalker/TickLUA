@@ -1,5 +1,6 @@
 ﻿using TickLUA.Compilers;
 using TickLUA.Compilers.LUA;
+using TickLUA.VM.Tools;
 using TickLUA_Tests.Instructions;
 
 namespace TickLUA_Tests.LUA
@@ -129,7 +130,7 @@ namespace TickLUA_Tests.LUA
                   return x, y, z";
 
             var luaFunction = LuaCompiler.Compile(source);
-            Utils.PrintBytecode(luaFunction);
+            BytecodePrinter.ConsoleWrite(luaFunction);
 
             Assert.That(luaFunction.Constants.Count, Is.LessThanOrEqualTo(1));
 
