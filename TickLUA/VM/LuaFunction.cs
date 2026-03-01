@@ -5,6 +5,7 @@ namespace TickLUA.VM
 {
     public class LuaFunction
     {
+        public string Name { get; private set; }
         internal List<Instruction> Instructions { get; }
         internal List<LuaObject> Constants { get; }
         internal int RegisterCount { get; set; }
@@ -14,6 +15,7 @@ namespace TickLUA.VM
         public int InstructionCount => Instructions.Count;
 
         internal LuaFunction(
+            string name,
             IEnumerable<Instruction> instructions,
             IEnumerable<LuaObject> constants,
             IEnumerable<UpvalueDef> upvalues,
@@ -21,6 +23,7 @@ namespace TickLUA.VM
             int registerCount
         )
         {
+            Name = name;
             Instructions = new List<Instruction>(instructions);
             Constants = new List<LuaObject>(constants);
             Upvalues = new List<UpvalueDef>(upvalues);
@@ -30,8 +33,9 @@ namespace TickLUA.VM
             Meta = meta;
         }
 
-        internal LuaFunction(int registerCount)
+        internal LuaFunction(string name, int registerCount)
         {
+            Name = name;
             Instructions = new List<Instruction>();
             Constants = new List<LuaObject>();
             Upvalues = new List<UpvalueDef>();

@@ -12,9 +12,9 @@ namespace TickLUA.Compilers.LUA
             lexer.Next();
 
 
-            var builder = new FunctionBuilder();
+            var builder = new FunctionBuilder("main");
 
-            var chunk = new BlockStatement(lexer);
+            var chunk = new RootStatement(lexer);
 
             chunk.Compile(builder);
 

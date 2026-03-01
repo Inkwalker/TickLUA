@@ -29,11 +29,10 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
             body = new BlockStatement(lexer);
 
-            AssertTokenNext(lexer, TokenType.End);
-
             var end_pos = lexer.Current.Position;
-
             SourceRange = new SourceRange(start_pos, end_pos);
+
+            AssertTokenNext(lexer, TokenType.End);
         }
 
         private bool ParseVar(LuaLexer lexer)
@@ -65,6 +64,8 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                         break;
                 }
             }
+
+            // TODO: source range
 
             variable = new SymbolExpression(chain[0]);
 
@@ -104,12 +105,12 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             if (local)
                 variable.PreallocateRegister(builder);
 
-            byte temp = builder.AllocateRegisters(1);
+            var context_temp = builder.AllocateRegistersContext(1);
 
-            expr.CompileRead(builder, temp);
-            variable.CompileWrite(builder, temp);
+            expr.CompileRead(builder, context_temp);
+            variable.CompileWrite(builder, context_temp);
 
-            builder.FreeRegisters(1);
+            builder.FreeRegisters(context_temp);
         }
     }
 }

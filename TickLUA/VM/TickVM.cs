@@ -33,9 +33,10 @@ namespace TickLUA.VM
             { Opcode.CONCAT,          HandlersMath.CONCAT },
             { Opcode.UNM,             HandlersMath.UNM },
             // Functions
-            { Opcode.GET_UPVAL,        HandlersCore.GET_UPVAL },
-            { Opcode.SET_UPVAL,        HandlersCore.SET_UPVAL },
+            { Opcode.GET_UPVAL,       HandlersCore.GET_UPVAL },
+            { Opcode.SET_UPVAL,       HandlersCore.SET_UPVAL },
             { Opcode.CLOSURE,         HandlersCore.CLOSURE },
+            { Opcode.CALL,            HandlersCore.CALL },
             { Opcode.RETURN,          HandlersCore.RETURN },
             // Logic
             { Opcode.TEST,            HandlersLogic.TEST },
@@ -70,8 +71,9 @@ namespace TickLUA.VM
 
             // TODO: add _ENV upvalue here
             var upvalues = new RegisterCell[0];
+            var frame = new StackFrame(bytecode, upvalues);
 
-            CallFunction(bytecode, upvalues);
+            PushFrame(frame);
         }
 
         private InstructionHandler[] LoadInstructionSet()
@@ -96,12 +98,6 @@ namespace TickLUA.VM
             var instruction = frame.Step();
 
             Execute(frame, instruction);
-
-            if (frame.IsFinished)
-            {
-                callStack.Pop();
-                ExecutionResult = frame.Results;
-            }
         }
 
         private void Execute(StackFrame frame, Instruction instruction)
@@ -110,10 +106,27 @@ namespace TickLUA.VM
             instructionHandlers[opcode](this, frame, instruction);
         }
 
-        private void CallFunction(LuaFunction function, RegisterCell[] upvalues)
+        internal void PushFrame(StackFrame frame)
         {
-            var frame = new StackFrame(function, upvalues);
             callStack.Push(frame);
+        }
+
+        internal StackFrame PopFrame()
+        {
+            return callStack.Pop();
+        }
+
+        internal StackFrame PeekFrame()
+        {
+            if (callStack.Count == 0)
+                return null;
+            else
+                return callStack.Peek();
+        }
+
+        internal void SetExecutionResult(params LuaObject[] result)
+        {
+            ExecutionResult = result;
         }
     }
 }

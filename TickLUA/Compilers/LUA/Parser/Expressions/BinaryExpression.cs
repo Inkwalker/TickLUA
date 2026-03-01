@@ -288,28 +288,26 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             }
         }
 
-        public override void CompileRead(FunctionBuilder builder, byte reg_result)
+        public override void CompileRead(FunctionBuilder builder, RegisterContext target_register)
         {
             if (operation != BinaryOperation.Invalid)
             {
-                var reg_r = builder.AllocateRegisters(1);
-                var reg_l = builder.AllocateRegisters(1);
-
-                right.CompileRead(builder, reg_r);
-                left.CompileRead(builder, reg_l);
+                var context_r = right.CompileReadAuto(builder);
+                var context_l = left.CompileReadAuto(builder);
 
                 ushort line = (ushort)SourceRange.from.line;
 
                 WriteInstructions(
                     builder,
                     operation,
-                    reg_result, 
-                    reg_l,
-                    reg_r,
+                    target_register.index,
+                    context_l.index,
+                    context_r.index,
                     line
                 );
 
-                builder.FreeRegisters(2);
+                builder.FreeRegisters(context_l);
+                builder.FreeRegisters(context_r);
             }
         }
 

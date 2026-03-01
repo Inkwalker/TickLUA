@@ -25,7 +25,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         }
 
         // Compile as read operation
-        public override void CompileRead(FunctionBuilder builder, byte reg_result)
+        public override void CompileRead(FunctionBuilder builder, RegisterContext target_register)
         {
             ushort line = (ushort)SourceRange.from.line;
             int reg_var = builder.ResolveVariable(name);
@@ -33,7 +33,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             if (reg_var >= 0)
             {
                 // local variable, just move it to the result register
-                builder.AddInstruction(Instruction.MOVE(reg_result, (byte)reg_var), line);
+                builder.AddInstruction(Instruction.MOVE(target_register.index, (byte)reg_var), line);
             }
             else
             {
@@ -41,7 +41,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 int upval_index = builder.ResloveUpvalue(name);
                 if (upval_index >= 0)
                 {
-                    builder.AddInstruction(Instruction.GET_UPVAL(reg_result, (byte)upval_index), line);
+                    builder.AddInstruction(Instruction.GET_UPVAL(target_register.index, (byte)upval_index), line);
                 }
                 else
                 {
@@ -51,7 +51,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             }
         }
 
-        public override void CompileWrite(FunctionBuilder builder, byte reg_value)
+        public override void CompileWrite(FunctionBuilder builder, RegisterContext value_register)
         {
             ushort line = (ushort)SourceRange.from.line;
 
@@ -60,7 +60,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             if (reg_var >= 0)
             {
                 // local variable, just move the value to it
-                builder.AddInstruction(Instruction.MOVE((byte)reg_var, reg_value), line);
+                builder.AddInstruction(Instruction.MOVE((byte)reg_var, value_register.index), line);
             }
             else
             {
@@ -68,7 +68,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 int upval_index = builder.ResloveUpvalue(name);
                 if (upval_index >= 0)
                 {
-                    builder.AddInstruction(Instruction.SET_UPVAL(reg_value, (byte)upval_index), line);
+                    builder.AddInstruction(Instruction.SET_UPVAL(value_register.index, (byte)upval_index), line);
                     return;
                 }
                 else

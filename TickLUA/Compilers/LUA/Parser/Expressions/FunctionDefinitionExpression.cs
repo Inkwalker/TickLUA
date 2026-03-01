@@ -40,15 +40,15 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
             body = new BlockStatement(lexer);
 
-            AssertTokenNext(lexer, TokenType.End);
-
             var end_pos = lexer.Current.Position;
             SourceRange = new SourceRange(start_pos, end_pos);
+
+            AssertTokenNext(lexer, TokenType.End);
         }
 
-        public override void CompileRead(FunctionBuilder builder, byte reg_result)
+        public override void CompileRead(FunctionBuilder builder, RegisterContext target_register)
         {
-            var nested_builder = builder.CreateNestedFunction(out int func_index);
+            var nested_builder = builder.CreateNestedFunction(FunctionName, out int func_index);
 
             foreach (var p in parameters)
             {
@@ -61,7 +61,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             //Return. This section will execute only if there is no return statements before.
             nested_builder.AddInstruction(Instruction.RETURN(0, 0), (ushort)SourceRange.to.line);
 
-            builder.AddInstruction(Instruction.CLOSURE(reg_result, (ushort)func_index), (ushort)SourceRange.from.line);
+            builder.AddInstruction(Instruction.CLOSURE(target_register.index, (ushort)func_index), (ushort)SourceRange.from.line);
         }
     }
 }

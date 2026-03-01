@@ -30,16 +30,15 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
         public override void Compile(FunctionBuilder builder)
         {
             // condition expr
-            byte reg_expr = builder.AllocateRegisters(1);
             int addr_start = builder.InstructionCount;
 
-            condition.CompileRead(builder, reg_expr);
+            var context_expr = condition.CompileReadAuto(builder);
 
             // condition test
-            builder.AddInstruction(Instruction.TEST(reg_expr, false), (ushort)SourceRange.from.line);
+            builder.AddInstruction(Instruction.TEST(context_expr.index, false), (ushort)SourceRange.from.line);
             int addr_exit_jmp = builder.AddInstruction(Instruction.NOP(), (ushort)SourceRange.from.line); // exit jump placeholder
             
-            builder.FreeRegisters(1);
+            builder.FreeRegisters(context_expr);
 
             // body
             block.Compile(builder);

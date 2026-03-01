@@ -1,20 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace TickLUA.VM.Objects
+﻿namespace TickLUA.VM.Objects
 {
     internal class ClosureObject : LuaObject
     {
+        public LuaFunction Function { get; set; }
         public RegisterCell[] Upvalues { get; set; }
 
-        public ClosureObject(int upvalue_count)
+        public ClosureObject(LuaFunction function)
         {
-            Upvalues = new RegisterCell[upvalue_count];
+            Function = function;
+            Upvalues = new RegisterCell[0];
         }
 
-        public ClosureObject(RegisterCell[] upvalues)
+        public ClosureObject(LuaFunction function, RegisterCell[] upvalues)
         {
+            Function = function;
             Upvalues = upvalues;
         }
 

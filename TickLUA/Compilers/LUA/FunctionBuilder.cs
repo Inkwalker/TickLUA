@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using TickLUA.Compilers.LUA.Parser.Expressions;
 using TickLUA.VM;
 using TickLUA.VM.Objects;
 
@@ -17,11 +18,11 @@ namespace TickLUA.Compilers.LUA
         public FunctionBuilder Parent { get; private set; } = null;
         public int MaxRegisters { get; private set; }
 
-        public FunctionBuilder(FunctionBuilder parent = null)
+        public FunctionBuilder(string function_name, FunctionBuilder parent = null)
         {
             Parent = parent;
 
-            function = new LuaFunction(0);
+            function = new LuaFunction(function_name, 0);
             blocks = new IndexableStack<BlockFrame>();
         }
 
@@ -96,6 +97,12 @@ namespace TickLUA.Compilers.LUA
             return (byte)index;
         }
 
+        public Expression.RegisterContext AllocateRegistersContext(int count)
+        {
+            byte reg = AllocateRegisters(count);
+            return new Expression.RegisterContext { index = reg, count = (byte)count };
+        }
+
         /// <summary>
         /// Free registers allocated in the current block.
         /// </summary>
@@ -104,6 +111,15 @@ namespace TickLUA.Compilers.LUA
         {
             var block = blocks.Peek();
             block.Allocator.Free(count);
+        }
+
+        /// <summary>
+        /// Free registers allocated in the current block.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">When trying to free more registers than allocated</exception>"
+        public void FreeRegisters(Expression.RegisterContext context)
+        {
+            FreeRegisters(context.count);
         }
 
         /// <summary>
@@ -225,9 +241,9 @@ namespace TickLUA.Compilers.LUA
             blocks.Pop();
         }
 
-        public FunctionBuilder CreateNestedFunction(out int func_index)
+        public FunctionBuilder CreateNestedFunction(string function_name, out int func_index)
         {
-            var nested = new FunctionBuilder(this);
+            var nested = new FunctionBuilder($"{function.Name}.{function_name}", this);
             nested_builders.Add(nested);
             func_index = nested_builders.Count - 1;
             return nested;

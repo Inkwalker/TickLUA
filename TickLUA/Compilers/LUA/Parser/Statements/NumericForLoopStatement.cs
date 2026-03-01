@@ -33,12 +33,16 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
             builder.NameRegister(reg_ext, variable_name);
 
-            init_expr.CompileRead(builder, reg_int);
-            limit_expr.CompileRead(builder, reg_limit);
+            var context_int   = new Expression.RegisterContext(reg_int, 1);
+            var context_limit = new Expression.RegisterContext(reg_limit, 1);
+            var context_step  = new Expression.RegisterContext(reg_step, 1);
+
+            init_expr.CompileRead(builder, context_int);
+            limit_expr.CompileRead(builder, context_limit);
 
             if (step_expr != null)
             {
-                step_expr.CompileRead(builder, reg_step);
+                step_expr.CompileRead(builder, context_step);
             }
             else
             {

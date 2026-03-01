@@ -1,4 +1,5 @@
-﻿using TickLUA.VM.Objects;
+﻿using System.Drawing;
+using TickLUA.VM.Objects;
 
 namespace TickLUA.VM.Handlers
 {
@@ -74,14 +75,68 @@ namespace TickLUA.VM.Handlers
             }
         }
 
+        internal static void CALL(TickVM vm, StackFrame frame, Instruction instruction)
+        {
+            byte func_reg = instruction.A;
+            int arg_count = instruction.B - 1;
+            int res_count = instruction.C - 1;
+
+            var func_value = frame.Registers[func_reg].Value;
+            if (func_value is ClosureObject closure)
+            {
+                var new_frame = new StackFrame(closure.Function, closure.Upvalues);
+                for (int i = 0; i < arg_count; i++)
+                {
+                    new_frame.Registers[i] = frame.Registers[func_reg + i + 1];
+                }
+
+                new_frame.ResultsStartRegister = func_reg;
+                new_frame.ResultsCount = res_count;
+
+                vm.PushFrame(new_frame);
+            }
+            else
+            {
+                throw new RuntimeException($"Attempt to call a non-function value of type {func_value.GetType().Name}");
+            }
+        }
+
         internal static void RETURN(TickVM vm, StackFrame frame, Instruction instruction)
         {
             frame.PC = frame.Function.Instructions.Count;
 
-            byte a = instruction.A;
-            ushort b = instruction.Bx;
+            byte reg_start = instruction.A;
+            int count = instruction.Bx - 1;
 
-            frame.SetResults(a, b - 1);
+            if (count < 0)
+                count = frame.Registers.Length - reg_start;
+
+            var results = new LuaObject[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                results[i] = frame.Registers[i + reg_start].Value;
+            }
+
+            vm.PopFrame();
+
+            var caller_frame = vm.PeekFrame();
+
+            if (caller_frame != null)
+            {
+                byte reg_result = frame.ResultsStartRegister;
+                int expected_count = frame.ResultsCount;
+
+                if (expected_count < 0)
+                    expected_count = results.Length;
+
+                for (int i = 0; i < expected_count; i++)
+                {
+                    caller_frame.Registers[reg_result + i].Value = i < results.Length ? results[i] : NilObject.Nil;
+                }
+            }
+            else
+                vm.SetExecutionResult(results);
         }
 
         internal static void JMP(TickVM vm, StackFrame frame, Instruction instruction)
@@ -107,7 +162,7 @@ namespace TickLUA.VM.Handlers
                     upvalues[i] = frame.Upvalues[def.Index];
             }
 
-            frame.Registers[reg_result].Value = new ClosureObject(upvalues);
+            frame.Registers[reg_result].Value = new ClosureObject(func, upvalues);
         }
 
         internal static void GET_UPVAL(TickVM vm, StackFrame frame, Instruction instruction)
@@ -143,10 +198,16 @@ namespace TickLUA.VM
         internal static Instruction LOAD_FALSE_SKIP(byte dest_reg) => new Instruction(Opcode.LOAD_FALSE_SKIP, dest_reg, 0, 0);
         internal static Instruction LOAD_BOOL(byte dest_reg, bool value) => value ? LOAD_TRUE(dest_reg) : LOAD_FALSE(dest_reg);
         internal static Instruction LOAD_NIL(byte start_reg, byte count = 1) => new Instruction(Opcode.LOAD_NIL, start_reg, count, 0);
+        internal static Instruction CALL(byte func_reg, int arg_count, int resul_count)
+        {
+            byte b = arg_count < -1 ? (byte)0 : (byte)(arg_count + 1);
+            byte c = resul_count < -1 ? (byte)0 : (byte)(resul_count + 1);
+            return new Instruction(Opcode.CALL, func_reg, b, c);
+        }
         internal static Instruction RETURN(byte start_reg, int count)
         {
-            int c = count < -1 ? -1 : count;
-            return new Instruction(Opcode.RETURN, start_reg, (ushort)(c + 1));
+            ushort c = count < -1 ? (ushort)0 : (ushort)(count + 1);
+            return new Instruction(Opcode.RETURN, start_reg, c);
         }
         internal static Instruction JMP(int offset) => new Instruction(Opcode.JMP, offset);
 

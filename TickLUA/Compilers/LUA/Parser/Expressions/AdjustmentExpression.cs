@@ -11,9 +11,9 @@
             SourceRange = expr.SourceRange;
         }
 
-        public override void CompileRead(FunctionBuilder builder, byte reg_result)
+        public override void CompileRead(FunctionBuilder builder, RegisterContext target_register)
         {
-            expr.CompileRead(builder, reg_result);
+            expr.CompileRead(builder, target_register);
         }
     }
 }

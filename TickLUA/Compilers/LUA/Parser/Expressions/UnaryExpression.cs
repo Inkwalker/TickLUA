@@ -27,24 +27,26 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             SourceRange = new SourceRange(start_pos, end_pos);
         }
 
-        public override void CompileRead(FunctionBuilder builder, byte reg_result)
+        public override void CompileRead(FunctionBuilder builder, RegisterContext target_register)
         {
-            expression.CompileRead(builder, reg_result);
+            expression.CompileRead(builder, target_register);
 
             if (operation != OperationType.None)
             {
                 ushort line = (ushort)SourceRange.from.line;
 
+                byte reg = target_register.index;
+
                 switch (operation)
                 {
                     case OperationType.Negate:
-                        builder.AddInstruction(Instruction.UNM(reg_result, reg_result), line);
+                        builder.AddInstruction(Instruction.UNM(reg, reg), line);
                         break;
                     case OperationType.Not:
-                        builder.AddInstruction(Instruction.NOT(reg_result, reg_result), line);
+                        builder.AddInstruction(Instruction.NOT(reg, reg), line);
                         break;
                     case OperationType.Len:
-                        builder.AddInstruction(Instruction.LEN(reg_result, reg_result), line);
+                        builder.AddInstruction(Instruction.LEN(reg, reg), line);
                         break;
                     default:
                         throw new CompilationException($"Unexpected unary operator", line, 1);

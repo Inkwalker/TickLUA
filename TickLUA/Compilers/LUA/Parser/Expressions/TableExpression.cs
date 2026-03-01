@@ -72,9 +72,9 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             args.Add(new TableArgumentNode(key, value));
         }
 
-        public override void CompileRead(FunctionBuilder builder, byte reg_result)
+        public override void CompileRead(FunctionBuilder builder, RegisterContext target_register)
         { 
-            builder.AddInstruction(Instruction.NEW_TABLE(reg_result), (ushort)SourceRange.from.line);
+            builder.AddInstruction(Instruction.NEW_TABLE(target_register.index), (ushort)SourceRange.from.line);
 
             int array_size = GetArrayElementsCount();
             byte start_reg = array_size > 0 ? builder.AllocateRegisters(array_size) : (byte)0;
@@ -86,25 +86,32 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
                 if (arg.HasKey)
                 {
-                    byte reg_key = builder.AllocateRegisters(1);
-                    byte reg_val = builder.AllocateRegisters(1);
+                    var context_key = arg.Key.CompileReadAuto(builder);
+                    var context_val = arg.Value.CompileReadAuto(builder);
 
-                    arg.Key.CompileRead(builder, reg_key);
-                    arg.Value.CompileRead(builder, reg_val);
-                    builder.AddInstruction(Instruction.SET_TABLE(reg_result, reg_key, reg_val), (ushort)arg.Key.SourceRange.from.line);
+                    builder.AddInstruction (
+                        Instruction.SET_TABLE (
+                            target_register.index, 
+                            context_key.index, 
+                            context_val.index
+                        ), 
+                        (ushort) arg.Key.SourceRange.from.line
+                    );
                     
-                    builder.FreeRegisters(2);
+                    builder.FreeRegisters(context_val);
+                    builder.FreeRegisters(context_key);
                 }
                 else
                 {
-                    arg.Value.CompileRead(builder, (byte)(start_reg + array_index));
+                    var context = new RegisterContext((byte)(start_reg + array_index), 1);
+                    arg.Value.CompileRead(builder, context);
                     array_index++;
                 }
             }
 
             if (array_size > 0)
             {
-                builder.AddInstruction(Instruction.SET_LIST(reg_result, start_reg, (byte)array_size), (ushort)SourceRange.from.line);
+                builder.AddInstruction(Instruction.SET_LIST(target_register.index, start_reg, (byte)array_size), (ushort)SourceRange.from.line);
                 builder.FreeRegisters(array_size);
             }
         }

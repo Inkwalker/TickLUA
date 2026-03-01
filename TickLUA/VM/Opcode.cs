@@ -178,7 +178,14 @@
         /// </summary>
         TESTSET,
 
-        //CALL,
+        /// <summary>
+        /// Call a function.
+        /// A - function closure reg, 
+        /// B - number of args (0 - all, 1 - none, 2+ - (B-1), 
+        /// C - number of results (0 - all, 1 - none, 2+ - (C-1)
+        /// Will read arguments from A + 1, A + 2, ... and write results to A, A + 1, ...
+        /// </summary>
+        CALL,
         //TAILCALL,
         /// <summary>
         /// Return from a function. 

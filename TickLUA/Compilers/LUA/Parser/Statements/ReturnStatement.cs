@@ -44,7 +44,8 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             for (int i = 0; i < values.Count; i++)
             {
                 byte reg = (byte)(reg_start + i);
-                values[i].CompileRead(builder, reg);
+                var context = new Expression.RegisterContext(reg, 1);
+                values[i].CompileRead(builder, context);
             }
 
             builder.AddInstruction(Instruction.RETURN(reg_start, values.Count), line);

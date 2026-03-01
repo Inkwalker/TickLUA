@@ -7,7 +7,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void NEW_TABLE()
         {
-            var bytecode = new LuaFunction(1);
+            var bytecode = new LuaFunction("main", 1);
 
             bytecode.Instructions.Add(Instruction.NEW_TABLE(0));
             bytecode.Instructions.Add(Instruction.RETURN(0, 1));
@@ -20,7 +20,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void SET_TABLE()
         {
-            var bytecode = new LuaFunction(3);
+            var bytecode = new LuaFunction("main", 3);
 
             bytecode.Instructions.Add(Instruction.NEW_TABLE(0));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 5));
@@ -36,7 +36,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void GET_TABLE()
         {
-            var bytecode = new LuaFunction(4);
+            var bytecode = new LuaFunction("main", 4);
 
             bytecode.Instructions.Add(Instruction.NEW_TABLE(0));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 5));
@@ -53,7 +53,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void SET_LIST()
         {
-            var bytecode = new LuaFunction(3);
+            var bytecode = new LuaFunction("main", 3);
 
             bytecode.Instructions.Add(Instruction.NEW_TABLE(0));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 5));
@@ -70,7 +70,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void SET_FIELD()
         {
-            var bytecode = new LuaFunction(2);
+            var bytecode = new LuaFunction("main", 2);
 
             bytecode.Constants.Add(BooleanObject.False);
 
@@ -87,7 +87,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void GET_FIELD()
         {
-            var bytecode = new LuaFunction(3);
+            var bytecode = new LuaFunction("main", 3);
 
             bytecode.Constants.Add(BooleanObject.False);
 
@@ -105,7 +105,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void LEN()
         {
-            var bytecode = new LuaFunction(4);
+            var bytecode = new LuaFunction("main", 4);
 
             bytecode.Instructions.Add(Instruction.NEW_TABLE(0));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 5));

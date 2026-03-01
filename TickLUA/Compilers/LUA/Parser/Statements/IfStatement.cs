@@ -48,15 +48,14 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
         public override void Compile(FunctionBuilder builder)
         {
-            byte reg_result = builder.AllocateRegisters(1);
-            expression.CompileRead(builder, reg_result);
+            var context_result = expression.CompileReadAuto(builder);
             ushort line = (ushort)SourceRange.from.line;
 
-            builder.AddInstruction(Instruction.TEST(reg_result, false), line);
+            builder.AddInstruction(Instruction.TEST(context_result.index, false), line);
             int main_jump_addr = builder.AddInstruction(Instruction.NOP(), line); //placeholder for jump over main statement
 
             //expression is tested. We can reuse it's register
-            builder.FreeRegisters(1);
+            builder.FreeRegisters(context_result);
 
             mainStatement.Compile(builder);
 

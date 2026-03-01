@@ -12,7 +12,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void ADD()
         {
-            var bytecode = new LuaFunction(3);
+            var bytecode = new LuaFunction("main", 3);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 40));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 2));
@@ -27,7 +27,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void SUB()
         {
-            var bytecode = new LuaFunction(3);
+            var bytecode = new LuaFunction("main", 3);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 2));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 12));
@@ -42,7 +42,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void MUL()
         {
-            var bytecode = new LuaFunction(3);
+            var bytecode = new LuaFunction("main", 3);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 3));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 4));
@@ -57,7 +57,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void MOD()
         {
-            var bytecode = new LuaFunction(3);
+            var bytecode = new LuaFunction("main", 3);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 32));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 5));
@@ -72,7 +72,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void POW()
         {
-            var bytecode = new LuaFunction(3);
+            var bytecode = new LuaFunction("main", 3);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 2));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 6));
@@ -87,7 +87,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void DIV()
         {
-            var bytecode = new LuaFunction(3);
+            var bytecode = new LuaFunction("main", 3);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 5));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 2));
@@ -102,7 +102,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void IDIV()
         {
-            var bytecode = new LuaFunction(3);
+            var bytecode = new LuaFunction("main", 3);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 12));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 4));
@@ -117,7 +117,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void CONCAT()
         {
-            var bytecode = new LuaFunction(3);
+            var bytecode = new LuaFunction("main", 3);
 
             bytecode.Constants.Add(new StringObject("hello "));
             bytecode.Constants.Add(new StringObject("world"));
@@ -135,7 +135,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void UNM()
         {
-            var bytecode = new LuaFunction(2);
+            var bytecode = new LuaFunction("main", 2);
 
             bytecode.Constants.Add(new NumberObject(3.14f));
 

@@ -8,6 +8,8 @@ namespace TickLUA.VM.Objects
 
         public float Value { get; }
 
+        public bool IsInteger => Value == (int)Value;
+
         public NumberObject(int value)
         {
             Value = value;

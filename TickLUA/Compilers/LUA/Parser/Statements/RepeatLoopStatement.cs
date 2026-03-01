@@ -34,15 +34,14 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
 
             // condition test
-            byte reg_expr = builder.AllocateRegisters(1);
-            condition.CompileRead(builder, reg_expr);
+            var context_expr = condition.CompileReadAuto(builder);
 
-            builder.AddInstruction(Instruction.TEST(reg_expr, false), (ushort)SourceRange.from.line);
+            builder.AddInstruction(Instruction.TEST(context_expr.index, false), (ushort)SourceRange.from.line);
             int addr_loop_jmp = builder.InstructionCount;
             // jump back
             builder.AddInstruction(Instruction.JMP(addr_start - addr_loop_jmp - 1), (ushort)SourceRange.from.line);
 
-            builder.FreeRegisters(1);
+            builder.FreeRegisters(context_expr);
         }
     }
 }

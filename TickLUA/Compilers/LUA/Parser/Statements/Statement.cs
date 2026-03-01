@@ -50,13 +50,12 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 default:
                     {
                         Expression exp = Expression.PrimaryExp(lexer);
-                        //        FunctionCallExpression fnexp = exp as FunctionCallExpression;
+                        FunctionCallExpression fnexp = exp as FunctionCallExpression;
 
-                        //        if (fnexp != null)
-                        //            return new FunctionCallStatement(fnexp);
-                        //        else
-                    
-                        return new AssignmentStatement(exp, lexer);
+                        if (fnexp != null)
+                            return new FunctionCallStatement(fnexp);
+                        else
+                            return new AssignmentStatement(exp, lexer);
                     }
             }
         }

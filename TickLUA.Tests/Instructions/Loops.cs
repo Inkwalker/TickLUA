@@ -12,7 +12,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void FORPREP()
         {
-            var bytecode = new LuaFunction(4);
+            var bytecode = new LuaFunction("main", 4);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, 1));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 5));
@@ -36,7 +36,7 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void FORLOOP()
         {
-            var bytecode = new LuaFunction(4);
+            var bytecode = new LuaFunction("main", 4);
 
             bytecode.Instructions.Add(Instruction.LOAD_INT(0, -1));
             bytecode.Instructions.Add(Instruction.LOAD_INT(1, 5));

@@ -27,29 +27,26 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         //    return new IndexExpression(variable, index);
         //}
 
-        public override void CompileRead(FunctionBuilder builder, byte reg_result)
+        public override void CompileRead(FunctionBuilder builder, RegisterContext target_register)
         {
-            byte reg_table = builder.AllocateRegisters(1);
-            byte reg_key   = builder.AllocateRegisters(1);
+            var context_table = variable.CompileReadAuto(builder);
+            var context_key   = index.CompileReadAuto(builder);
 
-            variable.CompileRead(builder, reg_table);
-            index.CompileRead(builder, reg_key);
-
-            builder.AddInstruction(Instruction.GET_TABLE(reg_result, reg_table, reg_key), (ushort)SourceRange.from.line);
+            builder.AddInstruction(Instruction.GET_TABLE(target_register.index, context_table.index, context_key.index), (ushort)SourceRange.from.line);
             
-            builder.FreeRegisters(2);
+            builder.FreeRegisters(context_key);
+            builder.FreeRegisters(context_table);
         }
 
-        public override void CompileWrite(FunctionBuilder builder, byte reg_value)
+        public override void CompileWrite(FunctionBuilder builder, RegisterContext value_register)
         {
-            byte reg_table = builder.AllocateRegisters(1);
-            byte reg_key   = builder.AllocateRegisters(1);
-            variable.CompileRead(builder, reg_table);
-            index.CompileRead(builder, reg_key);
+            var context_table = variable.CompileReadAuto(builder);
+            var context_key   = index.CompileReadAuto(builder);
 
-            builder.AddInstruction(Instruction.SET_TABLE(reg_table, reg_key, reg_value), (ushort)SourceRange.from.line);
+            builder.AddInstruction(Instruction.SET_TABLE(context_table.index, context_key.index, value_register.index), (ushort)SourceRange.from.line);
 
-            builder.FreeRegisters(2);
+            builder.FreeRegisters(context_key);
+            builder.FreeRegisters(context_table);
         }
 
         public override byte PreallocateRegister(FunctionBuilder builder)

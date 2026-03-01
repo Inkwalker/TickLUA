@@ -154,12 +154,11 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 if (local)
                     variables[0].PreallocateRegister(builder);
 
-                byte reg_result = builder.AllocateRegisters(1);
-                bin_op.CompileRead(builder, reg_result);
+                var context_result = bin_op.CompileReadAuto(builder);
 
-                variables[0].CompileWrite(builder, reg_result);
+                variables[0].CompileWrite(builder, context_result);
 
-                builder.FreeRegisters(1);
+                builder.FreeRegisters(context_result);
             }
             else
             {
@@ -174,16 +173,16 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
                 for (int i = 0; i < max; i++)
                 {
-                    byte reg = builder.AllocateRegisters(1);
+                    var context_reg = builder.AllocateRegistersContext(1);
                     if (i < values.Count)
-                        values[i].CompileRead(builder, reg);
+                        values[i].CompileRead(builder, context_reg);
                     else
-                        builder.AddInstruction(Instruction.LOAD_NIL(reg), line);
+                        builder.AddInstruction(Instruction.LOAD_NIL(context_reg.index), line);
 
                     if (i < variables.Count)
-                        variables[i].CompileWrite(builder, reg);
+                        variables[i].CompileWrite(builder, context_reg);
 
-                    builder.FreeRegisters(1);
+                    builder.FreeRegisters(context_reg);
                 }
             }
         }

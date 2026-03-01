@@ -15,6 +15,19 @@
         }
 
         [Test]
+        public void FunctionCall()
+        {
+            string source = @"
+                local function a()
+                    return 42
+                end
+                return a()";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 42);
+        }
+
+        [Test]
         public void ClosureForLoop()
         {
             // for loops in lua create a new external value each iteration.
@@ -24,7 +37,7 @@
 
                 for i = 1, 3 do
                     funcs[i] = function()
-                        print(i)
+                        return i
                     end
                 end
 

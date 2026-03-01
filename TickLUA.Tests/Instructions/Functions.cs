@@ -12,13 +12,13 @@ namespace TickLUA_Tests.Instructions
         [Test]
         public void CLOSURE()
         {
-            var outer = new LuaFunction(2);
+            var outer = new LuaFunction("main", 2);
 
             outer.Instructions.Add(Instruction.LOAD_INT(0, 42));
             outer.Instructions.Add(Instruction.CLOSURE(1, 0));
             outer.Instructions.Add(Instruction.RETURN(1, 1));
 
-            var inner = new LuaFunction(0);
+            var inner = new LuaFunction("main", 0);
             inner.Instructions.Add(Instruction.NOP());
             inner.Upvalues.Add(new LuaFunction.UpvalueDef(true, 0));
 

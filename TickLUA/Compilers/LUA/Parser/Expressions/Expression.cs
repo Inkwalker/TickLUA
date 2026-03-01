@@ -10,9 +10,28 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
     internal abstract class Expression : AstNode
     {
         /// <summary>
-        /// Compile expression
+        /// Compile expression. 
         /// </summary>
-        public abstract void CompileRead(FunctionBuilder builder, byte reg_result);
+        public abstract void CompileRead(FunctionBuilder builder, RegisterContext target_register);
+
+        /// <summary>
+        /// Compile expression with an automatically allocated registers as target. 
+        /// The caller is responsible for freeing the register after use.
+        /// </summary>
+        /// <remarks>
+        /// Default implementation allocates only one register. 
+        /// Override this method if the expression may produce multiple return values (e.g. function call).
+        /// </remarks>
+        public virtual RegisterContext CompileReadAuto(FunctionBuilder builder)
+        {
+            var target_register = new RegisterContext() 
+            { 
+                index = builder.AllocateRegisters(1), 
+                count = 1 
+            };
+            CompileRead(builder, target_register);
+            return target_register;
+        }
 
         public static Expression Create(LuaLexer lexer)
         {
@@ -142,9 +161,9 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                     //        e = new MethodCallExpression(e, method_name, lexer);
                     //    }
                     //    break;
-                    //case TokenType.BRK_ROUND_Left:
-                    //    e = new FunctionCallExpression(e, lexer);
-                    //    break;
+                    case TokenType.BRK_ROUND_Left:
+                        e = new FunctionCallExpression(e, lexer);
+                        break;
                     default:
                         return e;
                 }
@@ -168,6 +187,20 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                     return new SymbolExpression(lexer);
                 default:
                     throw new CompilationException($"Unexpected symbol near '{T.Content}'", T.Position);
+            }
+        }
+
+        public struct RegisterContext
+        {
+            public byte index;
+            public int count;
+
+            public bool UseAllStack => count <= 0;
+
+            public RegisterContext(byte index, int count)
+            {
+                this.index = index;
+                this.count = count;
             }
         }
     }

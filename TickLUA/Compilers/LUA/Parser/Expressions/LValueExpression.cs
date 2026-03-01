@@ -5,7 +5,7 @@
     /// </summary>
     internal abstract class LValueExpression : Expression
     {
-        public abstract void CompileWrite(FunctionBuilder builder, byte reg_value);
+        public abstract void CompileWrite(FunctionBuilder builder, RegisterContext value_register);
 
         public abstract byte PreallocateRegister(FunctionBuilder builder);
     }
