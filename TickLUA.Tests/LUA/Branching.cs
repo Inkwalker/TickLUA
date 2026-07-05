@@ -67,5 +67,48 @@
             var vm = Utils.Run(source, 100);
             Utils.AssertIntegerResult(vm, 42, 0);
         }
+
+        [Test]
+        public void ZeroIsTrue()
+        {
+            string source = @"
+                if 0 then
+                    return 1
+                else
+                    return 2
+                end";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 1);
+        }
+
+        [Test]
+        public void EmptyStringIsTrue()
+        {
+            string source = @"
+                if '' then
+                    return 1
+                else
+                    return 2
+                end";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 1);
+        }
+
+        [Test]
+        public void NilIsFalse()
+        {
+            string source = @"
+                local a = nil
+                if a then
+                    return 1
+                else
+                    return 2
+                end";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 2);
+        }
     }
 }

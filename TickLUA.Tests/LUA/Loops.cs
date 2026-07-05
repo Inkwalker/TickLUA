@@ -88,6 +88,145 @@ namespace TickLUA_Tests.LUA
         }
 
         [Test]
+        public void Break_WhileLoop()
+        {
+            string source = @"
+                local i = 0
+                while true do
+                    i = i + 1
+                    if i == 5 then
+                        break
+                    end
+                end
+                return i";
+
+            var vm = Utils.Run(source, 200);
+            Utils.AssertIntegerResult(vm, 5, 0);
+        }
+
+        [Test]
+        public void Break_NumericForLoop()
+        {
+            string source = @"
+                local sum = 0
+                for i = 1, 10 do
+                    if i > 3 then
+                        break
+                    end
+                    sum = sum + i
+                end
+                return sum";
+
+            var vm = Utils.Run(source, 200);
+            Utils.AssertIntegerResult(vm, 6, 0);
+        }
+
+        [Test]
+        public void GenericForIn_StatelessIterator()
+        {
+            string source = @"
+                local function iter(max, i)
+                    i = i + 1
+                    if i <= max then
+                        return i
+                    end
+                end
+
+                local sum = 0
+                for i in iter, 3, 0 do
+                    sum = sum + i
+                end
+                return sum";
+
+            var vm = Utils.Run(source, 200);
+            Utils.AssertIntegerResult(vm, 6, 0);
+        }
+
+        [Test]
+        public void GenericForIn_Ipairs()
+        {
+            string source = @"
+                local t = {10, 20, 30}
+                local sum = 0
+                for i, v in ipairs(t) do
+                    sum = sum + v
+                end
+                return sum";
+
+            var vm = Utils.Run(source, 200);
+            Utils.AssertIntegerResult(vm, 60, 0);
+        }
+
+        [Test]
+        public void NumericForLoop_EmptyRange()
+        {
+            // When the start already passes the limit for a positive step,
+            // the body must not execute at all.
+            string source = @"
+                local a = 5
+
+                for i = 1, 0 do
+                    a = 99
+                end
+
+                return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 5, 0);
+        }
+
+        [Test]
+        public void NumericForLoop_FloatStep()
+        {
+            // A fractional step is allowed: 1, 1.5, 2 -> three iterations.
+            string source = @"
+                local a = 0
+
+                for i = 1, 2, 0.5 do
+                    a = a + 1
+                end
+
+                return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 3, 0);
+        }
+
+        [Test]
+        public void RepeatLoop_UntilSeesBodyLocals()
+        {
+            string source = @"
+                local n = 0
+
+                repeat
+                    n = n + 1
+                    local done = n >= 3
+                until done
+
+                return n";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 3, 0);
+        }
+
+        [Test]
+        public void WhileLoop_FalseNeverRuns()
+        {
+            // A while loop whose condition starts false never enters the body.
+            string source = @"
+                local a = 5
+
+                while false do
+                    a = 99
+                end
+
+                return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 5, 0);
+        }
+
+        [Test]
         public void NumericForLoop_Speedtest()
         {
             string source = @"

@@ -130,6 +130,31 @@ namespace TickLUA_Tests.LUA
         }
 
         [Test]
+        public void NilAssignment_RemovesEntry()
+        {
+            string source = @"
+                local a = {1, 2, 3}
+                a[3] = nil
+                return #a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 2);
+        }
+
+        [Test]
+        public void NilAssignment_KeyReadsAsNil()
+        {
+            string source = @"
+                local a = {}
+                a.x = 5
+                a.x = nil
+                return a.x";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertNilResult(vm);
+        }
+
+        [Test]
         public void NestedTables()
         {
             string source = @"

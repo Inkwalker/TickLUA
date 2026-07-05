@@ -187,5 +187,51 @@
             var vm = Utils.Run(source, 100);
             Utils.AssertIntegerResult(vm, 10, 0);
         }
+
+        [Test]
+        public void And_ReturnsOperand()
+        {
+            var vm = Utils.Run("return 1 and 2", 100);
+            Utils.AssertIntegerResult(vm, 2);
+        }
+
+        [Test]
+        public void And_ShortCircuitsOnNil()
+        {
+            // 'and' returns the first operand (nil) without evaluating the second.
+            var vm = Utils.Run("return nil and 2", 100);
+            Utils.AssertNilResult(vm);
+        }
+
+        [Test]
+        public void Or_ReturnsFirstTrueOperand()
+        {
+            var vm = Utils.Run("return 1 or 2", 100);
+            Utils.AssertIntegerResult(vm, 1);
+        }
+
+        [Test]
+        public void Or_ReturnsSecondWhenFirstFalse()
+        {
+            var vm = Utils.Run("return false or 7", 100);
+            Utils.AssertIntegerResult(vm, 7);
+        }
+
+        [Test]
+        public void Not_DoubleNegationCoercesToBool()
+        {
+            // 'not not x' yields the truthiness of x as a boolean.
+            var vm = Utils.Run("return not not 5", 100);
+            Utils.AssertBoolResult(vm, true);
+        }
+
+        [Test]
+        public void ComparisonFeedingAndOr()
+        {
+            // Comparison binds tighter than 'and'/'or', so this parses as
+            // ((2 + 2 == 4) and 1) or 0 == (true and 1) or 0 == 1.
+            var vm = Utils.Run("return 2 + 2 == 4 and 1 or 0", 100);
+            Utils.AssertIntegerResult(vm, 1);
+        }
     }
 }

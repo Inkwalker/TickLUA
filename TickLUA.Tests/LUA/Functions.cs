@@ -62,5 +62,64 @@
             Utils.AssertIntegerResult(vm, 2, 1);
             Utils.AssertIntegerResult(vm, 3, 2);
         }
+
+        [Test]
+        public void MethodDefinitionAndCall()
+        {
+            string source = @"
+                local t = { value = 40 }
+                function t:add(n)
+                    return self.value + n
+                end
+                return t:add(2)";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 42);
+        }
+
+        [Test]
+        public void Varargs_Forwarded()
+        {
+            string source = @"
+                local function f(...)
+                    return ...
+                end
+                return f(1, 2, 3)";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 1, 0);
+            Utils.AssertIntegerResult(vm, 2, 1);
+            Utils.AssertIntegerResult(vm, 3, 2);
+        }
+
+        [Test]
+        public void Varargs_Count()
+        {
+            // select('#', ...) counts the variadic arguments.
+            string source = @"
+                local function count(...)
+                    return select('#', ...)
+                end
+                return count(10, 20, 30, 40)";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 4);
+        }
+
+        [Test]
+        public void ProperTailCall_DeepRecursion()
+        {
+            string source = @"
+                local function count(n)
+                    if n == 0 then
+                        return 'done'
+                    end
+                    return count(n - 1)
+                end
+                return count(100000)";
+
+            var vm = Utils.Run(source, 2000000);
+            Utils.AssertStringResult(vm, "done");
+        }
     }
 }
