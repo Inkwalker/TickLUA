@@ -207,7 +207,13 @@
 
         //TFORCALL,
         //TFORLOOP,
-        //CLOSE,
+
+        /// <summary>
+        /// Close upvalues.
+        /// Every register from A upwards is replaced with a fresh cell holding the same value.
+        /// A - start reg
+        /// </summary>
+        CLOSE,
 
         /// <summary>
         /// Create closure object form <see cref="LuaFunction"/>

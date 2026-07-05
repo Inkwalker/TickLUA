@@ -54,6 +54,12 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
             body.Compile(builder);
 
+            // Close upvalues if there any
+            if (builder.BlockHasEscapingVars())
+            {
+                builder.AddInstruction(Instruction.CLOSE(reg_ext), (ushort)SourceRange.from.line);
+            }
+
             int addr_forloop = builder.InstructionCount;
 
             builder.AddInstruction(Instruction.FORLOOP(reg_int, (short)(addr_forprep - addr_forloop)), (ushort)SourceRange.from.line);

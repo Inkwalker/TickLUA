@@ -127,6 +127,29 @@
         }
 
         [Test]
+        public void ClosureWhileLoop()
+        {
+            // Each while iteration declares a fresh local; every closure must capture
+            // its own copy.
+            string source = @"
+                local funcs = {}
+                local i = 0
+                while i < 3 do
+                    i = i + 1
+                    local j = i
+                    funcs[i] = function()
+                        return j
+                    end
+                end
+                return funcs[1](), funcs[2](), funcs[3]()";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 1, 0);
+            Utils.AssertIntegerResult(vm, 2, 1);
+            Utils.AssertIntegerResult(vm, 3, 2);
+        }
+
+        [Test]
         public void MethodDefinitionAndCall()
         {
             string source = @"

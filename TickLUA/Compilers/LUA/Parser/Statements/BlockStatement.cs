@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using TickLUA.Compilers.LUA.Lexer;
+using TickLUA.VM;
 
 namespace TickLUA.Compilers.LUA.Parser.Statements
 {
@@ -34,6 +35,12 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             foreach (var statement in statements)
             {
                 statement.Compile(builder);
+            }
+
+            // Close upvalues if there any
+            if (builder.BlockHasEscapingVars())
+            {
+                builder.AddInstruction(Instruction.CLOSE(builder.CurrentBlockOffset), (ushort)SourceRange.to.line);
             }
 
             builder.BlockEnd();

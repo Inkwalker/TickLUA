@@ -228,6 +228,11 @@ namespace TickLUA.Compilers.LUA
             return blocks.Peek().Allocator.HasEscapingVars();
         }
 
+        /// <summary>
+        /// Absolute register offset of the current (innermost) block.
+        /// </summary>
+        public byte CurrentBlockOffset => (byte)blocks.Peek().Allocator.Offset;
+
         public void BlockStart()
         {
             int offset = 0;

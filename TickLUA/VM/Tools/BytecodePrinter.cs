@@ -40,6 +40,7 @@ namespace TickLUA.VM.Tools
                 case Opcode.LOAD_FALSE:
                 case Opcode.LOAD_FALSE_SKIP:
                 case Opcode.NEW_TABLE:
+                case Opcode.CLOSE:
                     return $"{op_str} R{i.A}";
                 case Opcode.LOAD_CONST:
                     return $"{op_str} R{i.A} C{i.Bx}";

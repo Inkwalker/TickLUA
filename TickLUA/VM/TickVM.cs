@@ -35,6 +35,7 @@ namespace TickLUA.VM
             // Functions
             { Opcode.GET_UPVAL,       HandlersCore.GET_UPVAL },
             { Opcode.SET_UPVAL,       HandlersCore.SET_UPVAL },
+            { Opcode.CLOSE,           HandlersCore.CLOSE },
             { Opcode.CLOSURE,         HandlersCore.CLOSURE },
             { Opcode.CALL,            HandlersCore.CALL },
             { Opcode.RETURN,          HandlersCore.RETURN },
