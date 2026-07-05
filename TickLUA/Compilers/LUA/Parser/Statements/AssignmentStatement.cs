@@ -68,8 +68,13 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             else
                 ParsePrimaryVars(lexer);
 
-            if (local)
-                AssertToken(lexer.Current, TokenType.OP_Assignment);
+            if (local && lexer.Current.Type != TokenType.OP_Assignment)
+            {
+                // "local a, b" with no initializer: declared locals default to nil
+                operation = BinaryOperation.Invalid;
+                SourceRange = new SourceRange(start_pos, lexer.Current.Position);
+                return;
+            }
 
             operation = GetOp(lexer.Current.Type);
             lexer.Next();

@@ -148,6 +148,42 @@ namespace TickLUA_Tests.LUA
         }
 
         [Test]
+        public void LocalDeclaration_NoInitializer()
+        {
+            string source = @"
+                local a
+                return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertNilResult(vm, 0);
+        }
+
+        [Test]
+        public void LocalDeclaration_AssignLater()
+        {
+            string source = @"
+                local a
+                a = 5
+                return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 5);
+        }
+
+        [Test]
+        public void LocalDeclaration_Multiple_NoInitializer()
+        {
+            string source = @"
+                local a, b
+                b = 10
+                return a, b";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertNilResult(vm, 0);
+            Utils.AssertIntegerResult(vm, 10, 1);
+        }
+
+        [Test]
         public void MultiAssignment_Invalid()
         {
             string source = @"
