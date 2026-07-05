@@ -43,8 +43,8 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                     }
                 case TokenType.Return:
                     return new ReturnStatement(lexer);
-                //case TokenType.Break:
-                //    return new BreakStatement(lexer);
+                case TokenType.Break:
+                    return new BreakStatement(lexer);
                 //case TokenType.Continue:
                 //    return new ContinueStatement(lexer);
                 default:

@@ -11,6 +11,7 @@ namespace TickLUA.Compilers.LUA
         private LuaFunction function;
 
         private IndexableStack<BlockFrame> blocks;
+        private IndexableStack<LoopFrame> loops;
 
         private List<FunctionBuilder> nested_builders = new List<FunctionBuilder>();
 
@@ -24,6 +25,7 @@ namespace TickLUA.Compilers.LUA
 
             function = new LuaFunction(function_name, 0);
             blocks = new IndexableStack<BlockFrame>();
+            loops = new IndexableStack<LoopFrame>();
         }
 
         public LuaFunction Finish()
@@ -249,6 +251,61 @@ namespace TickLUA.Compilers.LUA
             blocks.Pop();
         }
 
+        /// <summary>
+        /// Whether compilation is currently inside a loop of this function.
+        /// </summary>
+        public bool InLoop => loops.Count > 0;
+
+        /// <summary>
+        /// Mark the start of a loop. Must be called before any of the loop's blocks are started.
+        /// </summary>
+        public void LoopStart()
+        {
+            loops.Push(new LoopFrame(blocks.Count));
+        }
+
+        /// <summary>
+        /// Emit a break out of the innermost loop. Closes captured cells of the
+        /// loop-owned blocks if needed and leaves a placeholder jump that is
+        /// patched to the loop exit by <see cref="LoopEnd"/>.
+        /// </summary>
+        public void EmitBreak(ushort line)
+        {
+            var loop = loops.Peek();
+            int inner = blocks.Count - loop.BlockDepth; // block frames owned by the loop, blocks[0] is innermost
+
+            bool escaping = false;
+            for (int i = 0; i < inner; i++)
+            {
+                if (blocks[i].Allocator.HasEscapingVars())
+                {
+                    escaping = true;
+                    break;
+                }
+            }
+
+            if (escaping)
+            {
+                byte close_reg = (byte)blocks[inner - 1].Allocator.Offset;
+                AddInstruction(Instruction.CLOSE(close_reg), line);
+            }
+
+            loop.BreakJumps.Add(AddInstruction(Instruction.NOP(), line));
+        }
+
+        /// <summary>
+        /// Mark the end of a loop. Patches all pending break jumps to the current address.
+        /// </summary>
+        public void LoopEnd()
+        {
+            var loop = loops.Pop();
+
+            foreach (var addr in loop.BreakJumps)
+            {
+                SetInstruction(addr, Instruction.JMP(InstructionCount - addr - 1));
+            }
+        }
+
         public FunctionBuilder CreateNestedFunction(string function_name, out int func_index)
         {
             var nested = new FunctionBuilder($"{function.Name}.{function_name}", this);
@@ -264,6 +321,17 @@ namespace TickLUA.Compilers.LUA
             public BlockFrame(int register_offset)
             {
                 Allocator = new BlockRegisterAllocator(register_offset);
+            }
+        }
+
+        private class LoopFrame
+        {
+            public int BlockDepth { get; }
+            public List<int> BreakJumps { get; } = new List<int>();
+
+            public LoopFrame(int block_depth)
+            {
+                BlockDepth = block_depth;
             }
         }
     }

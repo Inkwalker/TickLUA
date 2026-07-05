@@ -44,7 +44,7 @@ namespace TickLUA.VM.Handlers
             var obj_a = frame.Registers[reg_a].Value;
             var obj_b = frame.Registers[reg_b].Value;
 
-            if ((obj_a == obj_b) != expected)
+            if (obj_a.Equals(obj_b) != expected)
             {
                 frame.PC++;
             }

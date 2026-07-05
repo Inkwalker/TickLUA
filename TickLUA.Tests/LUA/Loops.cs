@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using TickLUA.Compilers;
 using TickLUA.Compilers.LUA;
 using TickLUA_Tests.Instructions;
 
@@ -119,6 +120,76 @@ namespace TickLUA_Tests.LUA
 
             var vm = Utils.Run(source, 200);
             Utils.AssertIntegerResult(vm, 6, 0);
+        }
+
+        [Test]
+        public void Break_RepeatLoop()
+        {
+            string source = @"
+                local i = 0
+                repeat
+                    i = i + 1
+                    if i == 4 then
+                        break
+                    end
+                until false
+                return i";
+
+            var vm = Utils.Run(source, 200);
+            Utils.AssertIntegerResult(vm, 4, 0);
+        }
+
+        [Test]
+        public void Break_NestedLoops()
+        {
+            // break only exits the innermost loop
+            string source = @"
+                local count = 0
+                for i = 1, 3 do
+                    while true do
+                        count = count + 1
+                        break
+                    end
+                end
+                return count";
+
+            var vm = Utils.Run(source, 200);
+            Utils.AssertIntegerResult(vm, 3, 0);
+        }
+
+        [Test]
+        public void Break_ClosureCapturesLocal()
+        {
+            // A body local captured before the break must keep its value
+            // after the loop exits early (break-path CLOSE).
+            string source = @"
+                local f = 0
+                local i = 0
+                while true do
+                    i = i + 1
+                    local j = i * 10
+                    if i == 2 then
+                        f = function()
+                            return j
+                        end
+                        break
+                    end
+                end
+                return f()";
+
+            var vm = Utils.Run(source, 200);
+            Utils.AssertIntegerResult(vm, 20, 0);
+        }
+
+        [Test]
+        public void Break_OutsideLoop_Throws()
+        {
+            string source = @"
+                local a = 1
+                break
+                return a";
+
+            Assert.Throws<CompilationException>(() => LuaCompiler.Compile(source));
         }
 
         [Test]

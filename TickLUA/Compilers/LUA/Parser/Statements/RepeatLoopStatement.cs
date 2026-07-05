@@ -29,6 +29,8 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
         {
             ushort line = (ushort)SourceRange.from.line;
 
+            builder.LoopStart();
+
             int addr_start = builder.InstructionCount;
 
             builder.BlockStart();
@@ -65,6 +67,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
             builder.FreeRegisters(context_expr);
             builder.BlockEnd();
+            builder.LoopEnd();
         }
     }
 }

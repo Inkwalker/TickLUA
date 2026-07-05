@@ -30,6 +30,8 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
         public override void Compile(FunctionBuilder builder)
         {
+            builder.LoopStart();
+
             // condition expr
             int addr_start = builder.InstructionCount;
 
@@ -52,6 +54,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             // set exit jump
             builder.SetInstruction(addr_exit_jmp, Instruction.JMP(addr_exit - addr_exit_jmp - 1));
 
+            builder.LoopEnd();
         }
     }
 }

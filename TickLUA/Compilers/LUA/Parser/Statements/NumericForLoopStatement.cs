@@ -24,6 +24,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
         public override void Compile(FunctionBuilder builder)
         {
+            builder.LoopStart();
             builder.BlockStart();
 
             byte reg_int   = builder.AllocateRegisters(4);
@@ -68,6 +69,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             //builder.FreeRegisters(4);
 
             builder.BlockEnd();
+            builder.LoopEnd();
         }
     }
 }
