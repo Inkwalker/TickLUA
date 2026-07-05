@@ -11,7 +11,9 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
         {
             var start_pos = lexer.Current.Position;
 
+            AssertTokenNext(lexer, TokenType.Do);
             body = new CompoundStatement(lexer);
+            AssertTokenNext(lexer, TokenType.End);
 
             var end_pos = lexer.Current.Position;
             SourceRange = new SourceRange(start_pos, end_pos);

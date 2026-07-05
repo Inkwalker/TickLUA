@@ -22,9 +22,13 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
         public override void Compile(FunctionBuilder builder)
         {
+            builder.BlockStart();
+
             body.Compile(builder);
 
             builder.AddInstruction(Instruction.RETURN(0, -1), (ushort)SourceRange.to.line);
+
+            builder.BlockEnd();
         }
     }
 }
