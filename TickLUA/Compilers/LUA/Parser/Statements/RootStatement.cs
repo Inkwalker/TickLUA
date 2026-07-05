@@ -9,12 +9,12 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
     /// </summary>
     internal class RootStatement : Statement
     {
-        private BlockStatement body;
+        private CompoundStatement body;
 
         public RootStatement(LuaLexer lexer)
         {
             var start = lexer.Current.Position;
-            body = new BlockStatement(lexer);
+            body = new CompoundStatement(lexer);
             var end = lexer.Current.Position;
 
             SourceRange = new SourceRange(start, end);

@@ -210,6 +210,30 @@ namespace TickLUA_Tests.LUA
         }
 
         [Test]
+        public void RepeatLoop_ClosureCapturesFreshLocal()
+        {
+            // Each repeat iteration has a fresh body local; closures capturing it must
+            // keep their own value, and the until-condition still sees that local.
+            string source = @"
+                local funcs = {}
+                local i = 0
+                repeat
+                    i = i + 1
+                    local j = i
+                    funcs[i] = function()
+                        return j
+                    end
+                until i >= 3
+
+                return funcs[1](), funcs[2](), funcs[3]()";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 1, 0);
+            Utils.AssertIntegerResult(vm, 2, 1);
+            Utils.AssertIntegerResult(vm, 3, 2);
+        }
+
+        [Test]
         public void WhileLoop_FalseNeverRuns()
         {
             // A while loop whose condition starts false never enters the body.

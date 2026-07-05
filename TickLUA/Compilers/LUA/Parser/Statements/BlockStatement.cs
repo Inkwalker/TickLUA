@@ -1,41 +1,33 @@
-﻿using System.Collections.Generic;
-using TickLUA.Compilers.LUA.Lexer;
+﻿using TickLUA.Compilers.LUA.Lexer;
 using TickLUA.VM;
 
 namespace TickLUA.Compilers.LUA.Parser.Statements
 {
     internal class BlockStatement : Statement
     {
-        private List<Statement> statements;
+        private CompoundStatement body;
 
         public BlockStatement(LuaLexer lexer)
         {
-            statements = new List<Statement>();
-
             var start_pos = lexer.Current.Position;
 
-            while (true)
-            {
-                Token t = lexer.Current;
-                if (t.IsEndOfBlock()) break;
-
-                Statement s = Create(lexer);
-                statements.Add(s);
-            }
+            body = new CompoundStatement(lexer);
 
             var end_pos = lexer.Current.Position;
-
             SourceRange = new SourceRange(start_pos, end_pos);
+        }
+
+        public BlockStatement(CompoundStatement body)
+        {
+            this.body = body;
+            SourceRange = body.SourceRange;
         }
 
         public override void Compile(FunctionBuilder builder)
         {
             builder.BlockStart();
 
-            foreach (var statement in statements)
-            {
-                statement.Compile(builder);
-            }
+            body.Compile(builder);
 
             // Close upvalues if there any
             if (builder.BlockHasEscapingVars())

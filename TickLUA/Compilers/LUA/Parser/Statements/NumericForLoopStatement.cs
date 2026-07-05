@@ -9,9 +9,9 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
         private Expression init_expr;
         private Expression limit_expr;
         private Expression step_expr;
-        private BlockStatement body;
+        private CompoundStatement body;
 
-        public NumericForLoopStatement(string variable_name, Expression init_expr, Expression limit_expr, Expression step_expr, BlockStatement body, SourceRange range)
+        public NumericForLoopStatement(string variable_name, Expression init_expr, Expression limit_expr, Expression step_expr, CompoundStatement body, SourceRange range)
         {
             this.variable_name = variable_name;
             this.init_expr = init_expr;

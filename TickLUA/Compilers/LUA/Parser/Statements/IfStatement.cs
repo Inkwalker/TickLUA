@@ -21,13 +21,16 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
             AssertTokenNext(lexer, TokenType.Then);
 
-            mainStatement = new BlockStatement(lexer);
+            var main_compound = new CompoundStatement(lexer);
+            mainStatement = new BlockStatement(main_compound);
 
             if (lexer.Current.Type == TokenType.Else)
             {
                 else_pos = lexer.Current.Position;
                 lexer.Next();
-                elseStatement = new BlockStatement(lexer);
+
+                var else_compound = new CompoundStatement(lexer);
+                elseStatement = new BlockStatement(else_compound);
                 AssertTokenNext(lexer, TokenType.End);
             }
             else if (lexer.Current.Type == TokenType.Elseif)

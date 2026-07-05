@@ -75,7 +75,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
             AssertTokenNext(lexer, TokenType.Do);
 
-            var body = new BlockStatement(lexer);
+            var body = new CompoundStatement(lexer);
 
             var end_pos = lexer.Current.Position;
             AssertTokenNext(lexer, TokenType.End);

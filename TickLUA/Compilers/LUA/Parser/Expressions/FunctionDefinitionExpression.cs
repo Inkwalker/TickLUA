@@ -10,9 +10,9 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         public string FunctionName { get; set; } = "func";
 
         private List<string> parameters;
-        private BlockStatement body;
+        private CompoundStatement body;
 
-        public FunctionDefinitionExpression(IEnumerable<string> parameters, BlockStatement body, SourceRange range)
+        public FunctionDefinitionExpression(IEnumerable<string> parameters, CompoundStatement body, SourceRange range)
         {
             this.body = body;
             this.parameters = new List<string>(parameters);
@@ -38,7 +38,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             }
             lexer.Next();
 
-            body = new BlockStatement(lexer);
+            body = new CompoundStatement(lexer);
 
             var end_pos = lexer.Current.Position;
             SourceRange = new SourceRange(start_pos, end_pos);

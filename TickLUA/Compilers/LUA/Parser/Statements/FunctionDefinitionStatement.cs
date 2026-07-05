@@ -8,7 +8,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
     {
         private LValueExpression variable;
         private List<string> parameters;
-        private BlockStatement body;
+        private CompoundStatement body;
         private bool local;
 
         public string FunctionName { get; private set; }
@@ -27,7 +27,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
             ParseParams(lexer);
 
-            body = new BlockStatement(lexer);
+            body = new CompoundStatement(lexer);
 
             var end_pos = lexer.Current.Position;
             SourceRange = new SourceRange(start_pos, end_pos);
