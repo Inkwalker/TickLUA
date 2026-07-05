@@ -38,7 +38,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             else
             {
                 // try to resolve as upvalue
-                int upval_index = builder.ResloveUpvalue(name);
+                int upval_index = builder.ResolveUpValue(name);
                 if (upval_index >= 0)
                 {
                     builder.AddInstruction(Instruction.GET_UPVAL(target_register.index, (byte)upval_index), line);
@@ -65,7 +65,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             else
             {
                 // try to resolve as upvalue
-                int upval_index = builder.ResloveUpvalue(name);
+                int upval_index = builder.ResolveUpValue(name);
                 if (upval_index >= 0)
                 {
                     builder.AddInstruction(Instruction.SET_UPVAL(value_register.index, (byte)upval_index), line);

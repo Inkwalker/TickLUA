@@ -85,9 +85,11 @@ namespace TickLUA.VM.Handlers
             if (func_value is ClosureObject closure)
             {
                 var new_frame = new StackFrame(closure.Function, closure.Upvalues);
-                for (int i = 0; i < arg_count; i++)
+
+                int copy_count = System.Math.Min(arg_count, new_frame.Registers.Length);
+                for (int i = 0; i < copy_count; i++)
                 {
-                    new_frame.Registers[i] = frame.Registers[func_reg + i + 1];
+                    new_frame.Registers[i].Value = frame.Registers[func_reg + i + 1].Value;
                 }
 
                 new_frame.ResultsStartRegister = func_reg;

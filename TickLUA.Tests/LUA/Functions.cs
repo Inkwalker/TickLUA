@@ -42,6 +42,69 @@
         }
 
         [Test]
+        public void FunctionCall_WithParam()
+        {
+            string source = @"
+                local function inc(n)
+                    return n + 1
+                end
+                return inc(41)";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 42);
+        }
+
+        [Test]
+        public void FunctionCall_MultipleParams()
+        {
+            string source = @"
+                local function add(a, b)
+                    return a + b
+                end
+                return add(40, 2)";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 42);
+        }
+
+        [Test]
+        public void ParamMutation_DoesNotAffectCaller()
+        {
+            // Arguments are copied by value; mutating a parameter must not change the
+            // caller's variable.
+            string source = @"
+                local function f(a)
+                    a = a + 100
+                    return a
+                end
+                local x = 5
+                f(x)
+                return x";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 5);
+        }
+
+        [Test]
+        public void ClosureOverParam()
+        {
+            // A closure capturing a parameter must keep its own independent state,
+            // unaffected by the caller reusing registers after the call returns.
+            string source = @"
+                local function counter(n)
+                    return function()
+                        n = n + 1
+                        return n
+                    end
+                end
+                local c = counter(10)
+                return c()";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 11);
+        }
+
+        [Test]
         public void ClosureForLoop()
         {
             // for loops in lua create a new external value each iteration.

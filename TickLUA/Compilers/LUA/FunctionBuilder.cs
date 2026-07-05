@@ -172,7 +172,7 @@ namespace TickLUA.Compilers.LUA
             return -1;
         }
 
-        public int ResloveUpvalue(string name)
+        public int ResolveUpValue(string name)
         {
             // First check if the upvalue is already defined in the current function
             for (int i = 0; i < function.Upvalues.Count; i++)
@@ -195,7 +195,7 @@ namespace TickLUA.Compilers.LUA
             {
                 // If not found in the parent function, try to resolve it as an upvalue in the parent function
                 // And save the result as an upvalue in the current function
-                var pu = Parent.ResloveUpvalue(name);
+                var pu = Parent.ResolveUpValue(name);
                 if (pu >= 0)
                 {
                     function.Upvalues.Add(new LuaFunction.UpvalueDef(name, false, (byte)pu));
@@ -215,8 +215,11 @@ namespace TickLUA.Compilers.LUA
             {
                 var block = blocks[i];
 
-                if (index > block.Allocator.Offset)
+                if (index >= block.Allocator.Offset)
+                {
                     block.Allocator.MarkEscaping(index);
+                    break;
+                }
             }
         }
 

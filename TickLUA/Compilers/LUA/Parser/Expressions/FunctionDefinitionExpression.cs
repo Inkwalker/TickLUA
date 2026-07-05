@@ -50,6 +50,9 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         {
             var nested_builder = builder.CreateNestedFunction(FunctionName, out int func_index);
 
+            //Open a new block to ensure that parameters are scoped correctly.
+            nested_builder.BlockStart();
+
             foreach (var p in parameters)
             {
                 nested_builder.AllocateVariable(p);
@@ -60,6 +63,8 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
             //Return. This section will execute only if there is no return statements before.
             nested_builder.AddInstruction(Instruction.RETURN(0, 0), (ushort)SourceRange.to.line);
+
+            nested_builder.BlockEnd();
 
             builder.AddInstruction(Instruction.CLOSURE(target_register.index, (ushort)func_index), (ushort)SourceRange.from.line);
         }
