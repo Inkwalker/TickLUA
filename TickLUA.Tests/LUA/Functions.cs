@@ -28,6 +28,20 @@
         }
 
         [Test]
+        public void FunctionCall_Multi()
+        {
+            string source = @"
+                local function a()
+                    return 42, 43
+                end
+                return a()";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 42, 0);
+            Utils.AssertIntegerResult(vm, 43, 1);
+        }
+
+        [Test]
         public void ClosureForLoop()
         {
             // for loops in lua create a new external value each iteration.

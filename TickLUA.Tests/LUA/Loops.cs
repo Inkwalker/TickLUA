@@ -1,4 +1,9 @@
-﻿namespace TickLUA_Tests.LUA
+﻿using System;
+using System.Diagnostics;
+using TickLUA.Compilers.LUA;
+using TickLUA_Tests.Instructions;
+
+namespace TickLUA_Tests.LUA
 {
     internal class Loops
     {
@@ -80,6 +85,38 @@
 
             var vm = Utils.Run(source, 100);
             Utils.AssertIntegerResult(vm, 55, 0);
+        }
+
+        [Test]
+        public void NumericForLoop_Speedtest()
+        {
+            string source = @"
+                local a = 0
+
+                for i = 1, 100000 do
+                    a = i
+                end
+
+                return a";
+
+            var luaFunction = LuaCompiler.Compile(source);
+
+            var vm = new TickVM(luaFunction);
+
+            var sw = Stopwatch.StartNew();
+
+            while (!vm.IsFinished)
+            {
+                vm.Tick();
+            }
+
+            sw.Stop();
+
+            Console.WriteLine("Elapsed time: " + sw.ElapsedMilliseconds.ToString() + "ms");
+
+            // non boxed : 22 ms
+            // boxes : 21 ms
+            
         }
     }
 }

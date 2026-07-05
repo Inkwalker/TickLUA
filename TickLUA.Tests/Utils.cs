@@ -37,7 +37,7 @@ namespace TickLUA_Tests
         public static void AssertIntegerResult(TickVM vm, int expected_value, int result_index = 0)
         {
             Assert.NotNull(vm.ExecutionResult);
-            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.That(vm.ExecutionResult.Length, Is.GreaterThan(result_index), "Not enough results");
             Assert.IsInstanceOf<NumberObject>(vm.ExecutionResult[result_index]);
             var answer = (NumberObject)vm.ExecutionResult[result_index];
             Assert.That(answer.Value, Is.EqualTo(expected_value));
@@ -46,7 +46,7 @@ namespace TickLUA_Tests
         public static void AssertFloatResult(TickVM vm, float expected_value, int result_index = 0)
         {
             Assert.NotNull(vm.ExecutionResult);
-            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.That(vm.ExecutionResult.Length, Is.GreaterThan(result_index), "Not enough results");
             Assert.IsInstanceOf<NumberObject>(vm.ExecutionResult[result_index]);
             var answer = (NumberObject)vm.ExecutionResult[result_index];
 
@@ -56,7 +56,7 @@ namespace TickLUA_Tests
         public static void AssertBoolResult(TickVM vm, bool expected_value, int result_index = 0)
         {
             Assert.NotNull(vm.ExecutionResult);
-            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.That(vm.ExecutionResult.Length, Is.GreaterThan(result_index), "Not enough results");
             Assert.IsInstanceOf<BooleanObject>(vm.ExecutionResult[result_index]);
             var answer = (BooleanObject)vm.ExecutionResult[result_index];
 
@@ -66,14 +66,14 @@ namespace TickLUA_Tests
         public static void AssertNilResult(TickVM vm, int result_index = 0)
         {
             Assert.NotNull(vm.ExecutionResult);
-            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.That(vm.ExecutionResult.Length, Is.GreaterThan(result_index), "Not enough results");
             Assert.IsInstanceOf<NilObject>(vm.ExecutionResult[result_index]);
         }
 
         public static void AssertStringResult(TickVM vm, string expected_value, int result_index = 0)
         {
             Assert.NotNull(vm.ExecutionResult);
-            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.That(vm.ExecutionResult.Length, Is.GreaterThan(result_index), "Not enough results");
             Assert.IsInstanceOf<StringObject>(vm.ExecutionResult[result_index]);
             var answer = (StringObject)vm.ExecutionResult[result_index];
 
@@ -83,7 +83,7 @@ namespace TickLUA_Tests
         public static TableObject AssertTableResult(TickVM vm, int result_index = 0)
         {
             Assert.NotNull(vm.ExecutionResult);
-            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.That(vm.ExecutionResult.Length, Is.GreaterThan(result_index), "Not enough results");
             Assert.IsInstanceOf<TableObject>(vm.ExecutionResult[result_index]);
 
             var table = (TableObject)vm.ExecutionResult[result_index];
@@ -102,7 +102,7 @@ namespace TickLUA_Tests
         public static ClosureObject AssertClosureResult(TickVM vm, int result_index = 0)
         {
             Assert.NotNull(vm.ExecutionResult);
-            Assert.IsTrue(vm.ExecutionResult.Length > result_index);
+            Assert.That(vm.ExecutionResult.Length, Is.GreaterThan(result_index), "Not enough results");
             Assert.IsInstanceOf<ClosureObject>(vm.ExecutionResult[result_index]);
 
             var closure = (ClosureObject)vm.ExecutionResult[result_index];
