@@ -155,6 +155,75 @@ namespace TickLUA_Tests.LUA
         }
 
         [Test]
+        public void Constructor_TrailingCallExpandsIntoList()
+        {
+            // A call as the last constructor field spreads all its results into
+            // consecutive array slots: {f()} == {1, 2, 3}.
+            string source = @"
+            local function f()
+                return 1, 2, 3
+            end
+            local a = {f()}
+            return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertTableResult(vm, new NumberObject(1), new NumberObject(1));
+            Utils.AssertTableResult(vm, new NumberObject(2), new NumberObject(2));
+            Utils.AssertTableResult(vm, new NumberObject(3), new NumberObject(3));
+        }
+
+        [Test]
+        public void Constructor_TrailingCallAfterFixedField()
+        {
+            // Fixed fields keep their slots; the trailing call fills the rest:
+            // {10, f()} == {10, 1, 2, 3}.
+            string source = @"
+            local function f()
+                return 1, 2, 3
+            end
+            local a = {10, f()}
+            return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertTableResult(vm, new NumberObject(1), new NumberObject(10));
+            Utils.AssertTableResult(vm, new NumberObject(2), new NumberObject(1));
+            Utils.AssertTableResult(vm, new NumberObject(3), new NumberObject(2));
+            Utils.AssertTableResult(vm, new NumberObject(4), new NumberObject(3));
+        }
+
+        [Test]
+        public void Constructor_NonTrailingCallTruncatesToOne()
+        {
+            // A call that is not the last field contributes exactly one value:
+            // {f(), 10} == {1, 10}.
+            string source = @"
+            local function f()
+                return 1, 2, 3
+            end
+            local a = {f(), 10}
+            return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertTableResult(vm, new NumberObject(1), new NumberObject(1));
+            Utils.AssertTableResult(vm, new NumberObject(2), new NumberObject(10));
+        }
+
+        [Test]
+        public void Constructor_TrailingCallLength()
+        {
+            // The expanded results count toward the table length: #{f()} == 3.
+            string source = @"
+            local function f()
+                return 1, 2, 3
+            end
+            local a = {f()}
+            return #a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 3);
+        }
+
+        [Test]
         public void NestedTables()
         {
             string source = @"

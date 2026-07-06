@@ -68,6 +68,79 @@
         }
 
         [Test]
+        public void CallArg_TrailingCallExpandsIntoParams()
+        {
+            // A call in the last argument position spreads all its results into the
+            // callee's parameters: add(pair()) == add(2, 3).
+            string source = @"
+                local function pair()
+                    return 2, 3
+                end
+                local function add(a, b)
+                    return a + b
+                end
+                return add(pair())";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 5);
+        }
+
+        [Test]
+        public void CallArg_TrailingCallAfterFixedArg()
+        {
+            // Fixed args keep their positions; the trailing call fills the rest.
+            // add3 reads all three params so the expanded result is observable:
+            // add3(10, pair()) == add3(10, 2, 3) == 15.
+            string source = @"
+                local function pair()
+                    return 2, 3
+                end
+                local function add3(a, b, c)
+                    return a + b + c
+                end
+                return add3(10, pair())";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 15);
+        }
+
+        [Test]
+        public void CallArg_NonTrailingCallTruncatesToOne()
+        {
+            // A call that is not the last argument contributes exactly one value:
+            // add(pair(), 10) == add(2, 10).
+            string source = @"
+                local function pair()
+                    return 2, 3
+                end
+                local function add(a, b)
+                    return a + b
+                end
+                return add(pair(), 10)";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 12);
+        }
+
+        [Test]
+        public void CallArg_ParenthesizedCallTruncatesToOne()
+        {
+            // Parentheses adjust a call to a single value even in trailing position:
+            // add((pair()), 10) == add(2, 10).
+            string source = @"
+                local function pair()
+                    return 2, 3
+                end
+                local function add(a, b)
+                    return a + b
+                end
+                return add((pair()), 10)";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 12);
+        }
+
+        [Test]
         public void ParamMutation_DoesNotAffectCaller()
         {
             // Arguments are copied by value; mutating a parameter must not change the

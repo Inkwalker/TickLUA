@@ -39,16 +39,21 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 return;
             }
 
+            // A function call in the last position expands to all of its results.
+            // Note: a parenthesized call parses as AdjustmentExpression and stays truncated to one value.
+            bool is_multi_return = values[values.Count - 1] is FunctionCallExpression;
+
             byte reg_start = builder.AllocateRegisters(values.Count);
 
             for (int i = 0; i < values.Count; i++)
             {
                 byte reg = (byte)(reg_start + i);
-                var context = new Expression.RegisterContext(reg, 1);
+                bool expand = is_multi_return && i == values.Count - 1;
+                var context = new Expression.RegisterContext(reg, expand ? -1 : 1);
                 values[i].CompileRead(builder, context);
             }
 
-            builder.AddInstruction(Instruction.RETURN(reg_start, values.Count), line);
+            builder.AddInstruction(Instruction.RETURN(reg_start, is_multi_return ? -1 : values.Count), line);
         }
 
         //private static bool IsConsecutiveRegisters(List<byte> regs)

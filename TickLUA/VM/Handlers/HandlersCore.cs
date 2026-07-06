@@ -111,7 +111,8 @@ namespace TickLUA.VM.Handlers
             int count = instruction.Bx - 1;
 
             if (count < 0)
-                count = frame.Registers.Length - reg_start;
+                // Multi return: everything from reg_start up to the top
+                count = System.Math.Max(0, frame.Top - reg_start);
 
             var results = new LuaObject[count];
 
@@ -130,7 +131,13 @@ namespace TickLUA.VM.Handlers
                 int expected_count = frame.ResultsCount;
 
                 if (expected_count < 0)
+                {
+                    // Caller wanted all results: record where they end
                     expected_count = results.Length;
+                    caller_frame.Top = reg_result + results.Length;
+                }
+
+                caller_frame.GrowRegisters(reg_result + expected_count);
 
                 for (int i = 0; i < expected_count; i++)
                 {

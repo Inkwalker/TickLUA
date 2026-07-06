@@ -178,6 +178,13 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
                 for (int i = 0; i < max; i++)
                 {
+                    // Special case for a function call as the last value.
+                    if (i == values.Count - 1 && variables.Count > values.Count && values[i] is FunctionCallExpression)
+                    {
+                        CompileExpandedCall(builder, i);
+                        return;
+                    }
+
                     var context_reg = builder.AllocateRegistersContext(1);
                     if (i < values.Count)
                         values[i].CompileRead(builder, context_reg);
@@ -188,8 +195,29 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                         variables[i].CompileWrite(builder, context_reg);
 
                     builder.FreeRegisters(context_reg);
+                    
                 }
             }
+        }
+
+        /// <summary>
+        /// Compile the last value (a function call) so it produces one result per
+        /// remaining variable, then write the results out.
+        /// </summary>
+        private void CompileExpandedCall(FunctionBuilder builder, int value_index)
+        {
+            int result_count = variables.Count - value_index;
+
+            var call_regs = builder.AllocateRegistersContext(result_count);
+            values[value_index].CompileRead(builder, call_regs);
+
+            for (int j = 0; j < result_count; j++)
+            {
+                var context_result = new Expression.RegisterContext((byte)(call_regs.index + j), 1);
+                variables[value_index + j].CompileWrite(builder, context_result);
+            }
+
+            builder.FreeRegisters(result_count);
         }
 
         private Expression ApplyOperation(Expression variable, Expression value)
