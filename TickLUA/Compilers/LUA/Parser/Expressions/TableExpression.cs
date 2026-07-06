@@ -73,10 +73,19 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         }
 
         public override void CompileRead(FunctionBuilder builder, RegisterContext target_register)
-        { 
+        {
             builder.AddInstruction(Instruction.NEW_TABLE(target_register.index), (ushort)SourceRange.from.line);
 
             int array_size = GetArrayElementsCount();
+
+            // If the last field is a positional function call, it expands to ALL of its
+            // results as trailing array elements (Lua multi return semantics). The trailing
+            // call is compiled with a variable result count and the result span is
+            // resolved at runtime via frame.Top; a SET_LIST count of -1 signals that.
+            bool multi_return = args.Count > 0
+                        && !args[args.Count - 1].HasKey
+                        && args[args.Count - 1].Value is FunctionCallExpression;
+
             byte start_reg = array_size > 0 ? builder.AllocateRegisters(array_size) : (byte)0;
             byte array_index = 0;
 
@@ -91,19 +100,23 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
                     builder.AddInstruction (
                         Instruction.SET_TABLE (
-                            target_register.index, 
-                            context_key.index, 
+                            target_register.index,
+                            context_key.index,
                             context_val.index
-                        ), 
+                        ),
                         (ushort) arg.Key.SourceRange.from.line
                     );
-                    
+
                     builder.FreeRegisters(context_val);
                     builder.FreeRegisters(context_key);
                 }
                 else
                 {
-                    var context = new RegisterContext((byte)(start_reg + array_index), 1);
+                    // The trailing multi return call occupies the top of the array block, so
+                    // its arguments allocate right after its func slot (func_reg+1) where
+                    // CALL expects them.
+                    bool expand = multi_return && i == args.Count - 1;
+                    var context = new RegisterContext((byte)(start_reg + array_index), expand ? -1 : 1);
                     arg.Value.CompileRead(builder, context);
                     array_index++;
                 }
@@ -111,7 +124,10 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
             if (array_size > 0)
             {
-                builder.AddInstruction(Instruction.SET_LIST(target_register.index, start_reg, (byte)array_size), (ushort)SourceRange.from.line);
+                // count 0 => variable length: consume registers up to frame.Top left by
+                // the trailing multi return call.
+                int set_count = multi_return ? -1 : array_size;
+                builder.AddInstruction(Instruction.SET_LIST(target_register.index, start_reg, set_count), (ushort)SourceRange.from.line);
                 builder.FreeRegisters(array_size);
             }
         }

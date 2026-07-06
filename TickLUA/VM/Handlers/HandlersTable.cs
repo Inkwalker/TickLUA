@@ -85,7 +85,12 @@ namespace TickLUA.VM.Handlers
         {
             byte a = instruction.A;
             byte b = instruction.B;
-            byte c = instruction.C;
+            int  c = instruction.C - 1;
+
+            // c < 0 signals a variable-length list: take everything from b up to the
+            // stack top left by a preceding trailing multi return call.
+            if (c < 0)
+                c = System.Math.Max(0, frame.Top - b);
 
             var table = frame.Registers[a].Value as TableObject;
             if (table != null)
@@ -131,7 +136,11 @@ namespace TickLUA.VM
         internal static Instruction GET_TABLE(byte reg_result, byte reg_table, byte reg_key) => new Instruction(Opcode.GET_TABLE, reg_result, reg_table, reg_key);
         internal static Instruction SET_FIELD(byte reg_table, byte const_key, byte reg_value) => new Instruction(Opcode.SET_FIELD, reg_table, const_key, reg_value);
         internal static Instruction GET_FIELD(byte reg_result, byte reg_table, byte const_key) => new Instruction(Opcode.GET_FIELD, reg_result, reg_table, const_key);
-        internal static Instruction SET_LIST(byte reg_table, byte start_reg, byte num_reg) => new Instruction(Opcode.SET_LIST, reg_table, start_reg, num_reg);
+        internal static Instruction SET_LIST(byte reg_table, byte start_reg, int num_reg)
+        {
+            byte c = num_reg < -1 ? (byte)0 : (byte)(num_reg + 1);
+            return new Instruction(Opcode.SET_LIST, reg_table, start_reg, c);
+        }
         internal static Instruction LEN(byte reg_result, byte reg_source) => new Instruction(Opcode.LEN, reg_result, reg_source, 0);
     }
 }

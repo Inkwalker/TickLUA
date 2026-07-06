@@ -224,6 +224,80 @@ namespace TickLUA_Tests.LUA
         }
 
         [Test]
+        public void Constructor_TrailingCallWithArgsExpands()
+        {
+            // The trailing call takes arguments; its func slot sits at the top of the
+            // array block so the args land where CALL reads them, and all results expand:
+            // {mk(10)} == {10, 11, 12}.
+            string source = @"
+            local function mk(n)
+                return n, n + 1, n + 2
+            end
+            local a = {mk(10)}
+            return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertTableResult(vm, new NumberObject(1), new NumberObject(10));
+            Utils.AssertTableResult(vm, new NumberObject(2), new NumberObject(11));
+            Utils.AssertTableResult(vm, new NumberObject(3), new NumberObject(12));
+        }
+
+        [Test]
+        public void Constructor_KeyedFieldBeforeTrailingCall()
+        {
+            // A keyed field interspersed before the trailing call must not disturb the
+            // array slots: {5, x = 99, f()} == {5, 1, 2, 3} plus x = 99.
+            string source = @"
+            local function f()
+                return 1, 2, 3
+            end
+            local a = {5, x = 99, f()}
+            return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertTableResult(vm, new NumberObject(1), new NumberObject(5));
+            Utils.AssertTableResult(vm, new NumberObject(2), new NumberObject(1));
+            Utils.AssertTableResult(vm, new NumberObject(3), new NumberObject(2));
+            Utils.AssertTableResult(vm, new NumberObject(4), new NumberObject(3));
+            Utils.AssertTableResult(vm, new StringObject("x"), new NumberObject(99));
+        }
+
+        [Test]
+        public void Constructor_TwoCallsOnlyLastExpands()
+        {
+            // Non-last call truncates to one; the last call expands:
+            // {f(), f()} == {1, 1, 2, 3}.
+            string source = @"
+            local function f()
+                return 1, 2, 3
+            end
+            local a = {f(), f()}
+            return a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertTableResult(vm, new NumberObject(1), new NumberObject(1));
+            Utils.AssertTableResult(vm, new NumberObject(2), new NumberObject(1));
+            Utils.AssertTableResult(vm, new NumberObject(3), new NumberObject(2));
+            Utils.AssertTableResult(vm, new NumberObject(4), new NumberObject(3));
+        }
+
+        [Test]
+        public void Constructor_TrailingCallNoResults()
+        {
+            // A trailing call that returns nothing contributes no elements:
+            // {7, nothing()} == {7}.
+            string source = @"
+            local function nothing()
+                return
+            end
+            local a = {7, nothing()}
+            return #a";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 1);
+        }
+
+        [Test]
         public void NestedTables()
         {
             string source = @"
