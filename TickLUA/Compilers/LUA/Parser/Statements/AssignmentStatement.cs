@@ -208,12 +208,26 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
         {
             int result_count = variables.Count - value_index;
 
-            var call_regs = builder.AllocateRegistersContext(result_count);
-            values[value_index].CompileRead(builder, call_regs);
+            // Allocate ONLY the call/func slot before compiling the call. The call
+            // expects its arguments in the registers immediately after the func slot
+            // (func_reg+1, +2, ...), which is where FunctionCallExpression puts them by
+            // allocating from the current register top. Reserving all result registers
+            // up front here would push the arguments past that point and CALL would read
+            // uninitialized registers. The extra result registers are reserved *after*
+            // the call instead (see below).
+            var call_reg = builder.AllocateRegisters(1);
+            var call_ctx = new Expression.RegisterContext(call_reg, result_count);
+            values[value_index].CompileRead(builder, call_ctx);
+
+            // The call left result_count values at call_reg..call_reg+result_count-1.
+            // Reserve the trailing ones so the variable writes below (which may allocate
+            // temporaries, e.g. for table-index targets) can't clobber results not yet read.
+            if (result_count > 1)
+                builder.AllocateRegisters(result_count - 1);
 
             for (int j = 0; j < result_count; j++)
             {
-                var context_result = new Expression.RegisterContext((byte)(call_regs.index + j), 1);
+                var context_result = new Expression.RegisterContext((byte)(call_reg + j), 1);
                 variables[value_index + j].CompileWrite(builder, context_result);
             }
 

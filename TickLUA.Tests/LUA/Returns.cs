@@ -1,7 +1,76 @@
 ﻿namespace TickLUA_Tests.LUA
 {
+    using TickLUA.VM.Objects;
+
     internal class Returns
     {
+        [Test]
+        public void ReturnTable_Single()
+        {
+            string source = @"
+                return {1, 2}";
+
+            var vm = Utils.Run(source, 100);
+            Assert.NotNull(vm.ExecutionResult);
+            Assert.IsTrue(vm.ExecutionResult.Length == 1);
+            Utils.AssertTableResult(vm, new NumberObject(1), new NumberObject(1), 0);
+            Utils.AssertTableResult(vm, new NumberObject(2), new NumberObject(2), 0);
+        }
+
+        [Test]
+        public void ReturnTable_MultipleTableConstructors()
+        {
+            // Each table constructor in a multi-return must build its own table
+            // without its temporary element registers clobbering sibling return slots.
+            string source = @"
+                return {1, 2}, {3, 4}";
+
+            var vm = Utils.Run(source, 100);
+            Assert.NotNull(vm.ExecutionResult);
+            Assert.IsTrue(vm.ExecutionResult.Length == 2);
+
+            Utils.AssertTableResult(vm, new NumberObject(1), new NumberObject(1), 0);
+            Utils.AssertTableResult(vm, new NumberObject(2), new NumberObject(2), 0);
+
+            Utils.AssertTableResult(vm, new NumberObject(1), new NumberObject(3), 1);
+            Utils.AssertTableResult(vm, new NumberObject(2), new NumberObject(4), 1);
+        }
+
+        [Test]
+        public void ReturnTable_TableConstructorAmongScalars()
+        {
+            // A table constructor sandwiched between scalar return values.
+            string source = @"
+                return 10, {1, 2}, 20";
+
+            var vm = Utils.Run(source, 100);
+            Assert.NotNull(vm.ExecutionResult);
+            Assert.IsTrue(vm.ExecutionResult.Length == 3);
+
+            Utils.AssertIntegerResult(vm, 10, 0);
+            Utils.AssertTableResult(vm, new NumberObject(1), new NumberObject(1), 1);
+            Utils.AssertTableResult(vm, new NumberObject(2), new NumberObject(2), 1);
+            Utils.AssertIntegerResult(vm, 20, 2);
+        }
+
+        [Test]
+        public void ReturnTable_TrailingCallInsideTable()
+        {
+            // The trailing table constructor is a single return value even though it
+            // internally contains a call; the outer return must not treat it as multret.
+            string source = @"
+                local function pair()
+                    return 2, 3
+                end
+                return 1, {pair()}";
+
+            var vm = Utils.Run(source, 100);
+            Assert.NotNull(vm.ExecutionResult);
+            Assert.IsTrue(vm.ExecutionResult.Length == 2);
+            Utils.AssertIntegerResult(vm, 1, 0);
+            Utils.AssertTableResult(vm, 1);
+        }
+
         [Test]
         public void ReturnNothing()
         {
