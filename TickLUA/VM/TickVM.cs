@@ -67,13 +67,24 @@ namespace TickLUA.VM
         public bool IsFinished => callStack.Count == 0;
         public LuaObject[] ExecutionResult { get; private set; }
 
-        public TickVM(LuaFunction bytecode)
+        public TickVM(LuaFunction bytecode, params LuaObject[] args)
         {
             instructionHandlers = LoadInstructionSet();
 
             // TODO: add _ENV upvalue here
             var upvalues = new RegisterCell[0];
             var frame = new StackFrame(bytecode, upvalues);
+
+            // Host-supplied values become the main chunk's varargs; scripts bind
+            // them via "local print, add = ..." (the main chunk is compiled with
+            // HasVarargs = true and no parameters).
+            if (args != null && args.Length > 0)
+            {
+                var varargs = new LuaObject[args.Length];
+                for (int i = 0; i < args.Length; i++)
+                    varargs[i] = args[i] ?? NilObject.Nil;
+                frame.Varargs = varargs;
+            }
 
             PushFrame(frame);
         }

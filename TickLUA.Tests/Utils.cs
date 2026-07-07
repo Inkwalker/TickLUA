@@ -6,18 +6,18 @@ namespace TickLUA_Tests
 {
     internal static class Utils
     {
-        public static TickVM Run(string code, int tick_limit)
+        public static TickVM Run(string code, int tick_limit, params LuaObject[] vm_args)
         {
             var luaFunction = LuaCompiler.Compile(code);
 
             BytecodePrinter.ConsoleWrite(luaFunction, true);
-            
-            return Run(luaFunction, tick_limit);
+
+            return Run(luaFunction, tick_limit, vm_args);
         }
 
-        public static TickVM Run(LuaFunction func, int tick_limit)
+        public static TickVM Run(LuaFunction func, int tick_limit, params LuaObject[] vm_args)
         {
-            var vm = new TickVM(func);
+            var vm = new TickVM(func, vm_args);
 
             int ticks = 0;
             while (!vm.IsFinished)

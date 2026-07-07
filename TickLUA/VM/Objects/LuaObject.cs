@@ -39,7 +39,15 @@
 
         //public TableObject Metatable { get; set; }
 
+        /// <summary>Allocation-free "no results" return value for native functions.</summary>
+        public static readonly LuaObject[] NoResults = new LuaObject[0];
+
         public LuaObject() { }
+
+        public static LuaObject From(bool value) => BooleanObject.FromBool(value);
+        public static LuaObject From(int value) => new NumberObject(value);
+        public static LuaObject From(float value) => new NumberObject(value);
+        public static LuaObject From(string value) => value == null ? (LuaObject)NilObject.Nil : new StringObject(value);
 
         public override string ToString()
         {

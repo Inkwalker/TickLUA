@@ -119,6 +119,36 @@ namespace TickLUA.VM.Handlers
 
                 vm.PushFrame(new_frame);
             }
+            else if (func_value is NativeFunctionObject native)
+            {
+                // Copy args out of the caller registers — results are written back
+                // starting at func_reg, overwriting the argument registers.
+                var args = new LuaObject[arg_count];
+                for (int i = 0; i < arg_count; i++)
+                {
+                    args[i] = frame.Registers[func_reg + 1 + i].Value;
+                }
+
+                // Synchronous: the whole native call costs exactly one tick, no frame push.
+                var results = native.Function(new NativeArgs(args, native.Name)) ?? LuaObject.NoResults;
+
+                int expected_count = res_count;
+                if (expected_count < 0)
+                {
+                    // Caller wanted all results: record where they end for the consuming
+                    // variable-count CALL/RETURN/SET_LIST.
+                    expected_count = results.Length;
+                    frame.Top = func_reg + results.Length;
+                }
+
+                frame.GrowRegisters(func_reg + expected_count);
+
+                for (int i = 0; i < expected_count; i++)
+                {
+                    frame.Registers[func_reg + i].Value =
+                        i < results.Length && results[i] != null ? results[i] : NilObject.Nil;
+                }
+            }
             else
             {
                 throw new RuntimeException($"Attempt to call a non-function value of type {func_value.GetType().Name}");
