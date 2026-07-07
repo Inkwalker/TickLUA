@@ -10,23 +10,60 @@
             token = null;
 
             char c = source.Peek();
-            char startChar = c;
 
-            if (startChar == '-')
+            if (c != '-') return false;
+
+            c = source.Next();
+
+            if (c != '-') return false;
+
+            // We have "--". Look at the character that follows.
+            c = source.Next();
+
+            // A long-bracket "[[" turns this into a block comment.
+            if (c == '[')
             {
                 c = source.Next();
 
-                if (c != '-') return false;
-
-                while (c != '\n' && !source.EoF)
+                if (c == '[')
                 {
-                    c = source.Next();
+                    ReadBlockComment(source);
+                    return true;
                 }
-
-                return true;
             }
 
-            return false;
+            // Otherwise it is a line comment: consume until end of line.
+            while (c != '\n' && !source.EoF)
+            {
+                c = source.Next();
+            }
+
+            return true;
+        }
+
+        private static void ReadBlockComment(SourceCode source)
+        {
+            char c = source.Next();
+
+            while (!source.EoF)
+            {
+                if (c == ']')
+                {
+                    c = source.Next();
+
+                    if (source.EoF) return;
+
+                    if (c == ']')
+                    {
+                        source.Next(); // eat the closing "]]"
+                        return;
+                    }
+
+                    continue;
+                }
+
+                c = source.Next();
+            }
         }
     }
 }
