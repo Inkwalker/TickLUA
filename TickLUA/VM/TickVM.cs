@@ -39,6 +39,7 @@ namespace TickLUA.VM
             { Opcode.CLOSURE,         HandlersCore.CLOSURE },
             { Opcode.CALL,            HandlersCore.CALL },
             { Opcode.RETURN,          HandlersCore.RETURN },
+            { Opcode.VARARG,          HandlersCore.VARARG },
             // Logic
             { Opcode.TEST,            HandlersLogic.TEST },
             { Opcode.TESTSET,         HandlersLogic.TESTSET },

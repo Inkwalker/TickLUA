@@ -9,6 +9,8 @@ namespace TickLUA.VM
         internal List<Instruction> Instructions { get; }
         internal List<LuaObject> Constants { get; }
         internal int RegisterCount { get; set; }
+        internal bool HasVarargs { get; set; }
+        internal int ParameterCount { get; set; }
         internal List<UpvalueDef> Upvalues { get; }
         public List<LuaFunction> NestedFunctions { get; } = new List<LuaFunction>();
         public Metadata Meta { get; }

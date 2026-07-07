@@ -81,6 +81,7 @@ namespace TickLUA.Compilers.LUA.Lexer
             new SymbolRecognizer("~=", TokenType.OP_NotEquals),
             new SymbolRecognizer("<=", TokenType.OP_LessEq),
             new SymbolRecognizer(">=", TokenType.OP_GreaterEq),
+            new SymbolRecognizer("...", TokenType.VarArgs),
             new SymbolRecognizer("..", TokenType.OP_Concat),
             new SymbolRecognizer(",", TokenType.Coma),
             new SymbolRecognizer(".", TokenType.Dot),

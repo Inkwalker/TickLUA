@@ -11,11 +11,13 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
         private List<string> parameters;
         private CompoundStatement body;
+        private bool is_varargs;
 
-        public FunctionDefinitionExpression(IEnumerable<string> parameters, CompoundStatement body, SourceRange range)
+        public FunctionDefinitionExpression(IEnumerable<string> parameters, CompoundStatement body, SourceRange range, bool isVarargs = false)
         {
             this.body = body;
             this.parameters = new List<string>(parameters);
+            is_varargs = isVarargs;
 
             SourceRange = range;
         }
@@ -30,6 +32,15 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             parameters = new List<string>();
             while (lexer.Current.Type != TokenType.BRK_ROUND_Right)
             {
+                if (lexer.Current.Type == TokenType.VarArgs)
+                {
+                    is_varargs = true;
+                    lexer.Next();
+                    if (lexer.Current.Type != TokenType.BRK_ROUND_Right)
+                        throw new CompilationException("'...' must be the last parameter", lexer.Current.Position);
+                    break;
+                }
+
                 AssertToken(lexer.Current, TokenType.Name);
                 parameters.Add(lexer.Current.Content);
                 lexer.Next();
@@ -49,6 +60,9 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         public override void CompileRead(FunctionBuilder builder, RegisterContext target_register)
         {
             var nested_builder = builder.CreateNestedFunction(FunctionName, out int func_index);
+
+            nested_builder.HasVarargs = is_varargs;
+            nested_builder.ParameterCount = parameters.Count;
 
             //Open a new block to ensure that parameters are scoped correctly.
             nested_builder.BlockStart();

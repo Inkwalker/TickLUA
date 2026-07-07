@@ -81,15 +81,37 @@ namespace TickLUA.VM.Handlers
             int arg_count = instruction.B - 1;
             int res_count = instruction.C - 1;
 
+            if (arg_count < 0)
+                // Variable arg count: everything from func_reg + 1 up to the top,
+                // left there by a preceding variable-count CALL or VARARG.
+                arg_count = System.Math.Max(0, frame.Top - func_reg - 1);
+
             var func_value = frame.Registers[func_reg].Value;
             if (func_value is ClosureObject closure)
             {
                 var new_frame = new StackFrame(closure.Function, closure.Upvalues);
 
-                int copy_count = System.Math.Min(arg_count, new_frame.Registers.Length);
+                // Args beyond the declared parameters of a vararg function go to its
+                // Varargs store instead of registers; for a non-vararg function they
+                // are simply dropped.
+                int param_count = closure.Function.HasVarargs
+                    ? closure.Function.ParameterCount
+                    : new_frame.Registers.Length;
+
+                int copy_count = System.Math.Min(arg_count, param_count);
                 for (int i = 0; i < copy_count; i++)
                 {
                     new_frame.Registers[i].Value = frame.Registers[func_reg + i + 1].Value;
+                }
+
+                if (closure.Function.HasVarargs && arg_count > param_count)
+                {
+                    var varargs = new LuaObject[arg_count - param_count];
+                    for (int i = 0; i < varargs.Length; i++)
+                    {
+                        varargs[i] = frame.Registers[func_reg + 1 + param_count + i].Value;
+                    }
+                    new_frame.Varargs = varargs;
                 }
 
                 new_frame.ResultsStartRegister = func_reg;
@@ -146,6 +168,28 @@ namespace TickLUA.VM.Handlers
             }
             else
                 vm.SetExecutionResult(results);
+        }
+
+        internal static void VARARG(TickVM vm, StackFrame frame, Instruction instruction)
+        {
+            byte a = instruction.A;
+            int count = instruction.Bx - 1;
+
+            var varargs = frame.Varargs;
+
+            if (count < 0)
+            {
+                // Expand all varargs: record where they end for the consuming
+                // variable-count CALL/RETURN/SET_LIST.
+                count = varargs.Length;
+                frame.GrowRegisters(a + count);
+                frame.Top = a + count;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                frame.Registers[a + i].Value = i < varargs.Length ? varargs[i] : NilObject.Nil;
+            }
         }
 
         internal static void JMP(TickVM vm, StackFrame frame, Instruction instruction)
@@ -227,6 +271,11 @@ namespace TickLUA.VM
         {
             ushort c = count < -1 ? (ushort)0 : (ushort)(count + 1);
             return new Instruction(Opcode.RETURN, start_reg, c);
+        }
+        internal static Instruction VARARG(byte dest_reg, int count)
+        {
+            ushort bx = count < -1 ? (ushort)0 : (ushort)(count + 1);
+            return new Instruction(Opcode.VARARG, dest_reg, bx);
         }
         internal static Instruction JMP(int offset) => new Instruction(Opcode.JMP, offset);
 

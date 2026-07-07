@@ -14,6 +14,10 @@ namespace TickLUA.Compilers.LUA
 
             var builder = new FunctionBuilder("main");
 
+            // The main chunk is a vararg function (per Lua semantics), so top-level
+            // '...' compiles and expands to zero values.
+            builder.HasVarargs = true;
+
             var chunk = new RootStatement(lexer);
 
             chunk.Compile(builder);

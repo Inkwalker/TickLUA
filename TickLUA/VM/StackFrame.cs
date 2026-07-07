@@ -25,6 +25,12 @@ namespace TickLUA.VM
         /// </summary>
         public int Top { get; set; }
 
+        /// <summary>
+        /// Extra arguments passed beyond the declared parameters of a vararg function.
+        /// Read by the VARARG instruction.
+        /// </summary>
+        public LuaObject[] Varargs { get; set; } = new LuaObject[0];
+
         public StackFrame(LuaFunction function, RegisterCell[] upvalues)
         {
             Function = function;

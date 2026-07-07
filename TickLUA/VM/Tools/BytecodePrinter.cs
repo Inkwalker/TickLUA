@@ -51,6 +51,7 @@ namespace TickLUA.VM.Tools
                     return $"{op_str} R{i.A} R{i.B}";
                 case Opcode.LOAD_NIL:
                 case Opcode.RETURN:
+                case Opcode.VARARG:
                     return $"{op_str} R{i.A} {i.Bx}";
                 case Opcode.TEST:
                     return $"{op_str} R{i.A} {i.B}";
@@ -114,6 +115,7 @@ namespace TickLUA.VM.Tools
                 //case Opcode.MOVE:
                 //    return $"; TODO: variable names";
                 case Opcode.RETURN:
+                case Opcode.VARARG:
                     return $"; {(i.Bx == 0?"all":(i.Bx-1).ToString())} out";
                 case Opcode.TEST:
                     return $"; expected {i.B > 0}";

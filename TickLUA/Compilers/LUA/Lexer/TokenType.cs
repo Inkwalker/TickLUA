@@ -41,6 +41,7 @@
         OP_Mod,
         OP_Pow,
         OP_Concat,
+        VarArgs,
         OP_Len,
         OP_Assignment,
         OP_Assignment_Div,

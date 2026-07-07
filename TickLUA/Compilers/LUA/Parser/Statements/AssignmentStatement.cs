@@ -178,8 +178,8 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
                 for (int i = 0; i < max; i++)
                 {
-                    // Special case for a function call as the last value.
-                    if (i == values.Count - 1 && variables.Count > values.Count && values[i] is FunctionCallExpression)
+                    // Special case for a multi-value expression (call or '...') as the last value.
+                    if (i == values.Count - 1 && variables.Count > values.Count && values[i].IsMultiValue)
                     {
                         CompileExpandedCall(builder, i);
                         return;

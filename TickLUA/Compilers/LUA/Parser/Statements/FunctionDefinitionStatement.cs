@@ -10,6 +10,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
         private List<string> parameters;
         private CompoundStatement body;
         private bool local;
+        private bool is_varargs;
 
         public string FunctionName { get; private set; }
 
@@ -88,6 +89,15 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
             while (lexer.Current.Type != TokenType.BRK_ROUND_Right)
             {
+                if (lexer.Current.Type == TokenType.VarArgs)
+                {
+                    is_varargs = true;
+                    lexer.Next();
+                    if (lexer.Current.Type != TokenType.BRK_ROUND_Right)
+                        throw new CompilationException("'...' must be the last parameter", lexer.Current.Position);
+                    break;
+                }
+
                 AssertToken(lexer.Current, TokenType.Name);
                 parameters.Add(lexer.Current.Content);
                 lexer.Next();
@@ -99,7 +109,7 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
 
         public override void Compile(FunctionBuilder builder)
         {
-            var expr = new FunctionDefinitionExpression(parameters, body, SourceRange);
+            var expr = new FunctionDefinitionExpression(parameters, body, SourceRange, is_varargs);
             expr.FunctionName = FunctionName;
 
             if (local)

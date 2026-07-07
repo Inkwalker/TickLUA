@@ -254,10 +254,12 @@
         [Test]
         public void Varargs_Count()
         {
-            // select('#', ...) counts the variadic arguments.
+            // No select() builtin yet (needs globals + native functions), so count
+            // via a table constructor instead; equivalent for non-nil arguments.
             string source = @"
                 local function count(...)
-                    return select('#', ...)
+                    local t = {...}
+                    return #t
                 end
                 return count(10, 20, 30, 40)";
 

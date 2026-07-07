@@ -220,6 +220,12 @@
         /// A - result reg, Bx - function index
         /// </summary>
         CLOSURE,
-        //VARARG
+
+        /// <summary>
+        /// Load the varargs of the current function into registers.
+        /// Fixed counts are nil-padded; expanding all sets the frame top.
+        /// A - start result reg, Bx - number of values (0 - all, 1 - none, 2+ - (Bx-1)).
+        /// </summary>
+        VARARG
     }
 }

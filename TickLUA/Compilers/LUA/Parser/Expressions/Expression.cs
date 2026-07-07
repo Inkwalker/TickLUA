@@ -10,9 +10,15 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
     internal abstract class Expression : AstNode
     {
         /// <summary>
-        /// Compile expression. 
+        /// Compile expression.
         /// </summary>
         public abstract void CompileRead(FunctionBuilder builder, RegisterContext target_register);
+
+        /// <summary>
+        /// Whether the expression can produce a variable number of values
+        /// (function call or '...') and expands in trailing positions.
+        /// </summary>
+        public virtual bool IsMultiValue => false;
 
         /// <summary>
         /// Compile expression with an automatically allocated registers as target. 
@@ -115,8 +121,8 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 case TokenType.True:
                 case TokenType.False:
                     return new LiteralExpression(lexer);
-                //case TokenType.VarArgs:
-                //    return new SymbolRefExpression(t, lcontext);
+                case TokenType.VarArgs:
+                    return new VarArgsExpression(lexer);
                 case TokenType.BRK_CUR_Left:
                     return new TableExpression(lexer);
                 case TokenType.Function:

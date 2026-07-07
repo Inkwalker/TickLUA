@@ -78,13 +78,14 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
             int array_size = GetArrayElementsCount();
 
-            // If the last field is a positional function call, it expands to ALL of its
-            // results as trailing array elements (Lua multi return semantics). The trailing
-            // call is compiled with a variable result count and the result span is
-            // resolved at runtime via frame.Top; a SET_LIST count of -1 signals that.
+            // If the last field is a positional multi-value expression (function call or
+            // '...'), it expands to ALL of its values as trailing array elements (Lua
+            // multi return semantics). It is compiled with a variable result count and
+            // the result span is resolved at runtime via frame.Top; a SET_LIST count of
+            // -1 signals that.
             bool multi_return = args.Count > 0
                         && !args[args.Count - 1].HasKey
-                        && args[args.Count - 1].Value is FunctionCallExpression;
+                        && args[args.Count - 1].Value.IsMultiValue;
 
             byte start_reg = array_size > 0 ? builder.AllocateRegisters(array_size) : (byte)0;
             byte array_index = 0;

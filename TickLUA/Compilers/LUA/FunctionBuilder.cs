@@ -19,6 +19,24 @@ namespace TickLUA.Compilers.LUA
         public FunctionBuilder Parent { get; private set; } = null;
         public int MaxRegisters { get; private set; }
 
+        /// <summary>
+        /// Whether the function being built accepts varargs ('...').
+        /// </summary>
+        public bool HasVarargs
+        {
+            get => function.HasVarargs;
+            set => function.HasVarargs = value;
+        }
+
+        /// <summary>
+        /// Number of fixed (named) parameters of the function being built.
+        /// </summary>
+        public int ParameterCount
+        {
+            get => function.ParameterCount;
+            set => function.ParameterCount = value;
+        }
+
         public FunctionBuilder(string function_name, FunctionBuilder parent = null)
         {
             Parent = parent;
