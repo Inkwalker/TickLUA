@@ -67,24 +67,39 @@ namespace TickLUA.VM
         public bool IsFinished => callStack.Count == 0;
         public LuaObject[] ExecutionResult { get; private set; }
 
+        /// <summary>
+        /// The globals table, exposed to scripts as _ENV. Hosts can register
+        /// native functions and other globals here before ticking.
+        /// </summary>
+        public TableObject Globals { get; }
+
         public TickVM(LuaFunction bytecode, params LuaObject[] args)
         {
             instructionHandlers = LoadInstructionSet();
 
-            // TODO: add _ENV upvalue here
-            var upvalues = new RegisterCell[0];
+            // The main chunk is compiled with _ENV as upvalue #0; its cell holds
+            // the globals table.
+            Globals = new TableObject();
+            var upvalues = new RegisterCell[] { new RegisterCell { Value = Globals } };
             var frame = new StackFrame(bytecode, upvalues);
 
             // Host-supplied values become the main chunk's varargs; scripts bind
             // them via "local print, add = ..." (the main chunk is compiled with
             // HasVarargs = true and no parameters).
+            // Per the Lua spec they are also published in the global 'arg' table
+            // at indices 1..n.
+            var arg_table = new TableObject();
             if (args != null && args.Length > 0)
             {
                 var varargs = new LuaObject[args.Length];
                 for (int i = 0; i < args.Length; i++)
+                {
                     varargs[i] = args[i] ?? NilObject.Nil;
+                    arg_table[i + 1] = varargs[i];
+                }
                 frame.Varargs = varargs;
             }
+            Globals["arg"] = arg_table;
 
             PushFrame(frame);
         }

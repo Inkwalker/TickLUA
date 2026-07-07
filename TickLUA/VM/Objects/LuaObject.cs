@@ -5,8 +5,10 @@
     /// </summary>
     public abstract class LuaObject
     {
+        /// <summary>Name of the environment upvalue holding the globals table (Lua 5.2+).</summary>
+        public const string ENV = "_ENV";
+
         #region Metatable constants
-        public const string ENV = "_env";
         public const string BASE = "__base";
         public const string INIT = "__init";
         public const string INDEX_GET = "__index";

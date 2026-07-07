@@ -30,6 +30,12 @@ namespace TickLUA.VM.Objects
             set => this[new NumberObject(i)] = value;
         }
 
+        public LuaObject this[string i]
+        {
+            get => this[new StringObject(i)];
+            set => this[new StringObject(i)] = value;
+        }
+
 
         public TableObject()
         {

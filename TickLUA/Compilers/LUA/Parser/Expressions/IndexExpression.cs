@@ -1,4 +1,5 @@
 ﻿using TickLUA.VM;
+using TickLUA.VM.Objects;
 
 namespace TickLUA.Compilers.LUA.Parser.Expressions
 {
@@ -13,6 +14,12 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             this.index = new LiteralExpression(index);
         }
 
+        public IndexExpression(Expression variable, string index, SourceRange source_range)
+            : this(variable, index)
+        {
+            SourceRange = source_range;
+        }
+
         public IndexExpression(Expression variable, Expression index)
         {
             this.variable = variable;
@@ -21,11 +28,14 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             SourceRange = new SourceRange(variable.SourceRange.from, index.SourceRange.to);
         }
 
-        //public static IndexExpression Env(string index)
-        //{
-        //    var variable = new SymbolExpression(LuaObject.ENV);
-        //    return new IndexExpression(variable, index);
-        //}
+        /// <summary>
+        /// Access to a global variable, translated to _ENV.index per Lua 5.2+ semantics.
+        /// </summary>
+        public static IndexExpression Env(string index, SourceRange source_range)
+        {
+            var variable = new SymbolExpression(LuaObject.ENV, source_range);
+            return new IndexExpression(variable, index, source_range);
+        }
 
         public override void CompileRead(FunctionBuilder builder, RegisterContext target_register)
         {

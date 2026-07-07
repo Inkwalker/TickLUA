@@ -192,6 +192,18 @@ namespace TickLUA.Compilers.LUA
             return -1;
         }
 
+        /// <summary>
+        /// Declare an upvalue on the function being built without resolving it in a
+        /// parent. Used to seed the main chunk's _ENV upvalue, whose cell is supplied
+        /// by the VM rather than captured by a CLOSURE instruction.
+        /// </summary>
+        /// <returns>Index of the declared upvalue</returns>
+        public int AddUpvalue(string name)
+        {
+            function.Upvalues.Add(new LuaFunction.UpvalueDef(name, false, (byte)function.Upvalues.Count));
+            return function.Upvalues.Count - 1;
+        }
+
         public int ResolveUpValue(string name)
         {
             // First check if the upvalue is already defined in the current function

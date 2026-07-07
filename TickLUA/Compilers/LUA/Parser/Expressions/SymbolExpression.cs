@@ -1,5 +1,6 @@
 ﻿using TickLUA.Compilers.LUA.Lexer;
 using TickLUA.VM;
+using TickLUA.VM.Objects;
 
 namespace TickLUA.Compilers.LUA.Parser.Expressions
 {
@@ -10,6 +11,12 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         public SymbolExpression(string name)
         {
             this.name = name;
+        }
+
+        public SymbolExpression(string name, SourceRange source_range)
+        {
+            this.name = name;
+            SourceRange = source_range;
         }
 
         public SymbolExpression(LuaLexer lexer)
@@ -45,8 +52,13 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 }
                 else
                 {
-                    // resolve as global variable
-                    throw new CompilationException($"Undefined variable '{name}'", SourceRange.from);
+                    // free name: global variable, translated to _ENV.name
+                    if (name == LuaObject.ENV)
+                        // _ENV itself must always resolve as an upvalue (seeded on the
+                        // main chunk); reaching here would recurse forever
+                        throw new CompilationException($"Undefined variable '{name}'", SourceRange.from);
+
+                    IndexExpression.Env(name, SourceRange).CompileRead(builder, target_register);
                 }
             }
         }
@@ -73,8 +85,11 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 }
                 else
                 {
-                    // resolve as global variable
-                    throw new CompilationException($"Undefined variable '{name}'", SourceRange.from);
+                    // free name: global variable, desugared to _ENV.name
+                    if (name == LuaObject.ENV)
+                        throw new CompilationException($"Undefined variable '{name}'", SourceRange.from);
+
+                    IndexExpression.Env(name, SourceRange).CompileWrite(builder, value_register);
                 }
             }
         }
