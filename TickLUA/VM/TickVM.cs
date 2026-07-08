@@ -58,6 +58,8 @@ namespace TickLUA.VM
             // Loops
             { Opcode.FORPREP,         HandlersLoops.FORPREP },
             { Opcode.FORLOOP,         HandlersLoops.FORLOOP },
+            { Opcode.TFORCALL,        HandlersLoops.TFORCALL },
+            { Opcode.TFORLOOP,        HandlersLoops.TFORLOOP },
         };
 
         private readonly InstructionHandler[] instructionHandlers;
@@ -80,6 +82,7 @@ namespace TickLUA.VM
             // The main chunk is compiled with _ENV as upvalue #0; its cell holds
             // the globals table.
             Globals = new TableObject();
+            StdLib.Register(Globals);
             var upvalues = new RegisterCell[] { new RegisterCell { Value = Globals } };
             var frame = new StackFrame(bytecode, upvalues);
 

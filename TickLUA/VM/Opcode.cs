@@ -205,8 +205,19 @@
         /// </summary>
         FORPREP,
 
-        //TFORCALL,
-        //TFORLOOP,
+        /// <summary>
+        /// Generic for loop iterator call.
+        /// Calls R(A) with arguments R(A+1) (state) and R(A+2) (control), storing B results at R(A+3) onwards.
+        /// A - base reg, B - number of loop variables
+        /// </summary>
+        TFORCALL,
+
+        /// <summary>
+        /// Generic for loop test.
+        /// If R(A+3) is not nil, copies it into R(A+2) (control) and jumps back into the loop body.
+        /// A - base reg, sBx - relative jump
+        /// </summary>
+        TFORLOOP,
 
         /// <summary>
         /// Close upvalues.

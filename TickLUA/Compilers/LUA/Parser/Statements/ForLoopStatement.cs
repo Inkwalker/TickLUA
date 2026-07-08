@@ -21,41 +21,47 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
             {
                 case TokenType.Coma:
                 case TokenType.In:
-                    //return ParseForInLoop(varibles, lexer, line);
-                    throw new CompilationException("For in loops are not implemented yet", start_pos);
+                    return ParseForInLoop(varibles, lexer, start_pos);
                 case TokenType.OP_Assignment:
                     return ParseForRangeLoop(varibles[0], lexer, start_pos);
                 default: throw new CompilationException($"Unexpected symbol near {lexer.Current.Type}", lexer.Current.Position);
             }
         }
 
-        //private static ForLoopStatement ParseForInLoop(List<string> variables, Lexer lexer, int startLine)
-        //{
-        //    while (true)
-        //    {
-        //        if (lexer.Current.Type == TokenType.Coma) lexer.Next();
-        //        if (lexer.Current.Type == TokenType.In) break;
+        private static ForLoopStatement ParseForInLoop(List<string> variables, LuaLexer lexer, SourcePosition start_pos)
+        {
+            while (lexer.Current.Type == TokenType.Coma)
+            {
+                lexer.Next();
 
-        //        AssertToken(lexer.Current, TokenType.Name);
+                AssertToken(lexer.Current, TokenType.Name);
+                variables.Add(lexer.Current.Content);
+                lexer.Next();
+            }
 
-        //        var var_name = lexer.Current.Content;
-        //        variables.Add(var_name);
+            AssertTokenNext(lexer, TokenType.In);
 
-        //        lexer.Next();
-        //    }
+            // The iterator triple (function, state, control) comes from an
+            // expression list: "for i, v in ipairs(t)" or "for i in iter, max, 0".
+            var values = new List<Expression>();
+            do
+            {
+                if (lexer.Current.Type == TokenType.Coma) lexer.Next();
+                values.Add(Expression.Create(lexer));
+            }
+            while (lexer.Current.Type == TokenType.Coma);
 
-        //    AssertTokenNext(lexer, TokenType.In);
+            AssertTokenNext(lexer, TokenType.Do);
 
-        //    Expression iterator = Expression.Create(lexer);
+            var body = new CompoundStatement(lexer);
 
-        //    AssertTokenNext(lexer, TokenType.Do);
+            var end_pos = lexer.Current.Position;
+            AssertTokenNext(lexer, TokenType.End);
 
-        //    CompoundStatement body = new CompoundStatement(lexer);
+            var range = new SourceRange(start_pos, end_pos);
 
-        //    AssertTokenNext(lexer, TokenType.End);
-
-        //    return new ForInLoopStatement(variables, iterator, body, startLine);
-        //}
+            return new ForInLoopStatement(variables, values, body, range);
+        }
 
         public static ForLoopStatement ParseForRangeLoop(string variable, LuaLexer lexer, SourcePosition start_pos)
         {

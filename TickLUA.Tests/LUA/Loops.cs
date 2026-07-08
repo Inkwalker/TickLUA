@@ -1,8 +1,6 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using TickLUA.Compilers;
 using TickLUA.Compilers.LUA;
-using TickLUA_Tests.Instructions;
 
 namespace TickLUA_Tests.LUA
 {
@@ -226,6 +224,114 @@ namespace TickLUA_Tests.LUA
 
             var vm = Utils.Run(source, 200);
             Utils.AssertIntegerResult(vm, 60, 0);
+        }
+
+        [Test]
+        public void GenericForIn_Pairs()
+        {
+            string source = @"
+                local t = {a = 1, b = 2, c = 3}
+                local sum = 0
+                for k, v in pairs(t) do
+                    sum = sum + v
+                end
+                return sum";
+
+            var vm = Utils.Run(source, 200);
+            Utils.AssertIntegerResult(vm, 6, 0);
+        }
+
+        [Test]
+        public void GenericForIn_Next()
+        {
+            // next called directly: first pair of a one-element array,
+            // then nil after the last key.
+            string source = @"
+                local t = {42}
+                local k, v = next(t)
+                local k2 = next(t, k)
+                return v, k2";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 42, 0);
+            Utils.AssertNilResult(vm, 1);
+        }
+
+        [Test]
+        public void GenericForIn_Break()
+        {
+            string source = @"
+                local t = {5, 6, 7}
+                local sum = 0
+                for i, v in ipairs(t) do
+                    sum = sum + v
+                    if i >= 2 then
+                        break
+                    end
+                end
+                return sum";
+
+            var vm = Utils.Run(source, 200);
+            Utils.AssertIntegerResult(vm, 11, 0);
+        }
+
+        [Test]
+        public void GenericForIn_MultiVarStatelessIterator()
+        {
+            string source = @"
+                local function iter(max, i)
+                    i = i + 1
+                    if i <= max then
+                        return i, i * 2
+                    end
+                end
+
+                local sum = 0
+                for i, d in iter, 3, 0 do
+                    sum = sum + d
+                end
+                return sum";
+
+            var vm = Utils.Run(source, 200);
+            Utils.AssertIntegerResult(vm, 12, 0);
+        }
+
+        [Test]
+        public void GenericForIn_IpairsStopsAtNilHole()
+        {
+            // ipairs iterates 1..n until the first nil value.
+            string source = @"
+                local t = {1, 2, 3}
+                t[2] = nil
+                local sum = 0
+                for i, v in ipairs(t) do
+                    sum = sum + v
+                end
+                return sum";
+
+            var vm = Utils.Run(source, 200);
+            Utils.AssertIntegerResult(vm, 1, 0);
+        }
+
+        [Test]
+        public void GenericForIn_ClosureCapturesFreshLoopVar()
+        {
+            // Each iteration has fresh loop variables; closures capturing them
+            // must keep their own value (exercises the CLOSE path).
+            string source = @"
+                local t = {10, 20, 30}
+                local funcs = {}
+                for i, v in ipairs(t) do
+                    funcs[i] = function()
+                        return v
+                    end
+                end
+                return funcs[1](), funcs[2](), funcs[3]()";
+
+            var vm = Utils.Run(source, 300);
+            Utils.AssertIntegerResult(vm, 10, 0);
+            Utils.AssertIntegerResult(vm, 20, 1);
+            Utils.AssertIntegerResult(vm, 30, 2);
         }
 
         [Test]

@@ -92,6 +92,38 @@ namespace TickLUA.VM.Objects
         }
 
         /// <summary>
+        /// Stateless iteration primitive backing the 'next' stdlib function.
+        /// A null or nil <paramref name="key"/> yields the first pair; otherwise the
+        /// pair following <paramref name="key"/> in enumeration order. Order is
+        /// unspecified but stable as long as the table is not mutated.
+        /// </summary>
+        /// <returns>False when iteration is finished (both outputs are nil)</returns>
+        /// <exception cref="RuntimeException"><paramref name="key"/> is not present in the table</exception>
+        public bool TryNext(LuaObject key, out LuaObject next_key, out LuaObject next_value)
+        {
+            bool found = key == null || key is NilObject;
+
+            foreach (var pair in Elements)
+            {
+                if (found)
+                {
+                    next_key = pair.Key;
+                    next_value = pair.Value;
+                    return true;
+                }
+
+                if (pair.Key.Equals(key)) found = true;
+            }
+
+            if (!found)
+                throw new RuntimeException("invalid key to 'next'");
+
+            next_key = NilObject.Nil;
+            next_value = NilObject.Nil;
+            return false;
+        }
+
+        /// <summary>
         /// Insert array element at index and shift all elements
         /// </summary>
         /// <exception cref="RuntimeException">Index out of bounds</exception>
