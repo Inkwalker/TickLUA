@@ -89,38 +89,19 @@ namespace TickLUA.VM.Handlers
             var func_value = frame.Registers[func_reg].Value;
             if (func_value is ClosureObject closure)
             {
-                var new_frame = new StackFrame(closure.Function, closure.Upvalues);
-
-                // Args beyond the declared parameters of a vararg function go to its
-                // Varargs store instead of registers; for a non-vararg function they
-                // are simply dropped.
-                int param_count = closure.Function.HasVarargs
-                    ? closure.Function.ParameterCount
-                    : new_frame.Registers.Length;
-
-                int copy_count = System.Math.Min(arg_count, param_count);
-                for (int i = 0; i < copy_count; i++)
-                {
-                    new_frame.Registers[i].Value = frame.Registers[func_reg + i + 1].Value;
-                }
-
-                if (closure.Function.HasVarargs && arg_count > param_count)
-                {
-                    var varargs = new LuaObject[arg_count - param_count];
-                    for (int i = 0; i < varargs.Length; i++)
-                    {
-                        varargs[i] = frame.Registers[func_reg + 1 + param_count + i].Value;
-                    }
-                    new_frame.Varargs = varargs;
-                }
-
-                new_frame.ResultsStartRegister = func_reg;
-                new_frame.ResultsCount = res_count;
-
+                var new_frame = BuildClosureFrame(frame, closure, func_reg + 1, arg_count, func_reg, res_count);
                 vm.PushFrame(new_frame);
             }
             else if (func_value is NativeFunctionObject native)
             {
+                if (native.VmFunction != null)
+                {
+                    // VM-aware native (e.g. pcall): manages caller registers and the
+                    // call stack itself.
+                    native.VmFunction(vm, frame, func_reg, arg_count, res_count);
+                    return;
+                }
+
                 // Copy args out of the caller registers — results are written back
                 // starting at func_reg, overwriting the argument registers.
                 var args = new LuaObject[arg_count];
@@ -132,26 +113,76 @@ namespace TickLUA.VM.Handlers
                 // Synchronous: the whole native call costs exactly one tick, no frame push.
                 var results = native.Function(new NativeArgs(args, native.Name)) ?? LuaObject.NoResults;
 
-                int expected_count = res_count;
-                if (expected_count < 0)
-                {
-                    // Caller wanted all results: record where they end for the consuming
-                    // variable-count CALL/RETURN/SET_LIST.
-                    expected_count = results.Length;
-                    frame.Top = func_reg + results.Length;
-                }
-
-                frame.GrowRegisters(func_reg + expected_count);
-
-                for (int i = 0; i < expected_count; i++)
-                {
-                    frame.Registers[func_reg + i].Value =
-                        i < results.Length && results[i] != null ? results[i] : NilObject.Nil;
-                }
+                WriteResults(frame, func_reg, res_count, results);
             }
             else
             {
                 throw new RuntimeException($"Attempt to call a non-function value of type {func_value.GetType().Name}");
+            }
+        }
+
+        /// <summary>
+        /// Builds a callee frame for a closure call: copies arguments from the caller's
+        /// registers (starting at arg_start_reg), routes surplus args of a vararg
+        /// function to its Varargs store, and records where the results should land.
+        /// The caller pushes the returned frame.
+        /// </summary>
+        internal static StackFrame BuildClosureFrame(StackFrame caller, ClosureObject closure,
+            int arg_start_reg, int arg_count, byte results_start_reg, int res_count)
+        {
+            var new_frame = new StackFrame(closure.Function, closure.Upvalues);
+
+            // Args beyond the declared parameters of a vararg function go to its
+            // Varargs store instead of registers; for a non-vararg function they
+            // are simply dropped.
+            int param_count = closure.Function.HasVarargs
+                ? closure.Function.ParameterCount
+                : new_frame.Registers.Length;
+
+            int copy_count = System.Math.Min(arg_count, param_count);
+            for (int i = 0; i < copy_count; i++)
+            {
+                new_frame.Registers[i].Value = caller.Registers[arg_start_reg + i].Value;
+            }
+
+            if (closure.Function.HasVarargs && arg_count > param_count)
+            {
+                var varargs = new LuaObject[arg_count - param_count];
+                for (int i = 0; i < varargs.Length; i++)
+                {
+                    varargs[i] = caller.Registers[arg_start_reg + param_count + i].Value;
+                }
+                new_frame.Varargs = varargs;
+            }
+
+            new_frame.ResultsStartRegister = results_start_reg;
+            new_frame.ResultsCount = res_count;
+
+            return new_frame;
+        }
+
+        /// <summary>
+        /// Writes call results into a frame's registers starting at start_reg,
+        /// honoring the expected count (res_count &lt; 0 = all results, recording
+        /// the end in <see cref="StackFrame.Top"/>) and nil-padding the rest.
+        /// </summary>
+        internal static void WriteResults(StackFrame frame, byte start_reg, int res_count, LuaObject[] results)
+        {
+            int expected_count = res_count;
+            if (expected_count < 0)
+            {
+                // Caller wanted all results: record where they end for the consuming
+                // variable-count CALL/RETURN/SET_LIST.
+                expected_count = results.Length;
+                frame.Top = start_reg + results.Length;
+            }
+
+            frame.GrowRegisters(start_reg + expected_count);
+
+            for (int i = 0; i < expected_count; i++)
+            {
+                frame.Registers[start_reg + i].Value =
+                    i < results.Length && results[i] != null ? results[i] : NilObject.Nil;
             }
         }
 
@@ -175,27 +206,20 @@ namespace TickLUA.VM.Handlers
 
             vm.PopFrame();
 
+            if (frame.IsProtected)
+            {
+                // A pcall'd function returned without error: report success by
+                // prepending true to its results.
+                var protected_results = new LuaObject[results.Length + 1];
+                protected_results[0] = BooleanObject.True;
+                System.Array.Copy(results, 0, protected_results, 1, results.Length);
+                results = protected_results;
+            }
+
             var caller_frame = vm.PeekFrame();
 
             if (caller_frame != null)
-            {
-                byte reg_result = frame.ResultsStartRegister;
-                int expected_count = frame.ResultsCount;
-
-                if (expected_count < 0)
-                {
-                    // Caller wanted all results: record where they end
-                    expected_count = results.Length;
-                    caller_frame.Top = reg_result + results.Length;
-                }
-
-                caller_frame.GrowRegisters(reg_result + expected_count);
-
-                for (int i = 0; i < expected_count; i++)
-                {
-                    caller_frame.Registers[reg_result + i].Value = i < results.Length ? results[i] : NilObject.Nil;
-                }
-            }
+                WriteResults(caller_frame, frame.ResultsStartRegister, frame.ResultsCount, results);
             else
                 vm.SetExecutionResult(results);
         }

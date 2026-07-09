@@ -12,6 +12,8 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
         {
             this.variable = variable;
             this.index = new LiteralExpression(index);
+
+            SourceRange = variable.SourceRange;
         }
 
         public IndexExpression(Expression variable, string index, SourceRange source_range)

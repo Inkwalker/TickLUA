@@ -19,6 +19,12 @@ namespace TickLUA.VM
         public int ResultsCount { get; set; }
 
         /// <summary>
+        /// Set on frames pushed by pcall. On a normal return the results get
+        /// true prepended; on error unwinding this frame is the catch boundary.
+        /// </summary>
+        public bool IsProtected { get; set; }
+
+        /// <summary>
         /// One past the last register holding a value of a variable-count CALL.
         /// Set when a caller returns a variable number of results into this frame,
         /// consumed by a following multi value RETURN.

@@ -128,7 +128,81 @@ namespace TickLUA.VM
             var frame = callStack.Peek();
             var instruction = frame.Step();
 
-            Execute(frame, instruction);
+            try
+            {
+                Execute(frame, instruction);
+            }
+            catch (RuntimeException ex)
+            {
+                if (!TryHandleRuntimeError(ex))
+                    throw;
+            }
+        }
+
+        /// <summary>
+        /// Unwinds the call stack to the nearest pcall boundary and delivers
+        /// (false, error value) there. Returns false when no protected frame
+        /// exists — the error is unhandled and the call stack is left intact
+        /// so the host can inspect it after the rethrow.
+        /// </summary>
+        private bool TryHandleRuntimeError(RuntimeException ex)
+        {
+            bool any_protected = false;
+            foreach (var f in callStack)
+            {
+                if (f.IsProtected)
+                {
+                    any_protected = true;
+                    break;
+                }
+            }
+            if (!any_protected)
+            {
+                // Error escapes every pcall boundary: record the Lua call stack (still
+                // intact — nothing has been popped) so the host sees where it happened.
+                ex.CaptureTraceback(BuildTraceback());
+                return false;
+            }
+
+            StackFrame boundary;
+            do
+            {
+                boundary = callStack.Pop();
+            } while (!boundary.IsProtected);
+
+            // pcall was called from some frame, so a caller is always below the boundary.
+            var caller = callStack.Peek();
+            Handlers.HandlersCore.WriteResults(caller, boundary.ResultsStartRegister, boundary.ResultsCount,
+                new LuaObject[] { BooleanObject.False, ex.ErrorValue });
+            return true;
+        }
+
+        /// <summary>
+        /// Snapshots the Lua functions currently on the call stack, innermost first,
+        /// each tagged with the source line it was executing. Native functions push no
+        /// frame, so only Lua frames appear.
+        /// </summary>
+        private RuntimeException.TracebackFrame[] BuildTraceback()
+        {
+            var frames = new RuntimeException.TracebackFrame[callStack.Count];
+            int i = 0;
+            foreach (var frame in callStack)
+                frames[i++] = new RuntimeException.TracebackFrame(frame.Function.Name, LineOf(frame));
+            return frames;
+        }
+
+        /// <summary>
+        /// The source line a frame is stopped on. Step() advances PC past an
+        /// instruction before executing it, so the in-progress instruction — the one
+        /// that threw, or the pending CALL for a caller frame — is at PC - 1.
+        /// </summary>
+        private static int LineOf(StackFrame frame)
+        {
+            var lines = frame.Function.Meta?.Lines;
+            int index = frame.PC - 1;
+            if (lines == null || index < 0 || index >= lines.Count)
+                return 0;
+            return lines[index];
         }
 
         private void Execute(StackFrame frame, Instruction instruction)

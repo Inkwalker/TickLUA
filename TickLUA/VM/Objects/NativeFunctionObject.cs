@@ -12,11 +12,23 @@ namespace TickLUA.VM.Objects
     public delegate LuaObject[] NativeFunction(NativeArgs args);
 
     /// <summary>
+    /// A VM-aware native (internal only, e.g. pcall). Reads its arguments from and
+    /// writes its results to the caller's registers itself, and may push frames onto
+    /// the call stack — but must never call <see cref="TickVM.Tick"/>.
+    /// </summary>
+    internal delegate void VmNativeFunction(TickVM vm, StackFrame frame, byte funcReg, int argCount, int resCount);
+
+    /// <summary>
     /// Wraps a C# delegate as a first-class Lua function value.
     /// </summary>
     public class NativeFunctionObject : LuaObject
     {
         public NativeFunction Function { get; }
+
+        /// <summary>
+        /// Non-null for VM-aware natives; takes precedence over <see cref="Function"/>.
+        /// </summary>
+        internal VmNativeFunction VmFunction { get; }
 
         /// <summary>
         /// Optional name used in error messages ("bad argument #1 to 'name' ...").
@@ -34,6 +46,15 @@ namespace TickLUA.VM.Objects
 
             Name = name;
             Function = function;
+        }
+
+        internal NativeFunctionObject(string name, VmNativeFunction vmFunction)
+        {
+            if (vmFunction == null)
+                throw new ArgumentNullException(nameof(vmFunction));
+
+            Name = name;
+            VmFunction = vmFunction;
         }
 
         public override string ToString() => Name == null ? "< native func >" : $"< native func '{Name}' >";
