@@ -237,6 +237,95 @@
         }
 
         [Test]
+        public void MethodCall_AsStatement()
+        {
+            string source = @"
+                local t = { x = 0 }
+                function t:set(n)
+                    self.x = n
+                end
+                t:set(42)
+                return t.x";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 42);
+        }
+
+        [Test]
+        public void MethodCall_ObjectEvaluatedOnce()
+        {
+            // 'get():add(2)' must evaluate the object expression exactly once,
+            // reusing it as the implicit self argument.
+            string source = @"
+                local calls = 0
+                local t = { value = 40 }
+                function t:add(n)
+                    return self.value + n
+                end
+                local function get()
+                    calls = calls + 1
+                    return t
+                end
+                local r = get():add(2)
+                return r, calls";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 42, 0);
+            Utils.AssertIntegerResult(vm, 1, 1);
+        }
+
+        [Test]
+        public void MethodCall_Chained()
+        {
+            string source = @"
+                local t = { child = { value = 41 } }
+                function t:get()
+                    return self.child
+                end
+                function t.child:inc()
+                    return self.value + 1
+                end
+                return t:get():inc()";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 42);
+        }
+
+        [Test]
+        public void MethodCall_TrailingCallExpandsIntoParams()
+        {
+            // A call in the last argument position of a method call spreads its
+            // results after the fixed args: t:add3(10, pair()) == t:add3(10, 2, 3).
+            string source = @"
+                local t = { value = 10 }
+                function t:add3(a, b, c)
+                    return self.value + a + b + c
+                end
+                local function pair()
+                    return 2, 3
+                end
+                return t:add3(10, pair())";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 25);
+        }
+
+        [Test]
+        public void MethodCall_MultipleResults()
+        {
+            string source = @"
+                local t = { value = 1 }
+                function t:pair()
+                    return self.value, self.value + 1
+                end
+                return t:pair()";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 1, 0);
+            Utils.AssertIntegerResult(vm, 2, 1);
+        }
+
+        [Test]
         public void Varargs_Forwarded()
         {
             string source = @"

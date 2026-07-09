@@ -158,15 +158,15 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                             e = new IndexExpression(e, index);
                         }
                         break;
-                    //case TokenType.Colon:
-                    //    {
-                    //        lexer.Next();
-                    //        AssertToken(lexer.Current, TokenType.Name);
-                    //        var method_name = lexer.Current.Content;
-                    //        lexer.Next();
-                    //        e = new MethodCallExpression(e, method_name, lexer);
-                    //    }
-                    //    break;
+                    case TokenType.Colon:
+                        {
+                            lexer.Next();
+                            AssertToken(lexer.Current, TokenType.Name);
+                            var method_name = lexer.Current.Content;
+                            lexer.Next();
+                            e = new MethodCallExpression(e, method_name, lexer);
+                        }
+                        break;
                     case TokenType.BRK_ROUND_Left:
                         e = new FunctionCallExpression(e, lexer);
                         break;

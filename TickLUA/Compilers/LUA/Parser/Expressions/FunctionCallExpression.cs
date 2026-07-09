@@ -6,8 +6,8 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 {
     internal class FunctionCallExpression : Expression
     {
-        private Expression function_expr;
-        private List<Expression> args;
+        protected Expression function_expr;
+        protected List<Expression> args;
 
         public FunctionCallExpression(Expression obj, IEnumerable<Expression> args)
         {
