@@ -4,12 +4,6 @@ using TickLUA.VM.Objects;
 namespace TickLUA.VM
 {
     /// <summary>
-    /// Receives the results of a metamethod call in place of the normal
-    /// register write (see <see cref="StackFrame.Sink"/>).
-    /// </summary>
-    internal delegate void ResultsSinkDelegate(TickVM vm, StackFrame caller, LuaObject[] results);
-
-    /// <summary>
     /// Metamethod lookup and dispatch, shared by the instruction handlers and
     /// the stdlib. Table indexers stay raw; all metatable semantics live here.
     /// </summary>
@@ -62,22 +56,20 @@ namespace TickLUA.VM
 
         /// <summary>
         /// Calls a value with an explicit argument array, resolving __call chains
-        /// for non-function callers. A closure caller runs on later ticks via a
-        /// pushed frame; a native runs inline this tick. Results go to the
-        /// caller's registers at results_start_reg (res_count &lt; 0 = all), or to
-        /// <paramref name="sink"/> when given. With <paramref name="protect"/> the
-        /// call behaves like pcall: errors become (false, err) results.
+        /// for non-function callers. A closure callee runs on later ticks via a
+        /// pushed frame; a native runs inline this tick. Results always go to
+        /// <paramref name="sink"/>. With <paramref name="errorSink"/> the call is
+        /// protected like pcall: errors go there instead of propagating.
         /// </summary>
-        internal static void Call(TickVM vm, StackFrame caller, LuaObject callee, LuaObject[] args,
-            byte results_start_reg, int res_count, ResultsSinkDelegate sink = null, bool protect = false)
+        internal static void Call(TickVM vm, LuaObject callee, LuaObject[] args,
+            ResultsSinkDelegate sink, ErrorSinkDelegate errorSink = null)
         {
             for (int depth = 0; depth < MaxChainDepth; depth++)
             {
                 if (callee is ClosureObject closure)
                 {
-                    var new_frame = HandlersCore.BuildArgsFrame(closure, args, results_start_reg, res_count);
-                    new_frame.Sink = sink;
-                    new_frame.IsProtected = protect;
+                    var new_frame = HandlersCore.BuildArgsFrame(closure, args, sink);
+                    new_frame.ErrorSink = errorSink;
                     vm.PushFrame(new_frame);
                     return;
                 }
@@ -91,32 +83,22 @@ namespace TickLUA.VM
                             $"'{native.Name}' cannot be called through a metamethod");
 
                     LuaObject[] results;
-                    if (protect)
-                    {
-                        try
-                        {
-                            results = InvokeNative(native, args);
-                            results = PrependTrue(results);
-                        }
-                        catch (RuntimeException ex)
-                        {
-                            results = new LuaObject[] { BooleanObject.False, ex.ErrorValue };
-                        }
-                    }
-                    else
+                    try
                     {
                         results = InvokeNative(native, args);
                     }
+                    catch (RuntimeException ex) when (errorSink != null)
+                    {
+                        errorSink(ex.ErrorValue);
+                        return;
+                    }
 
-                    if (sink != null)
-                        sink(vm, caller, results);
-                    else
-                        HandlersCore.WriteResults(caller, results_start_reg, res_count, results);
+                    sink(results);
                     return;
                 }
 
                 // Not directly callable: resolve one __call layer, prepending the
-                // callee itself as the first argument (Lua 5.4 semantics).
+                // caller itself as the first argument (Lua 5.4 semantics).
                 var handler = GetHandler(callee, CallKey);
                 if (handler == null)
                     throw new RuntimeException(
@@ -135,14 +117,6 @@ namespace TickLUA.VM
         private static LuaObject[] InvokeNative(NativeFunctionObject native, LuaObject[] args)
         {
             return native.Function(new NativeArgs(args, native.Name)) ?? LuaObject.NoResults;
-        }
-
-        private static LuaObject[] PrependTrue(LuaObject[] results)
-        {
-            var prepended = new LuaObject[results.Length + 1];
-            prepended[0] = BooleanObject.True;
-            System.Array.Copy(results, 0, prepended, 1, results.Length);
-            return prepended;
         }
 
         /// <summary>
@@ -173,7 +147,8 @@ namespace TickLUA.VM
 
                     if (handler is ClosureObject || handler is NativeFunctionObject)
                     {
-                        Call(vm, frame, handler, new LuaObject[] { table, key }, dest_reg, 1);
+                        Call(vm, handler, new LuaObject[] { table, key },
+                            ResultsSink.ToRegisters(frame, dest_reg, 1));
                         return;
                     }
 
@@ -225,7 +200,7 @@ namespace TickLUA.VM
 
                     if (handler is ClosureObject || handler is NativeFunctionObject)
                     {
-                        Call(vm, frame, handler, new LuaObject[] { table, key, value }, 0, 0);
+                        Call(vm, handler, new LuaObject[] { table, key, value }, ResultsSink.Discard);
                         return;
                     }
 
@@ -255,26 +230,9 @@ namespace TickLUA.VM
                     $"attempt to perform arithmetic on a {NativeArgs.TypeName(offender)} value");
             }
 
-            Call(vm, frame, handler, new LuaObject[] { l, r }, dest_reg, 1);
+            Call(vm, handler, new LuaObject[] { l, r }, ResultsSink.ToRegisters(frame, dest_reg, 1));
         }
 
         internal static bool ToBool(LuaObject value) => (bool)value.ToBooleanObject();
-
-        /// <summary>
-        /// Result sinks for comparison metamethods: EQ/LT/LE skip the next
-        /// caller instruction when the (boolean-coerced) result differs from
-        /// the expected flag encoded in the comparison instruction.
-        /// </summary>
-        internal static readonly ResultsSinkDelegate BranchExpectTrue = (vm, caller, results) =>
-        {
-            if (!ToBool(results.Length > 0 ? results[0] : NilObject.Nil))
-                caller.PC++;
-        };
-
-        internal static readonly ResultsSinkDelegate BranchExpectFalse = (vm, caller, results) =>
-        {
-            if (ToBool(results.Length > 0 ? results[0] : NilObject.Nil))
-                caller.PC++;
-        };
     }
 }

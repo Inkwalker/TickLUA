@@ -1,4 +1,3 @@
-using System;
 using TickLUA.VM.Handlers;
 using TickLUA.VM.Objects;
 
@@ -155,8 +154,9 @@ namespace TickLUA.VM
 
         /// <summary>
         /// pcall(f, ...) — VM-aware: a Lua closure cannot be run from inside a
-        /// native, so function frame is pushed marked IsProtected and runs on later
-        /// ticks; RETURN prepends true, error unwinding delivers (false, err).
+        /// native, so its frame is pushed and runs on later ticks. Its sinks
+        /// carry the pcall protocol: a normal return gets true prepended, an
+        /// unwinding error is delivered as (false, err) via the ErrorSink.
         /// </summary>
         private static void Pcall(TickVM vm, StackFrame frame, byte funcReg, int argCount, int resCount)
         {
@@ -166,11 +166,15 @@ namespace TickLUA.VM
             var target = frame.Registers[funcReg + 1].Value;
             int call_arg_count = argCount - 1;
 
+            // All branches deliver the (ok, ...) tuple to the same place: the
+            // caller's registers at funcReg.
+            var inner = ResultsSink.ToRegisters(frame, funcReg, resCount);
+
             if (target is ClosureObject closure)
             {
                 var new_frame = HandlersCore.BuildClosureFrame(
-                    frame, closure, funcReg + 2, call_arg_count, funcReg, resCount);
-                new_frame.IsProtected = true;
+                    frame, closure, funcReg + 2, call_arg_count, ResultsSink.PcallSuccess(inner));
+                new_frame.ErrorSink = ResultsSink.PcallCatch(inner);
                 vm.PushFrame(new_frame);
             }
             else if (target is NativeFunctionObject native)
@@ -196,8 +200,7 @@ namespace TickLUA.VM
                     }
                     catch (RuntimeException ex)
                     {
-                        HandlersCore.WriteResults(frame, funcReg, resCount,
-                            new LuaObject[] { BooleanObject.False, ex.ErrorValue });
+                        ResultsSink.PcallCatch(inner)(ex.ErrorValue);
                     }
                     return;
                 }
@@ -208,20 +211,15 @@ namespace TickLUA.VM
                     call_args[i] = frame.Registers[funcReg + 2 + i].Value;
                 }
 
-                LuaObject[] results;
                 try
                 {
                     var native_results = native.Function(new NativeArgs(call_args, native.Name)) ?? LuaObject.NoResults;
-                    results = new LuaObject[native_results.Length + 1];
-                    results[0] = BooleanObject.True;
-                    System.Array.Copy(native_results, 0, results, 1, native_results.Length);
+                    ResultsSink.PcallSuccess(inner)(native_results);
                 }
                 catch (RuntimeException ex)
                 {
-                    results = new LuaObject[] { BooleanObject.False, ex.ErrorValue };
+                    ResultsSink.PcallCatch(inner)(ex.ErrorValue);
                 }
-
-                HandlersCore.WriteResults(frame, funcReg, resCount, results);
             }
             else
             {
@@ -236,13 +234,13 @@ namespace TickLUA.VM
 
                 try
                 {
-                    Metamethods.Call(vm, frame, target, call_args, funcReg, resCount, protect: true);
+                    Metamethods.Call(vm, target, call_args,
+                        ResultsSink.PcallSuccess(inner), ResultsSink.PcallCatch(inner));
                 }
                 catch (RuntimeException ex)
                 {
                     // __call resolution itself failed (e.g. no metamethod).
-                    HandlersCore.WriteResults(frame, funcReg, resCount,
-                        new LuaObject[] { BooleanObject.False, ex.ErrorValue });
+                    ResultsSink.PcallCatch(inner)(ex.ErrorValue);
                 }
             }
         }

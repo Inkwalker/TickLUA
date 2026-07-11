@@ -86,6 +86,9 @@ namespace TickLUA.VM
             var upvalues = new RegisterCell[] { new RegisterCell { Value = Globals } };
             var frame = new StackFrame(bytecode, upvalues);
 
+            // The main chunk has no caller: its return becomes the VM's result.
+            frame.Sink = ResultsSink.ToExecutionResult(this);
+
             // Host-supplied values become the main chunk's varargs; scripts bind
             // them via "local print, add = ..." (the main chunk is compiled with
             // HasVarargs = true and no parameters).
@@ -170,10 +173,9 @@ namespace TickLUA.VM
                 boundary = callStack.Pop();
             } while (!boundary.IsProtected);
 
-            // pcall was called from some frame, so a caller is always below the boundary.
-            var caller = callStack.Peek();
-            Handlers.HandlersCore.WriteResults(caller, boundary.ResultsStartRegister, boundary.ResultsCount,
-                new LuaObject[] { BooleanObject.False, ex.ErrorValue });
+            // The boundary frame's error sink carries the pcall protocol; the
+            // VM core knows nothing about where or how the error is reported.
+            boundary.ErrorSink(ex.ErrorValue);
             return true;
         }
 
@@ -219,14 +221,6 @@ namespace TickLUA.VM
         internal StackFrame PopFrame()
         {
             return callStack.Pop();
-        }
-
-        internal StackFrame PeekFrame()
-        {
-            if (callStack.Count == 0)
-                return null;
-            else
-                return callStack.Peek();
         }
 
         internal void SetExecutionResult(params LuaObject[] result)

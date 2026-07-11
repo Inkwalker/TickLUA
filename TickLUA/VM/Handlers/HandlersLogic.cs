@@ -59,8 +59,8 @@ namespace TickLUA.VM.Handlers
                            ?? Metamethods.GetHandler(obj_b, Metamethods.EqualsKey);
                 if (handler != null)
                 {
-                    Metamethods.Call(vm, frame, handler, new LuaObject[] { obj_a, obj_b }, 0, 1,
-                        sink: expected ? Metamethods.BranchExpectTrue : Metamethods.BranchExpectFalse);
+                    Metamethods.Call(vm, handler, new LuaObject[] { obj_a, obj_b },
+                        ResultsSink.Branch(frame, expected));
                     return;
                 }
             }
@@ -118,8 +118,8 @@ namespace TickLUA.VM.Handlers
                 throw new RuntimeException(
                     $"attempt to compare {NativeArgs.TypeName(obj_a)} with {NativeArgs.TypeName(obj_b)}");
 
-            Metamethods.Call(vm, frame, handler, new LuaObject[] { obj_a, obj_b }, 0, 1,
-                sink: expected ? Metamethods.BranchExpectTrue : Metamethods.BranchExpectFalse);
+            Metamethods.Call(vm, handler, new LuaObject[] { obj_a, obj_b },
+                ResultsSink.Branch(frame, expected));
         }
 
         internal static void NOT(TickVM vm, StackFrame frame, Instruction instruction)

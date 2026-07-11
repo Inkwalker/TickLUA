@@ -56,8 +56,8 @@ namespace TickLUA.VM.Handlers
             // Results land in the loop variable registers; the iterator/state/control
             // triple below them stays intact for the next iteration. Callable
             // tables (__call) work as iterators through the shared dispatch.
-            Metamethods.Call(vm, frame, func_value,
-                new LuaObject[] { state, control }, (byte)reg_vars, var_count);
+            Metamethods.Call(vm, func_value, new LuaObject[] { state, control },
+                ResultsSink.ToRegisters(frame, (byte)reg_vars, var_count));
         }
 
         internal static void TFORLOOP(TickVM vm, StackFrame frame, Instruction instruction)

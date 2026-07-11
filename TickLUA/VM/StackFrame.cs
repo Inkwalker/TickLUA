@@ -15,22 +15,25 @@ namespace TickLUA.VM
         public bool IsFinished => PC >= Function.Instructions.Count;
         public RegisterCell[] Upvalues { get; }
 
-        public byte ResultsStartRegister { get; set; }
-        public int ResultsCount { get; set; }
-
         /// <summary>
-        /// Set on frames pushed by pcall. On a normal return the results get
-        /// true prepended; on error unwinding this frame is the catch boundary.
-        /// </summary>
-        public bool IsProtected { get; set; }
-
-        /// <summary>
-        /// Set on frames pushed for metamethod handlers whose result must not
-        /// land in a register (e.g. __lt drives a conditional skip). When set,
-        /// RETURN passes the results here instead of calling WriteResults.
+        /// The frame's sole result delivery channel, assigned at construction:
+        /// RETURN collects the results and hands them here. The sink captures
+        /// its target (caller registers, a branch skip, the VM's execution
+        /// result), so the returning frame never touches its caller directly.
         /// Never fires on error unwinding — errors go to the pcall boundary.
         /// </summary>
         internal ResultsSinkDelegate Sink { get; set; }
+
+        /// <summary>
+        /// Set only on frames pushed under pcall protection: receives the error
+        /// value when an error unwinds to this frame instead of the results.
+        /// </summary>
+        internal ErrorSinkDelegate ErrorSink { get; set; }
+
+        /// <summary>
+        /// Whether this frame is a pcall catch boundary for error unwinding.
+        /// </summary>
+        public bool IsProtected => ErrorSink != null;
 
         /// <summary>
         /// One past the last register holding a value of a variable-count CALL.

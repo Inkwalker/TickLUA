@@ -1,6 +1,4 @@
-﻿using System;
-using System.Globalization;
-using TickLUA.Compilers.LUA.Lexer;
+﻿using TickLUA.Compilers.LUA.Lexer;
 using TickLUA.VM;
 using TickLUA.VM.Objects;
 

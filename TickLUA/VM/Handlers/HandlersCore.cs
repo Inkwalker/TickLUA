@@ -86,10 +86,14 @@ namespace TickLUA.VM.Handlers
                 // left there by a preceding variable-count CALL or VARARG.
                 arg_count = System.Math.Max(0, frame.Top - func_reg - 1);
 
+            // All call flavors deliver their results the same way: into the
+            // calling frame's registers starting at func_reg.
+            var sink = ResultsSink.ToRegisters(frame, func_reg, res_count);
+
             var func_value = frame.Registers[func_reg].Value;
             if (func_value is ClosureObject closure)
             {
-                var new_frame = BuildClosureFrame(frame, closure, func_reg + 1, arg_count, func_reg, res_count);
+                var new_frame = BuildClosureFrame(frame, closure, func_reg + 1, arg_count, sink);
                 vm.PushFrame(new_frame);
             }
             else if (func_value is NativeFunctionObject native)
@@ -113,7 +117,7 @@ namespace TickLUA.VM.Handlers
                 // Synchronous: the whole native call costs exactly one tick, no frame push.
                 var results = native.Function(new NativeArgs(args, native.Name)) ?? LuaObject.NoResults;
 
-                WriteResults(frame, func_reg, res_count, results);
+                sink(results);
             }
             else
             {
@@ -125,18 +129,18 @@ namespace TickLUA.VM.Handlers
                     args[i] = frame.Registers[func_reg + 1 + i].Value;
                 }
 
-                Metamethods.Call(vm, frame, func_value, args, func_reg, res_count);
+                Metamethods.Call(vm, func_value, args, sink);
             }
         }
 
         /// <summary>
-        /// Builds a caller frame for a closure call: copies arguments from the caller's
+        /// Builds a callee frame for a closure call: copies arguments from the caller's
         /// registers (starting at arg_start_reg), routes surplus args of a vararg
-        /// function to its Varargs store, and records where the results should land.
+        /// function to its Varargs store, and attaches the result delivery sink.
         /// The caller pushes the returned frame.
         /// </summary>
         internal static StackFrame BuildClosureFrame(StackFrame caller, ClosureObject closure,
-            int arg_start_reg, int arg_count, byte results_start_reg, int res_count)
+            int arg_start_reg, int arg_count, ResultsSinkDelegate sink)
         {
             var new_frame = new StackFrame(closure.Function, closure.Upvalues);
 
@@ -163,20 +167,19 @@ namespace TickLUA.VM.Handlers
                 new_frame.Varargs = varargs;
             }
 
-            new_frame.ResultsStartRegister = results_start_reg;
-            new_frame.ResultsCount = res_count;
+            new_frame.Sink = sink;
 
             return new_frame;
         }
 
         /// <summary>
-        /// Builds a caller frame for a call whose arguments live in an array
+        /// Builds a callee frame for a call whose arguments live in an array
         /// rather than in caller registers (metamethod dispatch, __call with a
         /// prepended self). Mirrors <see cref="BuildClosureFrame"/> including
         /// the vararg-overflow split.
         /// </summary>
         internal static StackFrame BuildArgsFrame(ClosureObject closure, LuaObject[] args,
-            byte results_start_reg, int res_count)
+            ResultsSinkDelegate sink)
         {
             var new_frame = new StackFrame(closure.Function, closure.Upvalues);
 
@@ -197,35 +200,9 @@ namespace TickLUA.VM.Handlers
                 new_frame.Varargs = varargs;
             }
 
-            new_frame.ResultsStartRegister = results_start_reg;
-            new_frame.ResultsCount = res_count;
+            new_frame.Sink = sink;
 
             return new_frame;
-        }
-
-        /// <summary>
-        /// Writes call results into a frame's registers starting at start_reg,
-        /// honoring the expected count (res_count &lt; 0 = all results, recording
-        /// the end in <see cref="StackFrame.Top"/>) and nil-padding the rest.
-        /// </summary>
-        internal static void WriteResults(StackFrame frame, byte start_reg, int res_count, LuaObject[] results)
-        {
-            int expected_count = res_count;
-            if (expected_count < 0)
-            {
-                // Caller wanted all results: record where they end for the consuming
-                // variable-count CALL/RETURN/SET_LIST.
-                expected_count = results.Length;
-                frame.Top = start_reg + results.Length;
-            }
-
-            frame.GrowRegisters(start_reg + expected_count);
-
-            for (int i = 0; i < expected_count; i++)
-            {
-                frame.Registers[start_reg + i].Value =
-                    i < results.Length && results[i] != null ? results[i] : NilObject.Nil;
-            }
         }
 
         internal static void RETURN(TickVM vm, StackFrame frame, Instruction instruction)
@@ -248,26 +225,9 @@ namespace TickLUA.VM.Handlers
 
             vm.PopFrame();
 
-            if (frame.IsProtected)
-            {
-                // A pcall'd function returned without error: report success by
-                // prepending true to its results.
-                var protected_results = new LuaObject[results.Length + 1];
-                protected_results[0] = BooleanObject.True;
-                System.Array.Copy(results, 0, protected_results, 1, results.Length);
-                results = protected_results;
-            }
-
-            var caller_frame = vm.PeekFrame();
-
-            if (frame.Sink != null)
-                // Metamethod frame with custom result handling; the pushing
-                // handler always has a live caller frame.
-                frame.Sink(vm, caller_frame, results);
-            else if (caller_frame != null)
-                WriteResults(caller_frame, frame.ResultsStartRegister, frame.ResultsCount, results);
-            else
-                vm.SetExecutionResult(results);
+            // Every frame is constructed with a sink; delivery is entirely its
+            // concern — RETURN knows nothing about the caller.
+            frame.Sink(results);
         }
 
         internal static void VARARG(TickVM vm, StackFrame frame, Instruction instruction)

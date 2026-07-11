@@ -129,7 +129,8 @@ namespace TickLUA.VM.Handlers
                     $"attempt to concatenate a {NativeArgs.TypeName(offender)} value");
             }
 
-            Metamethods.Call(vm, frame, handler, new LuaObject[] { l, r }, instruction.A, 1);
+            Metamethods.Call(vm, handler, new LuaObject[] { l, r },
+                ResultsSink.ToRegisters(frame, instruction.A, 1));
         }
 
         /// <summary>
@@ -153,7 +154,8 @@ namespace TickLUA.VM.Handlers
                     $"attempt to perform arithmetic on a {NativeArgs.TypeName(v)} value");
 
             // Per Lua, the handler receives the operand twice.
-            Metamethods.Call(vm, frame, handler, new LuaObject[] { v, v }, instruction.A, 1);
+            Metamethods.Call(vm, handler, new LuaObject[] { v, v },
+                ResultsSink.ToRegisters(frame, instruction.A, 1));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -98,7 +98,8 @@ namespace TickLUA.VM.Handlers
                 var handler = Metamethods.GetHandler(table, Metamethods.LenKey);
                 if (handler != null)
                 {
-                    Metamethods.Call(vm, frame, handler, new LuaObject[] { table }, a, 1);
+                    Metamethods.Call(vm, handler, new LuaObject[] { table },
+                        ResultsSink.ToRegisters(frame, a, 1));
                     return;
                 }
 
