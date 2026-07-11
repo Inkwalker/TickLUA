@@ -73,66 +73,10 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
         private static float ParseNumber(Token t)
         {
-            try
-            {
-                // Hex?
-                if (t.Content.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-                {
-                    return (float)ParseLuaHexFloat(t.Content);
-                }
+            if (NumberObject.TryParse(t.Content, out var number))
+                return number.Value;
 
-                // Integer?
-                if (int.TryParse(t.Content, out int i))
-                {
-                    return (float)i;
-                }
-
-                // Decimal float
-                return float.Parse(t.Content, NumberStyles.Float, CultureInfo.InvariantCulture);
-            }
-            catch
-            {
-                throw new CompilationException("Literal type error", t.Position);
-            }
-        }
-
-        private static double ParseLuaHexFloat(string s)
-        {
-            // split "0x1.8p10"
-            int p = s.IndexOf('p');
-            string mantissaPart = p > -1 ? s.Substring(2, p - 2) : s;
-            int exponent = p > -1 ? int.Parse(s.Substring(p + 1), CultureInfo.InvariantCulture) : 0;
-
-            double mantissa = 0.0;
-
-            // split integer and fractional hex parts
-            var parts = mantissaPart.Split('.');
-            mantissa += Convert.ToInt64(parts[0], 16);
-
-            if (parts.Length == 2)
-            {
-                double frac = 0;
-                double scale = 1.0 / 16;
-                foreach (char c in parts[1])
-                {
-                    frac += HexDigit(c) * scale;
-                    scale /= 16;
-                }
-                mantissa += frac;
-            }
-
-            return mantissa * Math.Pow(2, exponent);
-        }
-
-        private static int HexDigit(char c)
-        {
-            if (c >= '0' && c <= '9')
-                return c - '0';
-            if (c >= 'a' && c <= 'f')
-                return c - 'a' + 10;
-            if (c >= 'A' && c <= 'F')
-                return c - 'A' + 10;
-            throw new FormatException("Invalid hex digit: " + c);
+            throw new CompilationException("Literal type error", t.Position);
         }
 
         public override void CompileRead(FunctionBuilder builder, RegisterContext target_register)

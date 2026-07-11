@@ -102,6 +102,16 @@ namespace TickLUA.VM.Handlers
                 return;
             }
 
+            if (obj_a is StringObject string_a && obj_b is StringObject string_b)
+            {
+                // Byte-order (locale-independent) comparison per the Lua manual §3.4.4.
+                int cmp = string.CompareOrdinal(string_a.Value, string_b.Value);
+                bool result = le ? cmp <= 0 : cmp < 0;
+                if (result != expected)
+                    frame.PC++;
+                return;
+            }
+
             var handler = Metamethods.GetHandler(obj_a, event_key)
                        ?? Metamethods.GetHandler(obj_b, event_key);
             if (handler == null)

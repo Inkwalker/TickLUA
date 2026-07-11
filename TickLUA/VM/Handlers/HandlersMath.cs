@@ -10,7 +10,7 @@ namespace TickLUA.VM.Handlers
             var l = GetRegB(frame, instruction);
             var r = GetRegC(frame, instruction);
 
-            if (l is NumberObject nl && r is NumberObject nr)
+            if (TryMath(l, r, out var nl, out var nr))
                 SetRegA(frame, instruction, nl + nr);
             else
                 Metamethods.Math(vm, frame, instruction.A, l, r, Metamethods.AddKey);
@@ -21,7 +21,7 @@ namespace TickLUA.VM.Handlers
             var l = GetRegB(frame, instruction);
             var r = GetRegC(frame, instruction);
 
-            if (l is NumberObject nl && r is NumberObject nr)
+            if (TryMath(l, r, out var nl, out var nr))
                 SetRegA(frame, instruction, nl - nr);
             else
                 Metamethods.Math(vm, frame, instruction.A, l, r, Metamethods.SubKey);
@@ -32,7 +32,7 @@ namespace TickLUA.VM.Handlers
             var l = GetRegB(frame, instruction);
             var r = GetRegC(frame, instruction);
 
-            if (l is NumberObject nl && r is NumberObject nr)
+            if (TryMath(l, r, out var nl, out var nr))
                 SetRegA(frame, instruction, nl * nr);
             else
                 Metamethods.Math(vm, frame, instruction.A, l, r, Metamethods.MulKey);
@@ -43,7 +43,7 @@ namespace TickLUA.VM.Handlers
             var l = GetRegB(frame, instruction);
             var r = GetRegC(frame, instruction);
 
-            if (l is NumberObject nl && r is NumberObject nr)
+            if (TryMath(l, r, out var nl, out var nr))
                 SetRegA(frame, instruction, nl % nr);
             else
                 Metamethods.Math(vm, frame, instruction.A, l, r, Metamethods.ModKey);
@@ -54,7 +54,7 @@ namespace TickLUA.VM.Handlers
             var l = GetRegB(frame, instruction);
             var r = GetRegC(frame, instruction);
 
-            if (l is NumberObject nl && r is NumberObject nr)
+            if (TryMath(l, r, out var nl, out var nr))
                 SetRegA(frame, instruction, NumberObject.Pow(nl, nr));
             else
                 Metamethods.Math(vm, frame, instruction.A, l, r, Metamethods.PowKey);
@@ -65,7 +65,7 @@ namespace TickLUA.VM.Handlers
             var l = GetRegB(frame, instruction);
             var r = GetRegC(frame, instruction);
 
-            if (l is NumberObject nl && r is NumberObject nr)
+            if (TryMath(l, r, out var nl, out var nr))
                 SetRegA(frame, instruction, nl / nr);
             else
                 Metamethods.Math(vm, frame, instruction.A, l, r, Metamethods.DivKey);
@@ -76,10 +76,33 @@ namespace TickLUA.VM.Handlers
             var l = GetRegB(frame, instruction);
             var r = GetRegC(frame, instruction);
 
-            if (l is NumberObject nl && r is NumberObject nr)
+            if (TryMath(l, r, out var nl, out var nr))
                 SetRegA(frame, instruction, NumberObject.IntDiv(nl, nr));
             else
                 Metamethods.Math(vm, frame, instruction.A, l, r, Metamethods.IdivKey);
+        }
+
+        /// <summary>
+        /// Resolves both arithmetic operands to numbers, coercing numeric
+        /// strings (Lua converts a string that looks like a number before
+        /// consulting metamethods). Returns false if either operand is not a
+        /// number and not a numeric string, leaving metamethod dispatch to
+        /// handle it and report errors against the original operands.
+        /// </summary>
+        private static bool TryMath(LuaObject l, LuaObject r, out NumberObject nl, out NumberObject nr)
+        {
+            nl = AsMathNumber(l);
+            nr = AsMathNumber(r);
+            return nl != null && nr != null;
+        }
+
+        private static NumberObject AsMathNumber(LuaObject o)
+        {
+            if (o is NumberObject n)
+                return n;
+            if (o is StringObject s && NumberObject.TryParse(s.Value, out var parsed))
+                return parsed;
+            return null;
         }
 
         internal static void CONCAT(TickVM vm, StackFrame frame, Instruction instruction)
@@ -87,9 +110,13 @@ namespace TickLUA.VM.Handlers
             var l = GetRegB(frame, instruction);
             var r = GetRegC(frame, instruction);
 
-            if (l is StringObject sl && r is StringObject sr)
+            // Strings and numbers concatenate directly; a number operand is
+            // coerced to its string form (all numbers are floats, so integral
+            // values render without a trailing ".0", matching reference Lua).
+            if (IsConcatable(l) && IsConcatable(r))
             {
-                frame.Registers[instruction.A].Value = sl + sr;
+                frame.Registers[instruction.A].Value =
+                    new StringObject(l.ToStringObject().Value + r.ToStringObject().Value);
                 return;
             }
 
@@ -97,15 +124,18 @@ namespace TickLUA.VM.Handlers
                        ?? Metamethods.GetHandler(r, Metamethods.ConcatKey);
             if (handler == null)
             {
-                // Number-to-string coercion is not implemented yet, so a number
-                // operand is reported like any other non-string.
-                var offender = l is StringObject ? r : l;
+                var offender = IsConcatable(l) ? r : l;
                 throw new RuntimeException(
                     $"attempt to concatenate a {NativeArgs.TypeName(offender)} value");
             }
 
             Metamethods.Call(vm, frame, handler, new LuaObject[] { l, r }, instruction.A, 1);
         }
+
+        /// <summary>
+        /// Concatenation operands that need no metamethod: strings and numbers.
+        /// </summary>
+        private static bool IsConcatable(LuaObject o) => o is StringObject || o is NumberObject;
 
         internal static void UNM(TickVM vm, StackFrame frame, Instruction instruction)
         {
