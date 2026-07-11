@@ -1,4 +1,6 @@
-﻿namespace TickLUA_Tests.LUA
+﻿using TickLUA.Compilers.LUA;
+
+namespace TickLUA_Tests.LUA
 {
     internal class Functions
     {
@@ -370,6 +372,160 @@
 
             var vm = Utils.Run(source, 2000000);
             Utils.AssertStringResult(vm, "done");
+        }
+
+        [Test]
+        public void ProperTailCall_ConstantStackDepth()
+        {
+            // Each 'return count(n - 1)' must replace the frame, not stack on it.
+            string source = @"
+                local function count(n)
+                    if n == 0 then
+                        return 'done'
+                    end
+                    return count(n - 1)
+                end
+                return count(1000)";
+
+            var lua_function = LuaCompiler.Compile(source);
+            var vm = new TickVM(lua_function);
+
+            int max_depth = 0;
+            int ticks = 0;
+            while (!vm.IsFinished)
+            {
+                vm.Tick();
+                max_depth = System.Math.Max(max_depth, vm.CallStackDepth);
+
+                if (++ticks > 100000)
+                    Assert.Fail("VM did not finish execution within 100000 ticks.");
+            }
+
+            Utils.AssertStringResult(vm, "done");
+            Assert.That(max_depth, Is.LessThanOrEqualTo(2), "tail calls must not grow the call stack");
+        }
+
+        [Test]
+        public void ProperTailCall_MutualRecursion()
+        {
+            string source = @"
+                local is_odd
+                local function is_even(n)
+                    if n == 0 then return true end
+                    return is_odd(n - 1)
+                end
+                is_odd = function(n)
+                    if n == 0 then return false end
+                    return is_even(n - 1)
+                end
+                return is_even(100000)";
+
+            var vm = Utils.Run(source, 2000000);
+            Utils.AssertBoolResult(vm, true);
+        }
+
+        [Test]
+        public void TailCall_Method()
+        {
+            string source = @"
+                local obj = { value = 10 }
+                obj.get = function(self, extra)
+                    return self.value + extra
+                end
+                local function f()
+                    return obj:get(5)
+                end
+                return f()";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 15);
+        }
+
+        [Test]
+        public void TailCall_UnderPcall_Success()
+        {
+            // The tail-called frame inherits the pcall wrapper's sink, so the
+            // results still get the pcall 'true' prepended.
+            string source = @"
+                local function inner() return 1, 2 end
+                local ok, a, b = pcall(function() return inner() end)
+                return ok, a, b";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertBoolResult(vm, true, 0);
+            Utils.AssertIntegerResult(vm, 1, 1);
+            Utils.AssertIntegerResult(vm, 2, 2);
+        }
+
+        [Test]
+        public void TailCall_UnderPcall_Error()
+        {
+            // The tail-called frame inherits the pcall wrapper's error sink, so
+            // the pcall boundary survives the frame replacement.
+            string source = @"
+                local function boom() error('kaboom') end
+                local ok, err = pcall(function() return boom() end)
+                return ok, err";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertBoolResult(vm, false, 0);
+            Utils.AssertStringResult(vm, "kaboom", 1);
+        }
+
+        [Test]
+        public void TailCall_ToNativeFunction()
+        {
+            // assert is a plain native: the tail call runs it synchronously and
+            // delivers its results through the replaced frame's sink.
+            string source = @"
+                local function f()
+                    return assert(42)
+                end
+                return f()";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 42);
+        }
+
+        [Test]
+        public void TailCall_ToVmAwareNative()
+        {
+            // pcall is a VM-aware native: TAILCALL cannot replace the frame and
+            // falls back to CALL semantics, finished by the trailing RETURN.
+            string source = @"
+                local function risky() return 7 end
+                local function wrap() return pcall(risky) end
+                return wrap()";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertBoolResult(vm, true, 0);
+            Utils.AssertIntegerResult(vm, 7, 1);
+        }
+
+        [Test]
+        public void TailCall_ToCallableTable()
+        {
+            // A __call callee cannot replace the frame either; the fallback path
+            // dispatches the metamethod and the trailing RETURN finishes up.
+            string source = @"
+                local t = setmetatable({}, { __call = function(self, x) return x * 2 end })
+                local function f() return t(21) end
+                return f()";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 42);
+        }
+
+        [Test]
+        public void TailCall_WithVarargs()
+        {
+            string source = @"
+                local function sum(a, b, c) return a + b + c end
+                local function pass(...) return sum(...) end
+                return pass(1, 2, 3)";
+
+            var vm = Utils.Run(source, 100);
+            Utils.AssertIntegerResult(vm, 6);
         }
     }
 }

@@ -89,6 +89,8 @@ namespace TickLUA.VM.Tools
                     return $"{op_str} R{i.A} R{i.B} C{i.C}";
                 case Opcode.CALL:
                     return $"{op_str} R{i.A} {i.B} {i.C}";
+                case Opcode.TAILCALL:
+                    return $"{op_str} R{i.A} {i.B}";
 
                 default:
                     return $"{op_str} R{i.A} R{i.B} C{i.C}";
@@ -142,6 +144,8 @@ namespace TickLUA.VM.Tools
                     return $"; field {f.Constants[i.C]}";
                 case Opcode.CALL:
                     return $"; {(i.B == 0 ? "all" : (i.B - 1).ToString())} in, {(i.C == 0 ? "all" : (i.C - 1).ToString())} out";
+                case Opcode.TAILCALL:
+                    return $"; {(i.B == 0 ? "all" : (i.B - 1).ToString())} in";
                 default:
                     return "";
             }

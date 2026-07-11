@@ -44,7 +44,10 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 args[i].CompileRead(builder, context);
             }
 
-            builder.AddInstruction(Instruction.CALL(func_register.index, multi_args ? -1 : args.Count + 1, func_register.count), line);
+            builder.AddInstruction(emit_tail_call
+                ? Instruction.TAILCALL(func_register.index, multi_args ? -1 : args.Count + 1)
+                : Instruction.CALL(func_register.index, multi_args ? -1 : args.Count + 1, func_register.count),
+                line);
 
             builder.FreeRegisters(args.Count + 1);
         }

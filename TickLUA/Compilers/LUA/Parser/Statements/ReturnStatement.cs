@@ -39,6 +39,20 @@ namespace TickLUA.Compilers.LUA.Parser.Statements
                 return;
             }
 
+            // return f(...) / return obj:m(...) — proper tail call: the caller
+            // replaces this frame. The RETURN after the TAILCALL only runs for
+            // callers that cannot replace the frame (VM-aware natives, __call).
+            // A parenthesized call parses as AdjustmentExpression, so it stays
+            // on the truncating general path, per Lua semantics.
+            if (values.Count == 1 && values[0] is FunctionCallExpression tail_call)
+            {
+                byte reg = builder.AllocateRegisters(1);
+                tail_call.CompileTailCall(builder, reg);
+                builder.AddInstruction(Instruction.RETURN(reg, -1), line);
+                builder.FreeRegisters(1);
+                return;
+            }
+
             // A multi-value expression (function call or '...') in the last position
             // expands to all of its values.
             // Note: a parenthesized one parses as AdjustmentExpression and stays truncated to one value.

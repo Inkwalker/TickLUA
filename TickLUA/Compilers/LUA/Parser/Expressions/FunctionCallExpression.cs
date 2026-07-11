@@ -42,6 +42,18 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
         public override bool IsMultiValue => true;
 
+        protected bool emit_tail_call;
+
+        /// <summary>
+        /// Compiles this call in tail position: emits TAILCALL instead of CALL.
+        /// Used by ReturnStatement for 'return f(...)'.
+        /// </summary>
+        internal void CompileTailCall(FunctionBuilder builder, byte func_reg)
+        {
+            emit_tail_call = true;
+            CompileRead(builder, new RegisterContext { index = func_reg, count = -1 });
+        }
+
         public override void CompileRead(FunctionBuilder builder, RegisterContext func_register)
         {
             function_expr.CompileRead(builder, func_register);
@@ -59,7 +71,10 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
                 args[i].CompileRead(builder, context);
             }
 
-            builder.AddInstruction(Instruction.CALL(func_register.index, multi_args ? -1 : args.Count, func_register.count), (ushort)SourceRange.from.line);
+            builder.AddInstruction(emit_tail_call
+                ? Instruction.TAILCALL(func_register.index, multi_args ? -1 : args.Count)
+                : Instruction.CALL(func_register.index, multi_args ? -1 : args.Count, func_register.count),
+                (ushort)SourceRange.from.line);
 
             builder.FreeRegisters(args.Count);
         }

@@ -133,6 +133,48 @@ namespace TickLUA.VM.Handlers
             }
         }
 
+        internal static void TAILCALL(TickVM vm, StackFrame frame, Instruction instruction)
+        {
+            byte func_reg = instruction.A;
+            int arg_count = instruction.B - 1;
+
+            if (arg_count < 0)
+                arg_count = System.Math.Max(0, frame.Top - func_reg - 1);
+
+            var func_value = frame.Registers[func_reg].Value;
+            if (func_value is ClosureObject closure)
+            {
+                // Proper tail call: the caller replaces this frame and inherits its
+                // delivery sinks, so results (or a pcall-caught error) flow to the
+                // original caller. Build first — args are read from this frame.
+                var new_frame = BuildClosureFrame(frame, closure, func_reg + 1, arg_count, frame.Sink);
+                new_frame.ErrorSink = frame.ErrorSink;
+                vm.PopFrame();
+                vm.PushFrame(new_frame);
+            }
+            else if (func_value is NativeFunctionObject native && native.VmFunction == null)
+            {
+                var args = new LuaObject[arg_count];
+                for (int i = 0; i < arg_count; i++)
+                {
+                    args[i] = frame.Registers[func_reg + 1 + i].Value;
+                }
+
+                var results = native.Function(new NativeArgs(args, native.Name)) ?? LuaObject.NoResults;
+
+                // The native's results are this frame's results: pop and deliver.
+                vm.PopFrame();
+                frame.Sink(results);
+            }
+            else
+            {
+                // VM-aware native (pcall) or __call metamethod: not a proper tail
+                // call. Behave exactly like CALL with all results into func_reg;
+                // the RETURN(func_reg, all) that follows finishes up.
+                CALL(vm, frame, Instruction.CALL(func_reg, instruction.B - 1, -1));
+            }
+        }
+
         /// <summary>
         /// Builds a callee frame for a closure call: copies arguments from the caller's
         /// registers (starting at arg_start_reg), routes surplus args of a vararg
@@ -326,6 +368,11 @@ namespace TickLUA.VM
             byte b = arg_count < -1 ? (byte)0 : (byte)(arg_count + 1);
             byte c = resul_count < -1 ? (byte)0 : (byte)(resul_count + 1);
             return new Instruction(Opcode.CALL, func_reg, b, c);
+        }
+        internal static Instruction TAILCALL(byte func_reg, int arg_count)
+        {
+            byte b = arg_count < -1 ? (byte)0 : (byte)(arg_count + 1);
+            return new Instruction(Opcode.TAILCALL, func_reg, b, 0);
         }
         internal static Instruction RETURN(byte start_reg, int count)
         {

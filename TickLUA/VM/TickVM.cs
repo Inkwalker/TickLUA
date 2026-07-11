@@ -38,6 +38,7 @@ namespace TickLUA.VM
             { Opcode.CLOSE,           HandlersCore.CLOSE },
             { Opcode.CLOSURE,         HandlersCore.CLOSURE },
             { Opcode.CALL,            HandlersCore.CALL },
+            { Opcode.TAILCALL,        HandlersCore.TAILCALL },
             { Opcode.RETURN,          HandlersCore.RETURN },
             { Opcode.VARARG,          HandlersCore.VARARG },
             // Logic
@@ -67,6 +68,12 @@ namespace TickLUA.VM
         private Stack<StackFrame> callStack = new Stack<StackFrame>();
 
         public bool IsFinished => callStack.Count == 0;
+
+        /// <summary>
+        /// Current number of frames on the call stack.
+        /// </summary>
+        internal int CallStackDepth => callStack.Count;
+
         public LuaObject[] ExecutionResult { get; private set; }
 
         /// <summary>

@@ -186,7 +186,15 @@
         /// Will read arguments from A + 1, A + 2, ... and write results to A, A + 1, ...
         /// </summary>
         CALL,
-        //TAILCALL,
+        /// <summary>
+        /// Tail call: the caller replaces the current frame instead of stacking on it.
+        /// A - function closure reg,
+        /// B - number of args (0 - all up to Top, 1 - none, 2+ - (B-1))
+        /// No result count: results are delivered through the replaced frame's sink.
+        /// Always followed by a RETURN(A, all) that finishes the call for callers
+        /// that cannot replace the frame (VM-aware natives, __call metamethods).
+        /// </summary>
+        TAILCALL,
         /// <summary>
         /// Return from a function. 
         /// A - start result reg, Bx - number of registers to return (0 - all, 1 - none, 2+ - (Bx-1))
