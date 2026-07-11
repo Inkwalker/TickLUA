@@ -6,6 +6,12 @@ namespace TickLUA.VM.Objects
     {
         public Dictionary<LuaObject, LuaObject> Elements { get; }
 
+        /// <summary>
+        /// The table's metatable, or null when unset. Consulted by the VM for
+        /// metamethod dispatch; the indexers above stay raw.
+        /// </summary>
+        public TableObject Metatable { get; set; }
+
         public LuaObject this[LuaObject i]
         {
             get

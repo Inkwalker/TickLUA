@@ -25,6 +25,14 @@ namespace TickLUA.VM
         public bool IsProtected { get; set; }
 
         /// <summary>
+        /// Set on frames pushed for metamethod handlers whose result must not
+        /// land in a register (e.g. __lt drives a conditional skip). When set,
+        /// RETURN passes the results here instead of calling WriteResults.
+        /// Never fires on error unwinding — errors go to the pcall boundary.
+        /// </summary>
+        internal ResultsSinkDelegate Sink { get; set; }
+
+        /// <summary>
         /// One past the last register holding a value of a variable-count CALL.
         /// Set when a caller returns a variable number of results into this frame,
         /// consumed by a following multi value RETURN.

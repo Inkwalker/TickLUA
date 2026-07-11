@@ -44,37 +44,48 @@ namespace TickLUA.VM.Handlers
             var obj_a = frame.Registers[reg_a].Value;
             var obj_b = frame.Registers[reg_b].Value;
 
-            if (obj_a.Equals(obj_b) != expected)
+            if (obj_a.Equals(obj_b))
             {
-                frame.PC++;
+                if (!expected)
+                    frame.PC++;
+                return;
             }
+
+            // __eq is consulted only when primitive equality fails and both
+            // operands are tables; its result drives the skip via the sink.
+            if (obj_a is TableObject && obj_b is TableObject)
+            {
+                var handler = Metamethods.GetHandler(obj_a, Metamethods.EqualsKey)
+                           ?? Metamethods.GetHandler(obj_b, Metamethods.EqualsKey);
+                if (handler != null)
+                {
+                    Metamethods.Call(vm, frame, handler, new LuaObject[] { obj_a, obj_b }, 0, 1,
+                        sink: expected ? Metamethods.BranchExpectTrue : Metamethods.BranchExpectFalse);
+                    return;
+                }
+            }
+
+            if (expected)
+                frame.PC++;
         }
 
         internal static void LT(TickVM vm, StackFrame frame, Instruction instruction)
         {
-            int reg_a     = instruction.A;
-            int reg_b     = instruction.B;
-            bool expected = instruction.C != 0;
-
-            var obj_a = frame.Registers[reg_a].Value;
-            var obj_b = frame.Registers[reg_b].Value;
-
-            var number_a = obj_a as NumberObject;
-            var number_b = obj_b as NumberObject;
-
-            if (number_a == null || number_b == null)
-            {
-                // TODO: proper error handling
-                throw new System.Exception("Attempt to compare non-number values.");
-            }
-
-            if ((number_a < number_b) != expected)
-            {
-                frame.PC++;
-            }
+            Compare(vm, frame, instruction, Metamethods.LessKey, le: false);
         }
 
         internal static void LE(TickVM vm, StackFrame frame, Instruction instruction)
+        {
+            Compare(vm, frame, instruction, Metamethods.LessEqKey, le: true);
+        }
+
+        /// <summary>
+        /// Shared LT/LE ordering: numbers compare primitively, anything else
+        /// dispatches to __lt/__le (left operand's handler first). The
+        /// metamethod's boolean-coerced result drives the skip via the sink.
+        /// </summary>
+        private static void Compare(TickVM vm, StackFrame frame, Instruction instruction,
+            StringObject event_key, bool le)
         {
             int reg_a     = instruction.A;
             int reg_b     = instruction.B;
@@ -83,19 +94,22 @@ namespace TickLUA.VM.Handlers
             var obj_a = frame.Registers[reg_a].Value;
             var obj_b = frame.Registers[reg_b].Value;
 
-            var number_a = obj_a as NumberObject;
-            var number_b = obj_b as NumberObject;
-
-            if (number_a == null || number_b == null)
+            if (obj_a is NumberObject number_a && obj_b is NumberObject number_b)
             {
-                // TODO: proper error handling
-                throw new System.Exception("Attempt to compare non-number values.");
+                bool result = le ? number_a <= number_b : number_a < number_b;
+                if (result != expected)
+                    frame.PC++;
+                return;
             }
 
-            if ((number_a <= number_b) != expected)
-            {
-                frame.PC++;
-            }
+            var handler = Metamethods.GetHandler(obj_a, event_key)
+                       ?? Metamethods.GetHandler(obj_b, event_key);
+            if (handler == null)
+                throw new RuntimeException(
+                    $"attempt to compare {NativeArgs.TypeName(obj_a)} with {NativeArgs.TypeName(obj_b)}");
+
+            Metamethods.Call(vm, frame, handler, new LuaObject[] { obj_a, obj_b }, 0, 1,
+                sink: expected ? Metamethods.BranchExpectTrue : Metamethods.BranchExpectFalse);
         }
 
         internal static void NOT(TickVM vm, StackFrame frame, Instruction instruction)

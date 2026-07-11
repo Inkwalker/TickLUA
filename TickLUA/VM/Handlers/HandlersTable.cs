@@ -17,16 +17,8 @@ namespace TickLUA.VM.Handlers
             byte b = instruction.B; // key
             byte c = instruction.C; // value
 
-            var table = frame.Registers[a].Value as TableObject;
-            if (table != null)
-            {
-                var key = frame.Registers[b].Value;
-                var val = frame.Registers[c].Value;
-
-                table[key] = val;
-            }
-            else
-                throw new RuntimeException("Not a table");
+            Metamethods.NewIndex(vm, frame,
+                frame.Registers[a].Value, frame.Registers[b].Value, frame.Registers[c].Value);
         }
 
         internal static void GET_TABLE(TickVM vm, StackFrame frame, Instruction instruction)
@@ -35,15 +27,8 @@ namespace TickLUA.VM.Handlers
             byte b = instruction.B; // table
             byte c = instruction.C; // key
 
-            var table = frame.Registers[b].Value as IIndexable;
-            if (table != null)
-            {
-                var key = frame.Registers[c].Value;
-
-                frame.Registers[a].Value = table[key];
-            }
-            else
-                throw new RuntimeException("Not a table or a string");
+            Metamethods.Index(vm, frame,
+                frame.Registers[b].Value, frame.Registers[c].Value, a);
         }
 
         internal static void SET_FIELD(TickVM vm, StackFrame frame, Instruction instruction)
@@ -52,16 +37,8 @@ namespace TickLUA.VM.Handlers
             byte b = instruction.B; // key const
             byte c = instruction.C; // value
 
-            var table = frame.Registers[a].Value as TableObject;
-            if (table != null)
-            {
-                var key = frame.Constants[b];
-                var val = frame.Registers[c].Value;
-
-                table[key] = val;
-            }
-            else
-                throw new RuntimeException("Not a table");
+            Metamethods.NewIndex(vm, frame,
+                frame.Registers[a].Value, frame.Constants[b], frame.Registers[c].Value);
         }
 
         internal static void GET_FIELD(TickVM vm, StackFrame frame, Instruction instruction)
@@ -70,15 +47,8 @@ namespace TickLUA.VM.Handlers
             byte b = instruction.B; // table
             byte c = instruction.C; // key const
 
-            var table = frame.Registers[b].Value as IIndexable;
-            if (table != null)
-            {
-                var key = frame.Constants[c];
-
-                frame.Registers[a].Value = table[key];
-            }
-            else
-                throw new RuntimeException("Not a table or a sting");
+            Metamethods.Index(vm, frame,
+                frame.Registers[b].Value, frame.Constants[c], a);
         }
 
         internal static void SET_LIST(TickVM vm, StackFrame frame, Instruction instruction)
@@ -114,15 +84,30 @@ namespace TickLUA.VM.Handlers
             byte a = instruction.A; // result
             byte b = instruction.B; // value
 
-            var obj = frame.Registers[b].Value as IHasLen;
-            if (obj != null)
-            {
-                var len = obj.Len();
+            var obj = frame.Registers[b].Value;
 
-                frame.Registers[a].Value = len;
+            if (obj is StringObject str)
+            {
+                frame.Registers[a].Value = str.Len();
+                return;
             }
-            else
-                throw new RuntimeException("Not a table or a string");
+
+            if (obj is TableObject table)
+            {
+                // __len takes priority over the raw border for tables.
+                var handler = Metamethods.GetHandler(table, Metamethods.LenKey);
+                if (handler != null)
+                {
+                    Metamethods.Call(vm, frame, handler, new LuaObject[] { table }, a, 1);
+                    return;
+                }
+
+                frame.Registers[a].Value = table.Len();
+                return;
+            }
+
+            throw new RuntimeException(
+                $"attempt to get length of a {NativeArgs.TypeName(obj)} value");
         }
     }
 }

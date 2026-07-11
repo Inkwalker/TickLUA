@@ -17,6 +17,13 @@ namespace TickLUA.VM
         private static readonly NativeFunctionObject AssertFunction = new NativeFunctionObject("assert", Assert);
         private static readonly NativeFunctionObject PcallFunction  = new NativeFunctionObject("pcall", Pcall);
 
+        private static readonly NativeFunctionObject SetmetatableFunction = new NativeFunctionObject("setmetatable", Setmetatable);
+        private static readonly NativeFunctionObject GetmetatableFunction = new NativeFunctionObject("getmetatable", Getmetatable);
+        private static readonly NativeFunctionObject RawgetFunction   = new NativeFunctionObject("rawget", Rawget);
+        private static readonly NativeFunctionObject RawsetFunction   = new NativeFunctionObject("rawset", Rawset);
+        private static readonly NativeFunctionObject RawequalFunction = new NativeFunctionObject("rawequal", Rawequal);
+        private static readonly NativeFunctionObject RawlenFunction   = new NativeFunctionObject("rawlen", Rawlen);
+
         public static void Register(TableObject globals)
         {
             globals["next"]   = NextFunction;
@@ -25,6 +32,13 @@ namespace TickLUA.VM
             globals["error"]  = ErrorFunction;
             globals["assert"] = AssertFunction;
             globals["pcall"]  = PcallFunction;
+
+            globals["setmetatable"] = SetmetatableFunction;
+            globals["getmetatable"] = GetmetatableFunction;
+            globals["rawget"]   = RawgetFunction;
+            globals["rawset"]   = RawsetFunction;
+            globals["rawequal"] = RawequalFunction;
+            globals["rawlen"]   = RawlenFunction;
         }
 
         private static LuaObject[] Next(NativeArgs args)
@@ -77,6 +91,66 @@ namespace TickLUA.VM
             throw new RuntimeException(args.IsNilOrNone(1)
                 ? (LuaObject)new StringObject("assertion failed!")
                 : args[1]);
+        }
+
+        private static LuaObject[] Setmetatable(NativeArgs args)
+        {
+            var table = args.CheckTable(0);
+            if (!args.IsNil(1) && !args.IsTable(1))
+                throw new RuntimeException(
+                    $"bad argument #2 to '{args.FunctionName}' (nil or table expected)");
+
+            if (table.Metatable != null && table.Metatable.Contains(Metamethods.MetatableKey))
+                throw new RuntimeException("cannot change a protected metatable");
+
+            table.Metatable = args[1] as TableObject; // null when nil
+            return new LuaObject[] { table };
+        }
+
+        private static LuaObject[] Getmetatable(NativeArgs args)
+        {
+            var metatable = (args.CheckAny(0) as TableObject)?.Metatable;
+            if (metatable == null)
+                return new LuaObject[] { NilObject.Nil };
+
+            // A __metatable field masks the real metatable.
+            if (metatable.Contains(Metamethods.MetatableKey))
+                return new LuaObject[] { metatable[Metamethods.MetatableKey] };
+
+            return new LuaObject[] { metatable };
+        }
+
+        private static LuaObject[] Rawget(NativeArgs args)
+        {
+            var table = args.CheckTable(0);
+            return new LuaObject[] { table[args.CheckAny(1)] };
+        }
+
+        private static LuaObject[] Rawset(NativeArgs args)
+        {
+            var table = args.CheckTable(0);
+            var key = args.CheckAny(1);
+            if (key is NilObject)
+                throw new RuntimeException("table index is nil");
+
+            table[key] = args.CheckAny(2);
+            return new LuaObject[] { table };
+        }
+
+        private static LuaObject[] Rawequal(NativeArgs args)
+        {
+            var a = args.CheckAny(0);
+            var b = args.CheckAny(1);
+            return new LuaObject[] { BooleanObject.FromBool(a.Equals(b)) };
+        }
+
+        private static LuaObject[] Rawlen(NativeArgs args)
+        {
+            if (args[0] is IHasLen measurable)
+                return new LuaObject[] { measurable.Len() };
+
+            throw new RuntimeException(
+                $"bad argument #1 to '{args.FunctionName}' (table or string expected)");
         }
 
         /// <summary>
@@ -151,12 +225,25 @@ namespace TickLUA.VM
             }
             else
             {
-                // A call error inside pcall is caught by pcall itself.
-                HandlersCore.WriteResults(frame, funcReg, resCount, new LuaObject[]
+                // Not a function: resolve __call under protection, so both a
+                // missing metamethod and errors inside the handler become
+                // (false, err) — a call error inside pcall is caught by pcall.
+                var call_args = new LuaObject[call_arg_count];
+                for (int i = 0; i < call_arg_count; i++)
                 {
-                    BooleanObject.False,
-                    new StringObject($"attempt to call a {NativeArgs.TypeName(target)} value")
-                });
+                    call_args[i] = frame.Registers[funcReg + 2 + i].Value;
+                }
+
+                try
+                {
+                    Metamethods.Call(vm, frame, target, call_args, funcReg, resCount, protect: true);
+                }
+                catch (RuntimeException ex)
+                {
+                    // __call resolution itself failed (e.g. no metamethod).
+                    HandlersCore.WriteResults(frame, funcReg, resCount,
+                        new LuaObject[] { BooleanObject.False, ex.ErrorValue });
+                }
             }
         }
     }

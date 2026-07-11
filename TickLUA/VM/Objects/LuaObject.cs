@@ -37,9 +37,9 @@
         public const string LESS = "__lt";
         public const string LESS_EQ = "__le";
         public const string EQUALS = "__eq";
-        #endregion
 
-        //public TableObject Metatable { get; set; }
+        public const string METATABLE = "__metatable";
+        #endregion
 
         /// <summary>Allocation-free "no results" return value for native functions.</summary>
         public static readonly LuaObject[] NoResults = new LuaObject[0];

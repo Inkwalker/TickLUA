@@ -117,12 +117,20 @@ namespace TickLUA.VM.Handlers
             }
             else
             {
-                throw new RuntimeException($"Attempt to call a non-function value of type {func_value.GetType().Name}");
+                // Not a function: resolve __call (or fail). Args are snapshotted
+                // because __call prepends the callee, shifting them all.
+                var args = new LuaObject[arg_count];
+                for (int i = 0; i < arg_count; i++)
+                {
+                    args[i] = frame.Registers[func_reg + 1 + i].Value;
+                }
+
+                Metamethods.Call(vm, frame, func_value, args, func_reg, res_count);
             }
         }
 
         /// <summary>
-        /// Builds a callee frame for a closure call: copies arguments from the caller's
+        /// Builds a caller frame for a closure call: copies arguments from the caller's
         /// registers (starting at arg_start_reg), routes surplus args of a vararg
         /// function to its Varargs store, and records where the results should land.
         /// The caller pushes the returned frame.
@@ -152,6 +160,40 @@ namespace TickLUA.VM.Handlers
                 {
                     varargs[i] = caller.Registers[arg_start_reg + param_count + i].Value;
                 }
+                new_frame.Varargs = varargs;
+            }
+
+            new_frame.ResultsStartRegister = results_start_reg;
+            new_frame.ResultsCount = res_count;
+
+            return new_frame;
+        }
+
+        /// <summary>
+        /// Builds a caller frame for a call whose arguments live in an array
+        /// rather than in caller registers (metamethod dispatch, __call with a
+        /// prepended self). Mirrors <see cref="BuildClosureFrame"/> including
+        /// the vararg-overflow split.
+        /// </summary>
+        internal static StackFrame BuildArgsFrame(ClosureObject closure, LuaObject[] args,
+            byte results_start_reg, int res_count)
+        {
+            var new_frame = new StackFrame(closure.Function, closure.Upvalues);
+
+            int param_count = closure.Function.HasVarargs
+                ? closure.Function.ParameterCount
+                : new_frame.Registers.Length;
+
+            int copy_count = System.Math.Min(args.Length, param_count);
+            for (int i = 0; i < copy_count; i++)
+            {
+                new_frame.Registers[i].Value = args[i];
+            }
+
+            if (closure.Function.HasVarargs && args.Length > param_count)
+            {
+                var varargs = new LuaObject[args.Length - param_count];
+                System.Array.Copy(args, param_count, varargs, 0, varargs.Length);
                 new_frame.Varargs = varargs;
             }
 
@@ -218,7 +260,11 @@ namespace TickLUA.VM.Handlers
 
             var caller_frame = vm.PeekFrame();
 
-            if (caller_frame != null)
+            if (frame.Sink != null)
+                // Metamethod frame with custom result handling; the pushing
+                // handler always has a live caller frame.
+                frame.Sink(vm, caller_frame, results);
+            else if (caller_frame != null)
                 WriteResults(caller_frame, frame.ResultsStartRegister, frame.ResultsCount, results);
             else
                 vm.SetExecutionResult(results);

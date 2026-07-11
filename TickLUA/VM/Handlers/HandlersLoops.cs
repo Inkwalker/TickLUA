@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using TickLUA.VM.Objects;
+﻿using TickLUA.VM.Objects;
 
 namespace TickLUA.VM.Handlers
 {
@@ -56,48 +53,11 @@ namespace TickLUA.VM.Handlers
             var state = frame.Registers[reg_base + 1].Value;
             var control = frame.Registers[reg_base + 2].Value;
 
-            if (func_value is ClosureObject closure)
-            {
-                var new_frame = new StackFrame(closure.Function, closure.Upvalues);
-
-                int param_count = closure.Function.HasVarargs
-                    ? closure.Function.ParameterCount
-                    : new_frame.Registers.Length;
-
-                if (param_count > 0) new_frame.Registers[0].Value = state;
-                if (param_count > 1) new_frame.Registers[1].Value = control;
-
-                if (closure.Function.HasVarargs && param_count < 2)
-                {
-                    new_frame.Varargs = param_count == 1
-                        ? new LuaObject[] { control }
-                        : new LuaObject[] { state, control };
-                }
-
-                // Results land in the loop variable registers; the iterator/state/control
-                // triple below them stays intact for the next iteration.
-                new_frame.ResultsStartRegister = (byte)reg_vars;
-                new_frame.ResultsCount = var_count;
-
-                vm.PushFrame(new_frame);
-            }
-            else if (func_value is NativeFunctionObject native)
-            {
-                var args = new LuaObject[] { state, control };
-                var results = native.Function(new NativeArgs(args, native.Name)) ?? LuaObject.NoResults;
-
-                frame.GrowRegisters(reg_vars + var_count);
-
-                for (int i = 0; i < var_count; i++)
-                {
-                    frame.Registers[reg_vars + i].Value =
-                        i < results.Length && results[i] != null ? results[i] : NilObject.Nil;
-                }
-            }
-            else
-            {
-                throw new RuntimeException($"Attempt to call a non-function value of type {func_value.GetType().Name}");
-            }
+            // Results land in the loop variable registers; the iterator/state/control
+            // triple below them stays intact for the next iteration. Callable
+            // tables (__call) work as iterators through the shared dispatch.
+            Metamethods.Call(vm, frame, func_value,
+                new LuaObject[] { state, control }, (byte)reg_vars, var_count);
         }
 
         internal static void TFORLOOP(TickVM vm, StackFrame frame, Instruction instruction)
