@@ -76,6 +76,12 @@ namespace TickLUA.VM
 
                 if (callee is NativeFunctionObject native)
                 {
+                    if (native.VmArgsFunction != null)
+                    {
+                        native.VmArgsFunction(vm, args, sink, errorSink);
+                        return;
+                    }
+
                     if (native.VmFunction != null)
                         // A VM-aware native reads its arguments from fixed caller
                         // register positions; an argument array cannot be routed to it.

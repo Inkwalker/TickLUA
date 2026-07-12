@@ -19,6 +19,14 @@ namespace TickLUA.VM.Objects
     internal delegate void VmNativeFunction(TickVM vm, StackFrame frame, byte funcReg, int argCount, int resCount);
 
     /// <summary>
+    /// Args-array form of a VM-aware native, for call sites that have no caller
+    /// register context (metamethod dispatch, TFORCALL iterators). Results go to
+    /// the sink; with a non-null errorSink the call is protected like pcall.
+    /// </summary>
+    internal delegate void VmArgsNativeFunction(TickVM vm, LuaObject[] args,
+        ResultsSinkDelegate sink, ErrorSinkDelegate errorSink);
+
+    /// <summary>
     /// Wraps a C# delegate as a first-class Lua function value.
     /// </summary>
     public class NativeFunctionObject : LuaObject
@@ -29,6 +37,13 @@ namespace TickLUA.VM.Objects
         /// Non-null for VM-aware natives; takes precedence over <see cref="Function"/>.
         /// </summary>
         internal VmNativeFunction VmFunction { get; }
+
+        /// <summary>
+        /// Optional args-array form of a VM-aware native, letting it be called
+        /// where no caller register context exists (metamethod dispatch,
+        /// TFORCALL iterators). Null means such calls are an error.
+        /// </summary>
+        internal VmArgsNativeFunction VmArgsFunction { get; }
 
         /// <summary>
         /// Optional name used in error messages ("bad argument #1 to 'name' ...").
@@ -48,13 +63,15 @@ namespace TickLUA.VM.Objects
             Function = function;
         }
 
-        internal NativeFunctionObject(string name, VmNativeFunction vmFunction)
+        internal NativeFunctionObject(string name, VmNativeFunction vmFunction,
+            VmArgsNativeFunction vmArgsFunction = null)
         {
             if (vmFunction == null)
                 throw new ArgumentNullException(nameof(vmFunction));
 
             Name = name;
             VmFunction = vmFunction;
+            VmArgsFunction = vmArgsFunction;
         }
 
         public override string ToString() => Name == null ? "< native func >" : $"< native func '{Name}' >";

@@ -65,14 +65,25 @@ namespace TickLUA.VM
 
         private readonly InstructionHandler[] instructionHandlers;
 
-        private Stack<StackFrame> callStack = new Stack<StackFrame>();
+        // Execution always operates on the current coroutine's stack; the main
+        // chunk runs on an implicit main coroutine. Resume/yield switch which
+        // coroutine is current, and with it the stack every handler sees.
+        private readonly CoroutineObject mainCoroutine = new CoroutineObject();
+        private CoroutineObject currentCoroutine;
 
-        public bool IsFinished => callStack.Count == 0;
+        private Stack<StackFrame> CallStack => currentCoroutine.Stack;
+
+        internal CoroutineObject CurrentCoroutine => currentCoroutine;
+        internal CoroutineObject MainCoroutine => mainCoroutine;
+
+        // Main cannot yield, so its stack only empties when the main chunk
+        // returns; suspended coroutines left behind are simply abandoned.
+        public bool IsFinished => mainCoroutine.Stack.Count == 0;
 
         /// <summary>
         /// Current number of frames on the call stack.
         /// </summary>
-        internal int CallStackDepth => callStack.Count;
+        internal int CallStackDepth => CallStack.Count;
 
         public LuaObject[] ExecutionResult { get; private set; }
 
@@ -85,6 +96,7 @@ namespace TickLUA.VM
         public TickVM(LuaFunction bytecode, params LuaObject[] args)
         {
             instructionHandlers = LoadInstructionSet();
+            currentCoroutine = mainCoroutine;
 
             // The main chunk is compiled with _ENV as upvalue #0; its cell holds
             // the globals table.
@@ -135,7 +147,7 @@ namespace TickLUA.VM
         {
             if (IsFinished) return;
 
-            var frame = callStack.Peek();
+            var frame = CallStack.Peek();
             var instruction = frame.Step();
 
             try
@@ -150,40 +162,158 @@ namespace TickLUA.VM
         }
 
         /// <summary>
-        /// Unwinds the call stack to the nearest pcall boundary and delivers
-        /// (false, error value) there. Returns false when no protected frame
-        /// exists — the error is unhandled and the call stack is left intact
-        /// so the host can inspect it after the rethrow.
+        /// Unwinds to the nearest error boundary and delivers the error value
+        /// there. A boundary is either a pcall-protected frame on the current
+        /// stack, or the base of a coroutine: a resumed coroutine reports
+        /// (false, error value) to its resumer, while a wrapped one dies and
+        /// lets the error keep unwinding in the resumer's stack. Returns false
+        /// when no boundary exists — the error is unhandled and the main stack
+        /// is left intact so the host can inspect it after the rethrow.
         /// </summary>
         private bool TryHandleRuntimeError(RuntimeException ex)
         {
-            bool any_protected = false;
-            foreach (var f in callStack)
+            while (true)
             {
-                if (f.IsProtected)
+                bool any_protected = false;
+                foreach (var f in CallStack)
                 {
-                    any_protected = true;
-                    break;
+                    if (f.IsProtected)
+                    {
+                        any_protected = true;
+                        break;
+                    }
+                }
+
+                if (any_protected)
+                {
+                    StackFrame boundary;
+                    do
+                    {
+                        boundary = CallStack.Pop();
+                    } while (!boundary.IsProtected);
+
+                    // The boundary frame's error sink carries the pcall protocol; the
+                    // VM core knows nothing about where or how the error is reported.
+                    boundary.ErrorSink(ex.ErrorValue);
+                    return true;
+                }
+
+                if (currentCoroutine == mainCoroutine)
+                {
+                    // Error escapes every boundary: record the Lua call stack (still
+                    // intact — nothing has been popped) so the host sees where it happened.
+                    ex.CaptureTraceback(BuildTraceback());
+                    return false;
+                }
+
+                var co = currentCoroutine;
+                if (co.PendingResumeErrorSink == null)
+                    // Wrap mode: the coroutine's frames are about to be discarded,
+                    // so capture them now (innermost capture wins on re-capture).
+                    ex.CaptureTraceback(BuildTraceback());
+                co.Stack.Clear();
+                SwitchBack(co, CoroutineStatus.Dead);
+
+                if (co.PendingResumeErrorSink != null)
+                {
+                    // Resume mode: resume itself is a protected call — deliver
+                    // (false, err) into the resumer and stop unwinding.
+                    co.PendingResumeErrorSink(ex.ErrorValue);
+                    return true;
+                }
+                // Wrap mode: keep unwinding in the resumer's stack.
+            }
+        }
+
+        /// <summary>
+        /// Makes a suspended coroutine current so subsequent ticks execute it.
+        /// The first resume builds the body's root frame from <paramref name="args"/>;
+        /// later resumes deliver them as the parked yield's results. The sinks
+        /// say where yielded/returned values and body errors go — a null
+        /// <paramref name="errorSink"/> (wrap semantics) lets errors propagate
+        /// into the resumer's stack instead. Callers validate status.
+        /// </summary>
+        internal void ResumeCoroutine(CoroutineObject co, LuaObject[] args,
+            ResultsSinkDelegate resultsSink, ErrorSinkDelegate errorSink)
+        {
+            co.PendingResumeSink = resultsSink;
+            co.PendingResumeErrorSink = errorSink;
+            co.Resumer = currentCoroutine;
+            currentCoroutine.Status = CoroutineStatus.Normal;
+            co.Status = CoroutineStatus.Running;
+
+            if (!co.Started)
+            {
+                co.Started = true;
+                currentCoroutine = co;
+                if (co.Body is ClosureObject closure)
+                {
+                    // The root sink reads PendingResumeSink at delivery time, so a
+                    // later resume from a different caller redirects the results.
+                    var root = HandlersCore.BuildArgsFrame(closure, args,
+                        results => FinishCoroutine(co, results));
+                    co.Stack.Push(root);
+                }
+                else
+                {
+                    // Plain native body: runs synchronously within this tick.
+                    var native = (NativeFunctionObject)co.Body;
+                    try
+                    {
+                        var results = native.Function(new NativeArgs(args, native.Name)) ?? LuaObject.NoResults;
+                        FinishCoroutine(co, results);
+                    }
+                    catch (RuntimeException ex)
+                    {
+                        SwitchBack(co, CoroutineStatus.Dead);
+                        if (co.PendingResumeErrorSink != null)
+                            co.PendingResumeErrorSink(ex.ErrorValue);
+                        else
+                            // Wrap mode: rethrow inside Tick's try, now in the
+                            // resumer's context, so its own protection applies.
+                            throw;
+                    }
                 }
             }
-            if (!any_protected)
+            else
             {
-                // Error escapes every pcall boundary: record the Lua call stack (still
-                // intact — nothing has been popped) so the host sees where it happened.
-                ex.CaptureTraceback(BuildTraceback());
-                return false;
+                co.PendingYieldSink(args);
+                currentCoroutine = co;
             }
+        }
 
-            StackFrame boundary;
-            do
-            {
-                boundary = callStack.Pop();
-            } while (!boundary.IsProtected);
+        /// <summary>
+        /// Suspends the current coroutine: parks <paramref name="resumeArgsSink"/>
+        /// (where the next resume's arguments land — the yield call site's result
+        /// registers), switches back to the resumer, and delivers the yielded
+        /// values there. The coroutine's frames stay intact for the next resume.
+        /// </summary>
+        internal void YieldCurrent(LuaObject[] values, ResultsSinkDelegate resumeArgsSink)
+        {
+            var co = currentCoroutine;
+            if (co == mainCoroutine)
+                throw new RuntimeException("attempt to yield from outside a coroutine");
 
-            // The boundary frame's error sink carries the pcall protocol; the
-            // VM core knows nothing about where or how the error is reported.
-            boundary.ErrorSink(ex.ErrorValue);
-            return true;
+            co.PendingYieldSink = resumeArgsSink;
+            SwitchBack(co, CoroutineStatus.Suspended);
+            co.PendingResumeSink(values);
+        }
+
+        /// <summary>
+        /// The body returned: the root frame is already popped (RETURN did it),
+        /// so just die and deliver the results to the resumer.
+        /// </summary>
+        private void FinishCoroutine(CoroutineObject co, LuaObject[] results)
+        {
+            SwitchBack(co, CoroutineStatus.Dead);
+            co.PendingResumeSink(results);
+        }
+
+        private void SwitchBack(CoroutineObject co, CoroutineStatus newStatus)
+        {
+            co.Status = newStatus;
+            currentCoroutine = co.Resumer;
+            currentCoroutine.Status = CoroutineStatus.Running;
         }
 
         /// <summary>
@@ -193,9 +323,9 @@ namespace TickLUA.VM
         /// </summary>
         private RuntimeException.TracebackFrame[] BuildTraceback()
         {
-            var frames = new RuntimeException.TracebackFrame[callStack.Count];
+            var frames = new RuntimeException.TracebackFrame[CallStack.Count];
             int i = 0;
-            foreach (var frame in callStack)
+            foreach (var frame in CallStack)
                 frames[i++] = new RuntimeException.TracebackFrame(frame.Function.Name, LineOf(frame));
             return frames;
         }
@@ -222,12 +352,12 @@ namespace TickLUA.VM
 
         internal void PushFrame(StackFrame frame)
         {
-            callStack.Push(frame);
+            CallStack.Push(frame);
         }
 
         internal StackFrame PopFrame()
         {
-            return callStack.Pop();
+            return CallStack.Pop();
         }
 
         internal void SetExecutionResult(params LuaObject[] result)

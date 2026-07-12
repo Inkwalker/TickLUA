@@ -38,6 +38,8 @@ namespace TickLUA.VM
             globals["rawset"]   = RawsetFunction;
             globals["rawequal"] = RawequalFunction;
             globals["rawlen"]   = RawlenFunction;
+
+            StdLibCoroutine.Register(globals);
         }
 
         private static LuaObject[] Next(NativeArgs args)
@@ -179,6 +181,31 @@ namespace TickLUA.VM
             }
             else if (target is NativeFunctionObject native)
             {
+                if (native.VmArgsFunction != null)
+                {
+                    // The args form takes explicit sinks, so the pcall protocol
+                    // rides along: results get true prepended, and — crucially for
+                    // error-propagating natives like a coroutine.wrap wrapper —
+                    // a later asynchronous error is delivered here as (false, err)
+                    // instead of unwinding past this pcall.
+                    var vm_args = new LuaObject[call_arg_count];
+                    for (int i = 0; i < call_arg_count; i++)
+                    {
+                        vm_args[i] = frame.Registers[funcReg + 2 + i].Value;
+                    }
+
+                    try
+                    {
+                        native.VmArgsFunction(vm, vm_args,
+                            ResultsSink.PcallSuccess(inner), ResultsSink.PcallCatch(inner));
+                    }
+                    catch (RuntimeException ex)
+                    {
+                        ResultsSink.PcallCatch(inner)(ex.ErrorValue);
+                    }
+                    return;
+                }
+
                 if (native.VmFunction != null)
                 {
                     // Protected call of another VM-aware native (e.g. pcall(pcall, f)):

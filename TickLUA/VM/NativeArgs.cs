@@ -141,6 +141,7 @@ namespace TickLUA.VM
             if (value is NumberObject) return "number";
             if (value is StringObject) return "string";
             if (value is TableObject) return "table";
+            if (value is CoroutineObject) return "thread";
             if (value is ClosureObject || value is NativeFunctionObject) return "function";
             return value.GetType().Name;
         }
