@@ -6,6 +6,13 @@ using TickLUA.VM.Objects;
 
 namespace TickLUA.VM
 {
+    /// <summary>
+    /// Host-supplied source reader backing require/dofile: receives the
+    /// name/path exactly as the script wrote it and returns Lua source text,
+    /// or null when there is no such module/file.
+    /// </summary>
+    public delegate string ModuleReaderDelegate(string path);
+
     public class TickVM
     {
         internal delegate void InstructionHandler(TickVM vm, StackFrame frame, Instruction instruction);
@@ -93,6 +100,18 @@ namespace TickLUA.VM
         /// </summary>
         public TableObject Globals { get; }
 
+        /// <summary>
+        /// Reads module source for require/dofile. Unset by default; while
+        /// null, any require/dofile call raises a Lua error. Set before ticking.
+        /// </summary>
+        public ModuleReaderDelegate ModuleReader { get; set; }
+
+        /// <summary>
+        /// Backing store of package.loaded — require's module cache. Hosts can
+        /// preload entries to expose modules without going through the reader.
+        /// </summary>
+        public TableObject LoadedModules { get; }
+
         public TickVM(LuaFunction bytecode, params LuaObject[] args)
         {
             instructionHandlers = LoadInstructionSet();
@@ -101,7 +120,8 @@ namespace TickLUA.VM
             // The main chunk is compiled with _ENV as upvalue #0; its cell holds
             // the globals table.
             Globals = new TableObject();
-            StdLib.Register(Globals);
+            LoadedModules = new TableObject();
+            StdLib.Register(Globals, LoadedModules);
             var upvalues = new RegisterCell[] { new RegisterCell { Value = Globals } };
             var frame = new StackFrame(bytecode, upvalues);
 

@@ -13,7 +13,7 @@ namespace TickLUA.Compilers.LUA
             lexer.Next();
 
 
-            var builder = new FunctionBuilder("main");
+            var builder = new FunctionBuilder(module);
 
             // The main chunk is a vararg function (per Lua semantics), so top-level
             // '...' compiles and expands to zero values.

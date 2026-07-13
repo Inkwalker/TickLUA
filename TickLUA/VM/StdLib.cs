@@ -23,7 +23,7 @@ namespace TickLUA.VM
         private static readonly NativeFunctionObject RawequalFunction = new NativeFunctionObject("rawequal", Rawequal);
         private static readonly NativeFunctionObject RawlenFunction   = new NativeFunctionObject("rawlen", Rawlen);
 
-        public static void Register(TableObject globals)
+        public static void Register(TableObject globals, TableObject loadedModules)
         {
             globals["next"]   = NextFunction;
             globals["pairs"]  = PairsFunction;
@@ -40,6 +40,7 @@ namespace TickLUA.VM
             globals["rawlen"]   = RawlenFunction;
 
             StdLibCoroutine.Register(globals);
+            StdLibPackage.Register(globals, loadedModules);
         }
 
         private static LuaObject[] Next(NativeArgs args)

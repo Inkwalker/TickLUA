@@ -15,10 +15,25 @@ namespace TickLUA_Tests
             return Run(luaFunction, tick_limit, vm_args);
         }
 
+        public static TickVM Run(string code, int tick_limit, ModuleReaderDelegate module_reader, params LuaObject[] vm_args)
+        {
+            var luaFunction = LuaCompiler.Compile(code);
+
+            BytecodePrinter.ConsoleWrite(luaFunction, true);
+
+            var vm = new TickVM(luaFunction, vm_args);
+            vm.ModuleReader = module_reader;
+
+            return Run(vm, tick_limit);
+        }
+
         public static TickVM Run(LuaFunction func, int tick_limit, params LuaObject[] vm_args)
         {
-            var vm = new TickVM(func, vm_args);
+            return Run(new TickVM(func, vm_args), tick_limit);
+        }
 
+        public static TickVM Run(TickVM vm, int tick_limit)
+        {
             int ticks = 0;
             while (!vm.IsFinished)
             {
