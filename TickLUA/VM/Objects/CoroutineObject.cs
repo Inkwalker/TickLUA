@@ -21,6 +21,11 @@ namespace TickLUA.VM.Objects
     /// </summary>
     internal class CoroutineObject : LuaObject
     {
+        // Rough x64 memory-accounting cost (see LuaObject.ShallowMemoryCost):
+        // the coroutine object with its sinks and empty stack — frames bill
+        // themselves on push/pop.
+        internal const long HeaderMemoryCost = 128;
+
         /// <summary>The coroutine body: a ClosureObject or a plain native.</summary>
         internal LuaObject Body { get; }
 
@@ -68,5 +73,8 @@ namespace TickLUA.VM.Objects
         public override string ToString() => "< thread >";
 
         public override StringObject ToStringObject() => new StringObject("[thread]");
+
+        // Header only: the frames bill themselves on push/pop.
+        public override long ShallowMemoryCost() => HeaderMemoryCost;
     }
 }

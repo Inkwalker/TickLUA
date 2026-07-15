@@ -43,6 +43,9 @@ namespace TickLUA.VM.Objects
 
         public override StringObject ToStringObject() => new StringObject(Value.ToString());
 
+        // Fixed-size and bounded by the slots that hold it.
+        public override long ShallowMemoryCost() => 0;
+
         /// <summary>
         /// Canonical Lua string-to-number conversion, shared by numeric literals
         /// and by string coercion in arithmetic. Accepts decimal integers/floats

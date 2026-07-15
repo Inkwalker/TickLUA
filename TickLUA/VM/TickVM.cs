@@ -87,6 +87,21 @@ namespace TickLUA.VM
         // returns; suspended coroutines left behind are simply abandoned.
         public bool IsFinished => mainCoroutine.Stack.Count == 0;
 
+        // Per-coroutine frame budget; int.MaxValue when no limit was configured.
+        private readonly int maxCallStackDepth;
+
+        // Approximate memory accounting; null when no memory limit was
+        // configured (all choke points then no-op).
+        private readonly MemoryLedger ledger;
+
+        /// <summary>
+        /// The ledger's running estimate of memory retained by script-reachable
+        /// values, in bytes. An upper-bound approximation (see
+        /// <see cref="TickVMOptions.MaxMemoryBytes"/>); 0 when no memory limit
+        /// is configured.
+        /// </summary>
+        public long EstimatedMemoryBytes => ledger?.Total ?? 0;
+
         /// <summary>
         /// Current number of frames on the call stack.
         /// </summary>
@@ -113,7 +128,25 @@ namespace TickLUA.VM
         public TableObject LoadedModules { get; }
 
         public TickVM(LuaFunction bytecode, params LuaObject[] args)
+            : this(bytecode, null, args)
         {
+        }
+
+        public TickVM(LuaFunction bytecode, TickVMOptions options, params LuaObject[] args)
+        {
+            if (options?.MaxCallStackDepth is int depth && depth < 1)
+                throw new ArgumentOutOfRangeException(nameof(options),
+                    "MaxCallStackDepth must be at least 1 (null for unlimited)");
+            maxCallStackDepth = options?.MaxCallStackDepth ?? int.MaxValue;
+
+            if (options?.MaxMemoryBytes is long max_memory)
+            {
+                if (max_memory < 1)
+                    throw new ArgumentOutOfRangeException(nameof(options),
+                        "MaxMemoryBytes must be at least 1 (null for unlimited)");
+                ledger = new MemoryLedger(this, max_memory);
+            }
+
             instructionHandlers = LoadInstructionSet();
             currentCoroutine = mainCoroutine;
 
@@ -170,14 +203,26 @@ namespace TickLUA.VM
             var frame = CallStack.Peek();
             var instruction = frame.Step();
 
+            // Hand this VM's ledger to the write choke points for the duration
+            // of the instruction (see MemoryLedger.Current); save/restore so a
+            // native that ticks another VM cannot leave a stale ledger behind.
+            var previous_ledger = MemoryLedger.Current;
+            MemoryLedger.Current = ledger;
             try
             {
                 Execute(frame, instruction);
+
+                if (ledger != null)
+                    ledger.EnforceLimit();
             }
             catch (RuntimeException ex)
             {
                 if (!TryHandleRuntimeError(ex))
                     throw;
+            }
+            finally
+            {
+                MemoryLedger.Current = previous_ledger;
             }
         }
 
@@ -209,7 +254,7 @@ namespace TickLUA.VM
                     StackFrame boundary;
                     do
                     {
-                        boundary = CallStack.Pop();
+                        boundary = PopFrame();
                     } while (!boundary.IsProtected);
 
                     // The boundary frame's error sink carries the pcall protocol; the
@@ -231,6 +276,9 @@ namespace TickLUA.VM
                     // Wrap mode: the coroutine's frames are about to be discarded,
                     // so capture them now (innermost capture wins on re-capture).
                     ex.CaptureTraceback(BuildTraceback());
+                if (ledger != null)
+                    foreach (var f in co.Stack)
+                        ledger.ChargeFrame(f, -1);
                 co.Stack.Clear();
                 SwitchBack(co, CoroutineStatus.Dead);
 
@@ -270,9 +318,12 @@ namespace TickLUA.VM
                 {
                     // The root sink reads PendingResumeSink at delivery time, so a
                     // later resume from a different caller redirects the results.
+                    // PushFrame targets the current coroutine's stack (co, as of
+                    // above) and enforces the depth limit; an overflow here
+                    // unwinds like a body error — resume reports (false, err).
                     var root = HandlersCore.BuildArgsFrame(closure, args,
                         results => FinishCoroutine(co, results));
-                    co.Stack.Push(root);
+                    PushFrame(root);
                 }
                 else
                 {
@@ -372,12 +423,19 @@ namespace TickLUA.VM
 
         internal void PushFrame(StackFrame frame)
         {
+            // Depth is checked per coroutine: CallStack is the active
+            // coroutine's stack, and each coroutine gets the full budget.
+            if (CallStack.Count >= maxCallStackDepth)
+                throw new RuntimeException("stack overflow");
+            ledger?.ChargeFrame(frame, +1);
             CallStack.Push(frame);
         }
 
         internal StackFrame PopFrame()
         {
-            return CallStack.Pop();
+            var frame = CallStack.Pop();
+            ledger?.ChargeFrame(frame, -1);
+            return frame;
         }
 
         internal void SetExecutionResult(params LuaObject[] result)

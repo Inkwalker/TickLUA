@@ -4,13 +4,30 @@ namespace TickLUA.VM.Objects
 {
     public class TableObject : LuaObject, IHasLen, IIndexable
     {
+        // Rough x64 memory-accounting costs (see LuaObject.ShallowMemoryCost):
+        // the table object itself, and one dictionary entry (slot + hash
+        // bookkeeping) — the key and value bill their own shallow costs.
+        internal const long HeaderMemoryCost = 64;
+        internal const long EntryMemoryCost = 32;
+
         public Dictionary<LuaObject, LuaObject> Elements { get; }
+
+        private TableObject metatable;
 
         /// <summary>
         /// The table's metatable, or null when unset. Consulted by the VM for
-        /// metamethod dispatch; the indexers above stay raw.
+        /// metamethod dispatch; the indexers above stay raw. A charged slot
+        /// like any other, so a chain of metatables stays inside the budget.
         /// </summary>
-        public TableObject Metatable { get; set; }
+        public TableObject Metatable
+        {
+            get => metatable;
+            set
+            {
+                MemoryLedger.OnSlotWrite(metatable, value);
+                metatable = value;
+            }
+        }
 
         public LuaObject this[LuaObject i]
         {
@@ -23,7 +40,28 @@ namespace TickLUA.VM.Objects
             }
             set
             {
-                if (value == NilObject.Nil) 
+                // Memory-ledger choke point: entry adds/removes and value
+                // overwrites adjust the executing VM's budget (no-op when the
+                // ledger is inactive). Keys and values bill their shallow cost
+                // per slot; entry overhead covers the dictionary slot itself.
+                var ledger = MemoryLedger.Current;
+                if (ledger != null)
+                {
+                    Elements.TryGetValue(i, out var old);
+                    if (value == NilObject.Nil)
+                    {
+                        if (old != null)
+                            ledger.Total -= EntryMemoryCost
+                                + MemoryLedger.ShallowCost(i) + MemoryLedger.ShallowCost(old);
+                    }
+                    else if (old != null)
+                        ledger.Total += MemoryLedger.ShallowCost(value) - MemoryLedger.ShallowCost(old);
+                    else
+                        ledger.Total += EntryMemoryCost
+                            + MemoryLedger.ShallowCost(i) + MemoryLedger.ShallowCost(value);
+                }
+
+                if (value == NilObject.Nil)
                     Elements.Remove(i);
                 else
                     Elements[i] = value;
@@ -60,18 +98,39 @@ namespace TickLUA.VM.Objects
 
                 Elements[key] = value;
             }
+
+            ChargeInitialContents();
         }
 
         ///<summary> Key-value pair constructor </summary>
         public TableObject(IDictionary<LuaObject, LuaObject> elements)
         {
             Elements = new Dictionary<LuaObject, LuaObject>(elements);
+
+            ChargeInitialContents();
         }
 
         ///<summary> Copy constructor </summary>
         public TableObject(TableObject other)
         {
             Elements = new Dictionary<LuaObject, LuaObject>(other.Elements);
+
+            ChargeInitialContents();
+        }
+
+        /// <summary>
+        /// Bulk constructors fill Elements without going through the indexer,
+        /// so the entries are billed here instead when a ledger is active.
+        /// </summary>
+        private void ChargeInitialContents()
+        {
+            var ledger = MemoryLedger.Current;
+            if (ledger == null)
+                return;
+
+            foreach (var pair in Elements)
+                ledger.Total += EntryMemoryCost
+                    + MemoryLedger.ShallowCost(pair.Key) + MemoryLedger.ShallowCost(pair.Value);
         }
 
         public T Get<T>(LuaObject key, T default_value) where T : LuaObject
@@ -230,6 +289,9 @@ namespace TickLUA.VM.Objects
         }
 
         public override StringObject ToStringObject() => new StringObject("[table]");
+
+        // Header only: the entries bill themselves through the indexer.
+        public override long ShallowMemoryCost() => HeaderMemoryCost;
 
         public NumberObject Len()
         {

@@ -60,6 +60,18 @@
 
         public abstract StringObject ToStringObject();
 
+        /// <summary>
+        /// Approximate number of bytes this value adds to each slot that
+        /// references it, used by the memory limit
+        /// (<see cref="TickVMOptions.MaxMemoryBytes"/>). Containers report
+        /// only their own header — their contents are billed separately as
+        /// they are written. Values that are fixed-size and already bounded
+        /// by the slots holding them (numbers, booleans, nil) report 0.
+        /// Precision is not required; the estimate only has to scale with
+        /// the value's real footprint.
+        /// </summary>
+        public abstract long ShallowMemoryCost();
+
         public static bool NullOrNil(LuaObject obj) => obj == null || obj == NilObject.Nil;
     }
 }

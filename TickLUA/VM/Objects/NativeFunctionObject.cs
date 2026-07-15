@@ -77,5 +77,8 @@ namespace TickLUA.VM.Objects
         public override string ToString() => Name == null ? "< native func >" : $"< native func '{Name}' >";
 
         public override StringObject ToStringObject() => new StringObject("[native func]");
+
+        // Host-owned, typically a shared singleton.
+        public override long ShallowMemoryCost() => 0;
     }
 }

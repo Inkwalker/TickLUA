@@ -67,6 +67,7 @@ namespace TickLUA.VM
             Array.Copy(Registers, newRegisters, Registers.Length);
             for (int i = Registers.Length; i < newSize; i++)
                 newRegisters[i] = new RegisterCell();
+            MemoryLedger.OnRegistersResized(newSize - Registers.Length);
             Registers = newRegisters;
             return true;
         }
@@ -77,6 +78,7 @@ namespace TickLUA.VM
                 return false;
             var newRegisters = new RegisterCell[newSize];
             Array.Copy(Registers, newRegisters, newSize);
+            MemoryLedger.OnRegistersResized(newSize - Registers.Length);
             Registers = newRegisters;
             return true;
         }

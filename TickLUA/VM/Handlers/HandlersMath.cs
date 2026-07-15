@@ -115,8 +115,15 @@ namespace TickLUA.VM.Handlers
             // values render without a trailing ".0", matching reference Lua).
             if (IsConcatable(l) && IsConcatable(r))
             {
-                frame.Registers[instruction.A].Value =
-                    new StringObject(l.ToStringObject().Value + r.ToStringObject().Value);
+                var ls = l.ToStringObject().Value;
+                var rs = r.ToStringObject().Value;
+
+                // CONCAT is the one instruction whose single allocation can
+                // dwarf the whole budget; check against the memory limit
+                // before building the result, not after.
+                MemoryLedger.PrecheckStringAllocation((long)ls.Length + rs.Length);
+
+                frame.Registers[instruction.A].Value = new StringObject(ls + rs);
                 return;
             }
 

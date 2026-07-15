@@ -31,6 +31,7 @@ namespace TickLUA.VM
         {
             public override string ToString() => "< module loading >";
             public override StringObject ToStringObject() => new StringObject("[module loading]");
+            public override long ShallowMemoryCost() => 0;
         }
 
         private static readonly LuaObject Loading = new LoadingSentinel();

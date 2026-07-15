@@ -13,6 +13,9 @@
 
         public override StringObject ToStringObject() => new StringObject("[nil]");
 
+        // Singleton.
+        public override long ShallowMemoryCost() => 0;
+
         public static implicit operator BooleanObject(NilObject nil) => BooleanObject.False;
     }
 }

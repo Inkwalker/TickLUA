@@ -4,6 +4,11 @@ namespace TickLUA.VM.Objects
 {
     public class StringObject : LuaObject, IHasLen, IIndexable
     {
+        // Rough x64 memory-accounting base cost (see LuaObject.ShallowMemoryCost):
+        // the wrapper object plus the .NET string header; characters add
+        // 2 bytes each (UTF-16).
+        internal const long BaseMemoryCost = 48;
+
         public string Value { get; }
 
         public LuaObject this[LuaObject index] 
@@ -64,6 +69,8 @@ namespace TickLUA.VM.Objects
         }
 
         public override StringObject ToStringObject() => this;
+
+        public override long ShallowMemoryCost() => BaseMemoryCost + 2L * Value.Length;
 
         public static explicit operator string(StringObject str) => str.Value;
         public static StringObject operator +(StringObject l, StringObject r) => new StringObject(l.Value + r.Value);
