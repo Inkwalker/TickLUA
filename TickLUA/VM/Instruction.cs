@@ -116,6 +116,22 @@
             raw = (byte)opcode;
         }
 
+        /// <summary>
+        /// The raw 32-bit encoding of the instruction, used by bytecode serialization.
+        /// </summary>
+        public uint Raw => raw;
+
+        /// <summary>
+        /// Reconstructs an instruction from its raw 32-bit encoding
+        /// (see <see cref="Raw"/>), used by bytecode deserialization.
+        /// </summary>
+        public static Instruction FromRaw(uint raw)
+        {
+            var instruction = default(Instruction);
+            instruction.raw = raw;
+            return instruction;
+        }
+
         public override string ToString()
         {
             return $"{Opcode} {A} {B} {C}";

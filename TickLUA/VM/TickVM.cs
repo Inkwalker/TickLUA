@@ -134,6 +134,11 @@ namespace TickLUA.VM
 
         public TickVM(LuaFunction bytecode, TickVMOptions options, params LuaObject[] args)
         {
+            if (bytecode.CompilerVersion != LuaFunction.CurrentCompilerVersion)
+                throw new Serialization.BytecodeFormatException(
+                    $"Bytecode compiler version {bytecode.CompilerVersion} is not compatible with this VM " +
+                    $"(expected {LuaFunction.CurrentCompilerVersion})");
+
             if (options?.MaxCallStackDepth is int depth && depth < 1)
                 throw new ArgumentOutOfRangeException(nameof(options),
                     "MaxCallStackDepth must be at least 1 (null for unlimited)");

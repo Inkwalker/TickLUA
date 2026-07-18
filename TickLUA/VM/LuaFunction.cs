@@ -5,6 +5,21 @@ namespace TickLUA.VM
 {
     public class LuaFunction
     {
+        /// <summary>
+        /// Version of the bytecode format this compiler/VM pair produces and
+        /// understands. Bump on any change to the instruction encoding, opcode
+        /// set, constant serialization, or function layout.
+        /// </summary>
+        public const ushort CurrentCompilerVersion = 1;
+
+        /// <summary>
+        /// Version of the compiler that produced this bytecode. Freshly
+        /// compiled functions carry <see cref="CurrentCompilerVersion"/>;
+        /// deserialized ones carry the version stored in the stream. The VM
+        /// refuses to execute bytecode whose version does not match its own.
+        /// </summary>
+        public ushort CompilerVersion { get; internal set; } = CurrentCompilerVersion;
+
         public string Name { get; private set; }
         internal List<Instruction> Instructions { get; }
         internal List<LuaObject> Constants { get; }
