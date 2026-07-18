@@ -86,24 +86,20 @@ namespace TickLUA.VM.Handlers
 
             var obj = frame.Registers[b].Value;
 
-            if (obj is StringObject str)
+
+            // __len takes priority over the raw border (strings, handled
+            // above, keep their raw length).
+            var handler = Metamethods.GetHandler(obj, Metamethods.LenKey);
+            if (handler != null)
             {
-                frame.Registers[a].Value = str.Len();
+                Metamethods.Call(vm, handler, new LuaObject[] { obj },
+                    ResultsSink.ToRegisters(frame, a, 1));
                 return;
             }
 
-            if (obj is TableObject table)
+            if (obj is IHasLen measurable)
             {
-                // __len takes priority over the raw border for tables.
-                var handler = Metamethods.GetHandler(table, Metamethods.LenKey);
-                if (handler != null)
-                {
-                    Metamethods.Call(vm, handler, new LuaObject[] { table },
-                        ResultsSink.ToRegisters(frame, a, 1));
-                    return;
-                }
-
-                frame.Registers[a].Value = table.Len();
+                frame.Registers[a].Value = measurable.Len();
                 return;
             }
 

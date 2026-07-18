@@ -1,6 +1,6 @@
 ﻿namespace TickLUA.VM.Objects
 {
-    public class BooleanObject : LuaObject
+    public sealed class BooleanObject : LuaObject
     {
         public static BooleanObject True { get; } = new BooleanObject();
         public static BooleanObject False { get; } = new BooleanObject();

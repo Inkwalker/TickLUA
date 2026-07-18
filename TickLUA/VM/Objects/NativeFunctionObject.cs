@@ -29,7 +29,7 @@ namespace TickLUA.VM.Objects
     /// <summary>
     /// Wraps a C# delegate as a first-class Lua function value.
     /// </summary>
-    public class NativeFunctionObject : LuaObject
+    public sealed class NativeFunctionObject : LuaObject
     {
         public NativeFunction Function { get; }
 

@@ -97,21 +97,24 @@ namespace TickLUA.VM
 
         private static LuaObject[] Setmetatable(NativeArgs args)
         {
-            var table = args.CheckTable(0);
+            var value = args.CheckAny(0);
+            if (!(value is IMetatable target))
+                throw new RuntimeException(
+                    $"bad argument #1 to '{args.FunctionName}' (table expected, got {NativeArgs.TypeName(value)})");
             if (!args.IsNil(1) && !args.IsTable(1))
                 throw new RuntimeException(
                     $"bad argument #2 to '{args.FunctionName}' (nil or table expected)");
 
-            if (table.Metatable != null && table.Metatable.Contains(Metamethods.MetatableKey))
+            if (target.Metatable != null && target.Metatable.Contains(Metamethods.MetatableKey))
                 throw new RuntimeException("cannot change a protected metatable");
 
-            table.Metatable = args[1] as TableObject; // null when nil
-            return new LuaObject[] { table };
+            target.Metatable = args[1] as TableObject; // null when nil
+            return new LuaObject[] { value };
         }
 
         private static LuaObject[] Getmetatable(NativeArgs args)
         {
-            var metatable = (args.CheckAny(0) as TableObject)?.Metatable;
+            var metatable = (args.CheckAny(0) as IMetatable)?.Metatable;
             if (metatable == null)
                 return new LuaObject[] { NilObject.Nil };
 

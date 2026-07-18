@@ -1,6 +1,6 @@
 ﻿namespace TickLUA.VM.Objects
 {
-    internal class ClosureObject : LuaObject
+    internal sealed class ClosureObject : LuaObject
     {
         // Rough x64 memory-accounting costs (see LuaObject.ShallowMemoryCost):
         // the closure object, and one captured upvalue cell (cell + array

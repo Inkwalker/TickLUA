@@ -42,11 +42,12 @@ namespace TickLUA.VM
         /// <summary>
         /// The metamethod handler for an event on a value, or null when the value
         /// has no metatable or the metatable lacks the field. The lookup on the
-        /// metatable itself is raw. Only tables carry metatables for now.
+        /// metatable itself is raw. Only values implementing <see cref="IMetatable"/>
+        /// carry metatables.
         /// </summary>
         internal static LuaObject GetHandler(LuaObject obj, StringObject event_key)
         {
-            var metatable = (obj as TableObject)?.Metatable;
+            var metatable = (obj as IMetatable)?.Metatable;
             if (metatable == null)
                 return null;
 
@@ -126,95 +127,94 @@ namespace TickLUA.VM
         }
 
         /// <summary>
-        /// Full table-read semantics for t[k]: raw hit, then the __index chain.
-        /// A table handler restarts the lookup on it (honoring its own metatable);
-        /// a function handler is called with (table, key) and its result lands in
-        /// dest_reg (possibly on a later tick). Strings keep their raw indexer.
+        /// Full read semantics for t[k]: raw hit on the value's IIndexable
+        /// storage, then the __index chain. A handler with raw storage restarts
+        /// the lookup on it (honoring its own metatable); a function handler is
+        /// called with (target, key) and its result lands in dest_reg (possibly
+        /// on a later tick). A value with neither raw storage nor a __index
+        /// metamethod is not indexable.
         /// </summary>
         internal static void Index(TickVM vm, StackFrame frame, LuaObject target, LuaObject key, byte dest_reg)
         {
             for (int depth = 0; depth < MaxChainDepth; depth++)
             {
-                if (target is TableObject table)
+                var indexable = target as IIndexable;
+                if (indexable != null)
                 {
-                    var raw = table[key];
+                    var raw = indexable[key];
                     if (!(raw is NilObject))
                     {
                         frame.Registers[dest_reg].Value = raw;
                         return;
                     }
-
-                    var handler = GetHandler(table, IndexGetKey);
-                    if (handler == null)
-                    {
-                        frame.Registers[dest_reg].Value = NilObject.Nil;
-                        return;
-                    }
-
-                    if (handler is ClosureObject || handler is NativeFunctionObject)
-                    {
-                        Call(vm, handler, new LuaObject[] { table, key },
-                            ResultsSink.ToRegisters(frame, dest_reg, 1));
-                        return;
-                    }
-
-                    // Any other handler value is indexed in turn (Lua semantics);
-                    // non-indexable values error on the next iteration.
-                    target = handler;
-                    continue;
                 }
 
-                if (target is IIndexable indexable)
+                var handler = GetHandler(target, IndexGetKey);
+                if (handler == null)
                 {
-                    // Strings: raw read-only indexing, no metatable support yet.
-                    frame.Registers[dest_reg].Value = indexable[key];
+                    if (indexable == null)
+                        throw new RuntimeException(
+                            $"attempt to index a {NativeArgs.TypeName(target)} value");
+
+                    frame.Registers[dest_reg].Value = NilObject.Nil;
                     return;
                 }
 
-                throw new RuntimeException($"attempt to index a {NativeArgs.TypeName(target)} value");
+                if (handler is ClosureObject || handler is NativeFunctionObject)
+                {
+                    Call(vm, handler, new LuaObject[] { target, key },
+                        ResultsSink.ToRegisters(frame, dest_reg, 1));
+                    return;
+                }
+
+                // Any other handler value is indexed in turn (Lua semantics);
+                // non-indexable values error on the next iteration.
+                target = handler;
             }
 
             throw new RuntimeException("'__index' chain too long; possible loop");
         }
 
         /// <summary>
-        /// Full table-write semantics for t[k] = v: raw set when the key is
-        /// present or there is no __newindex; otherwise a table handler restarts
-        /// the write on it and a function handler is called with (table, key, value).
+        /// Full write semantics for t[k] = v: raw set on the value's IIndexable
+        /// storage when the key is present or there is no __newindex; otherwise
+        /// a handler with raw storage restarts the write on it and a function
+        /// handler is called with (target, key, value). A value with neither
+        /// raw storage nor a __newindex metamethod is not indexable; read-only
+        /// storage (strings) rejects the raw set itself.
         /// </summary>
         internal static void NewIndex(TickVM vm, StackFrame frame, LuaObject target, LuaObject key, LuaObject value)
         {
             for (int depth = 0; depth < MaxChainDepth; depth++)
             {
-                if (target is TableObject table)
+                var indexable = target as IIndexable;
+                if (indexable != null && indexable.Contains(key))
                 {
-                    if (table.Contains(key))
-                    {
-                        table[key] = value;
-                        return;
-                    }
-
-                    var handler = GetHandler(table, IndexSetKey);
-                    if (handler == null)
-                    {
-                        if (key is NilObject)
-                            throw new RuntimeException("table index is nil");
-
-                        table[key] = value;
-                        return;
-                    }
-
-                    if (handler is ClosureObject || handler is NativeFunctionObject)
-                    {
-                        Call(vm, handler, new LuaObject[] { table, key, value }, ResultsSink.Discard);
-                        return;
-                    }
-
-                    target = handler;
-                    continue;
+                    indexable[key] = value;
+                    return;
                 }
 
-                throw new RuntimeException($"attempt to index a {NativeArgs.TypeName(target)} value");
+                var handler = GetHandler(target, IndexSetKey);
+                if (handler == null)
+                {
+                    if (indexable == null)
+                        throw new RuntimeException(
+                            $"attempt to index a {NativeArgs.TypeName(target)} value");
+
+                    if (key is NilObject)
+                        throw new RuntimeException("table index is nil");
+
+                    indexable[key] = value;
+                    return;
+                }
+
+                if (handler is ClosureObject || handler is NativeFunctionObject)
+                {
+                    Call(vm, handler, new LuaObject[] { target, key, value }, ResultsSink.Discard);
+                    return;
+                }
+
+                target = handler;
             }
 
             throw new RuntimeException("'__newindex' chain too long; possible loop");

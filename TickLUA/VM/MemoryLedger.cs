@@ -68,7 +68,7 @@ namespace TickLUA.VM
 
         /// <summary>
         /// Charge for one slot's reference changing from oldValue to newValue.
-        /// Serves register/upvalue cells and the table Metatable edge.
+        /// Serves register/upvalue cells and the IMetatable Metatable edge.
         /// </summary>
         internal static void OnSlotWrite(LuaObject oldValue, LuaObject newValue)
         {
@@ -202,6 +202,12 @@ namespace TickLUA.VM
             while (pending.Count > 0)
             {
                 var node = pending.Pop();
+
+                // The Metatable edge of any metatable-capable value is a
+                // charged slot (see IMetatable), so it is billed like one here.
+                if (node is IMetatable owner && owner.Metatable != null)
+                    Visit(owner.Metatable);
+
                 if (node is TableObject table)
                 {
                     foreach (var pair in table.Elements)
@@ -210,10 +216,6 @@ namespace TickLUA.VM
                         Visit(pair.Key);
                         Visit(pair.Value);
                     }
-                    // The Metatable edge is a charged slot (see the property),
-                    // so it is billed like one here.
-                    if (table.Metatable != null)
-                        Visit(table.Metatable);
                 }
                 else if (node is ClosureObject closure)
                 {

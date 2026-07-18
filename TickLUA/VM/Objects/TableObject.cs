@@ -2,7 +2,7 @@
 
 namespace TickLUA.VM.Objects
 {
-    public class TableObject : LuaObject, IHasLen, IIndexable
+    public sealed class TableObject : LuaObject, IHasLen, IIndexable, IMetatable
     {
         // Rough x64 memory-accounting costs (see LuaObject.ShallowMemoryCost):
         // the table object itself, and one dictionary entry (slot + hash

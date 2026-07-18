@@ -2,7 +2,7 @@
 
 namespace TickLUA.VM.Objects
 {
-    public class StringObject : LuaObject, IHasLen, IIndexable
+    public sealed class StringObject : LuaObject, IHasLen, IIndexable
     {
         // Rough x64 memory-accounting base cost (see LuaObject.ShallowMemoryCost):
         // the wrapper object plus the .NET string header; characters add

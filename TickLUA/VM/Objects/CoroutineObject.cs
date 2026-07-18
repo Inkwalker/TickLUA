@@ -19,7 +19,7 @@ namespace TickLUA.VM.Objects
     /// resume/yield switch which stack the tick loop operates on. The main chunk
     /// runs on an implicit main coroutine that has no body.
     /// </summary>
-    internal class CoroutineObject : LuaObject
+    internal sealed class CoroutineObject : LuaObject
     {
         // Rough x64 memory-accounting cost (see LuaObject.ShallowMemoryCost):
         // the coroutine object with its sinks and empty stack — frames bill

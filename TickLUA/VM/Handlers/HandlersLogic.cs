@@ -52,8 +52,9 @@ namespace TickLUA.VM.Handlers
             }
 
             // __eq is consulted only when primitive equality fails and both
-            // operands are tables; its result drives the skip via the sink.
-            if (obj_a is TableObject && obj_b is TableObject)
+            // operands can carry metatables; its result drives the skip via
+            // the sink.
+            if (obj_a is IMetatable && obj_b is IMetatable)
             {
                 var handler = Metamethods.GetHandler(obj_a, Metamethods.EqualsKey)
                            ?? Metamethods.GetHandler(obj_b, Metamethods.EqualsKey);

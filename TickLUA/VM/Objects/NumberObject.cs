@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace TickLUA.VM.Objects
 {
-    public class NumberObject : LuaObject
+    public sealed class NumberObject : LuaObject
     {
         public static NumberObject Zero { get; } = new NumberObject(0);
 
