@@ -57,6 +57,36 @@ namespace TickLUA_Tests
         }
 
         [Test]
+        public void Builder_Protect_SetsMetatableField()
+        {
+            TableObject def = MetatableBuilder.Protect();
+            TableObject named = MetatableBuilder.Protect("Vec2");
+
+            Assert.That(((StringObject)def[LuaObject.METATABLE]).Value, Is.EqualTo("protected"));
+            Assert.That(((StringObject)named[LuaObject.METATABLE]).Value, Is.EqualTo("Vec2"));
+        }
+
+        [Test]
+        public void Builder_Protect_LocksMetatableInVm()
+        {
+            var obj = new TableObject();
+            obj.Metatable = MetatableBuilder
+                .Len(args => new LuaObject[] { new NumberObject(7) })
+                .Protect("Vec2");
+
+            string source = @"
+            local obj = ...
+            local ok, err = pcall(setmetatable, obj, {})
+            return ok, err, getmetatable(obj), #obj";
+
+            var vm = Utils.Run(source, 1000, obj);
+            Utils.AssertBoolResult(vm, false, 0);
+            Utils.AssertStringResult(vm, "cannot change a protected metatable", 1);
+            Utils.AssertStringResult(vm, "Vec2", 2);
+            Utils.AssertIntegerResult(vm, 7, 3);
+        }
+
+        [Test]
         public void Builder_HandlerName_IsEventName()
         {
             var obj = new TableObject();

@@ -6,10 +6,13 @@ namespace TickLUA.VM.Objects
     /// chained call assigns one standard metamethod, and the finished chain
     /// converts implicitly to the <see cref="TableObject"/> the VM consumes:
     /// <code>obj.Metatable = MetatableBuilder.Call(funcA).Add(funcB);</code>
-    /// Only the metamethods the VM actually dispatches are exposed.
+    /// Only the metamethods the VM actually dispatches are exposed, plus
+    /// <see cref="Chain.Protect"/> for the __metatable protection field.
     /// </summary>
     public static class MetatableBuilder
     {
+        public static Chain Protect(string name = "protected") => new Chain().Protect(name);
+
         public static Chain Index(NativeFunction handler)    => new Chain().Index(handler);
         public static Chain NewIndex(NativeFunction handler) => new Chain().NewIndex(handler);
         public static Chain Call(NativeFunction handler)     => new Chain().Call(handler);
@@ -59,6 +62,21 @@ namespace TickLUA.VM.Objects
             public Chain IDiv(NativeFunction handler) => Set(LuaObject.IDIV, handler);
 
             public Chain Concat(NativeFunction handler) => Set(LuaObject.CONCAT, handler);
+
+            /// <summary>
+            /// Sets the __metatable field, locking the metatable: setmetatable
+            /// on the owner raises "cannot change a protected metatable" and
+            /// getmetatable returns <paramref name="name"/> instead of the
+            /// table — scripts can neither swap it nor edit its entries.
+            /// </summary>
+            public Chain Protect(string name = "protected")
+            {
+                if (name == null)
+                    throw new System.ArgumentNullException(nameof(name));
+
+                table[LuaObject.METATABLE] = new StringObject(name);
+                return this;
+            }
 
             public Chain Eq(NativeFunction handler) => Set(LuaObject.EQUALS, handler);
             public Chain Lt(NativeFunction handler) => Set(LuaObject.LESS, handler);

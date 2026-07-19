@@ -98,9 +98,12 @@ namespace TickLUA.VM
         private static LuaObject[] Setmetatable(NativeArgs args)
         {
             var value = args.CheckAny(0);
-            if (!(value is IMetatable target))
-                throw new RuntimeException(
-                    $"bad argument #1 to '{args.FunctionName}' (table expected, got {NativeArgs.TypeName(value)})");
+            // Only table metatables are script-assignable; every other
+            // IMetatable implementation (host types) is protected by design.
+            if (!(value is TableObject target))
+                throw new RuntimeException(value is IMetatable
+                    ? "cannot change a protected metatable"
+                    : $"bad argument #1 to '{args.FunctionName}' (table expected, got {NativeArgs.TypeName(value)})");
             if (!args.IsNil(1) && !args.IsTable(1))
                 throw new RuntimeException(
                     $"bad argument #2 to '{args.FunctionName}' (nil or table expected)");
