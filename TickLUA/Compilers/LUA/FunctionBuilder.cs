@@ -50,6 +50,15 @@ namespace TickLUA.Compilers.LUA
         {
             function.RegisterCount = MaxRegisters;
 
+            // Blocks are balanced by the statement compilers, so every local
+            // should already be closed; sweep defensively in case a code path
+            // names a register outside a block scope.
+            foreach (var local in function.Meta.Locals)
+            {
+                if (local.EndPC < 0)
+                    local.EndPC = InstructionCount;
+            }
+
             foreach (var c in nested_builders)
             {
                 function.NestedFunctions.Add(c.Finish());
@@ -170,9 +179,31 @@ namespace TickLUA.Compilers.LUA
                 if (index >= block.Allocator.Offset)
                 {
                     block.Allocator.NameRegister(index, name);
+                    OpenLocalEntry(block, (byte)index, name);
                     break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Record a local-variable debug entry, visible from the current
+        /// instruction until its owning block ends. Re-naming a register whose
+        /// entry is still open (the allocator reuses the slot for a new
+        /// variable) closes the old entry first.
+        /// </summary>
+        private void OpenLocalEntry(BlockFrame block, byte register, string name)
+        {
+            var locals = function.Meta.Locals;
+
+            foreach (int open_index in block.OpenLocals)
+            {
+                var open = locals[open_index];
+                if (open.Register == register && open.EndPC < 0)
+                    open.EndPC = InstructionCount;
+            }
+
+            block.OpenLocals.Add(locals.Count);
+            locals.Add(new LuaFunction.Metadata.LocalVarInfo(name, register, InstructionCount, -1));
         }
 
         /// <summary>
@@ -278,7 +309,14 @@ namespace TickLUA.Compilers.LUA
 
         public void BlockEnd()
         {
-            blocks.Pop();
+            var block = blocks.Pop();
+
+            foreach (int open_index in block.OpenLocals)
+            {
+                var local = function.Meta.Locals[open_index];
+                if (local.EndPC < 0)
+                    local.EndPC = InstructionCount;
+            }
         }
 
         /// <summary>
@@ -347,6 +385,12 @@ namespace TickLUA.Compilers.LUA
         private class BlockFrame
         {
             public BlockRegisterAllocator Allocator { get; }
+
+            /// <summary>
+            /// Indices into Meta.Locals of the debug entries opened in this
+            /// block, closed (EndPC set) when the block ends.
+            /// </summary>
+            public List<int> OpenLocals { get; } = new List<int>();
 
             public BlockFrame(int register_offset)
             {

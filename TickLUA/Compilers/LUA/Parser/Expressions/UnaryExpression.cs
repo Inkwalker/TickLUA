@@ -17,7 +17,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             //optimization for number literals
             if (operation == OperationType.Negate && expression is LiteralExpression le && le.Value is NumberObject num)
             {
-                this.expression = new LiteralExpression(-num.Value);
+                this.expression = new LiteralExpression(-num.Value, expression.SourceRange);
                 this.operation = OperationType.None;
             }
 

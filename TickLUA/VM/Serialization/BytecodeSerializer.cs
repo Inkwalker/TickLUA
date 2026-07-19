@@ -14,22 +14,30 @@ namespace TickLUA.VM.Serialization
     {
         private static readonly byte[] Magic = { (byte)'T', (byte)'L', (byte)'U', (byte)'A' };
 
-        public static byte[] Serialize(LuaFunction function)
+        public static byte[] Serialize(LuaFunction function, bool stripDebugInfo = false)
         {
             using (var stream = new MemoryStream())
             {
-                Serialize(function, stream);
+                Serialize(function, stream, stripDebugInfo);
                 return stream.ToArray();
             }
         }
 
-        public static void Serialize(LuaFunction function, Stream stream)
+        public static void Serialize(LuaFunction function, Stream stream, bool stripDebugInfo = false)
         {
             using (var writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen: true))
             {
                 writer.Write(Magic);
                 writer.Write(function.CompilerVersion);
-                WriteFunction(writer, function);
+
+                // One flag for the whole tree keeps it uniform by construction:
+                // either every function carries its Locals section or none does.
+                // Re-serializing an already-stripped chunk stays stripped. Line
+                // info is not debug info in this sense and is always written.
+                bool debug_info = !stripDebugInfo && function.HasDebugInfo;
+                writer.Write(debug_info);
+
+                WriteFunction(writer, function, debug_info);
             }
         }
 
@@ -61,7 +69,9 @@ namespace TickLUA.VM.Serialization
                             $"Bytecode compiler version {version} is not compatible with this VM " +
                             $"(expected {LuaFunction.CurrentCompilerVersion})");
 
-                    return ReadFunction(reader, version);
+                    bool debug_info = reader.ReadBoolean();
+
+                    return ReadFunction(reader, version, debug_info);
                 }
                 catch (EndOfStreamException ex)
                 {
@@ -70,7 +80,7 @@ namespace TickLUA.VM.Serialization
             }
         }
 
-        private static void WriteFunction(BinaryWriter writer, LuaFunction function)
+        private static void WriteFunction(BinaryWriter writer, LuaFunction function, bool debugInfo)
         {
             writer.Write(function.Name != null);
             if (function.Name != null)
@@ -102,12 +112,24 @@ namespace TickLUA.VM.Serialization
                 writer.Write(upvalue.Index);
             }
 
+            if (debugInfo)
+            {
+                writer.Write(function.Meta.Locals.Count);
+                foreach (var local in function.Meta.Locals)
+                {
+                    writer.Write(local.Name);
+                    writer.Write(local.Register);
+                    writer.Write(local.StartPC);
+                    writer.Write(local.EndPC);
+                }
+            }
+
             writer.Write(function.NestedFunctions.Count);
             foreach (var nested in function.NestedFunctions)
-                WriteFunction(writer, nested);
+                WriteFunction(writer, nested, debugInfo);
         }
 
-        private static LuaFunction ReadFunction(BinaryReader reader, ushort version)
+        private static LuaFunction ReadFunction(BinaryReader reader, ushort version, bool debugInfo)
         {
             string name = reader.ReadBoolean() ? reader.ReadString() : null;
             bool has_varargs = reader.ReadBoolean();
@@ -139,16 +161,30 @@ namespace TickLUA.VM.Serialization
                 upvalues[i] = new LuaFunction.UpvalueDef(upvalue_name, is_local, index);
             }
 
+            if (debugInfo)
+            {
+                int local_count = reader.ReadInt32();
+                for (int i = 0; i < local_count; i++)
+                {
+                    string local_name = reader.ReadString();
+                    byte register = reader.ReadByte();
+                    int start_pc = reader.ReadInt32();
+                    int end_pc = reader.ReadInt32();
+                    meta.Locals.Add(new LuaFunction.Metadata.LocalVarInfo(local_name, register, start_pc, end_pc));
+                }
+            }
+
             var function = new LuaFunction(name, instructions, constants, upvalues, meta, register_count)
             {
                 HasVarargs = has_varargs,
                 ParameterCount = parameter_count,
                 CompilerVersion = version,
+                HasDebugInfo = debugInfo,
             };
 
             int nested_count = reader.ReadInt32();
             for (int i = 0; i < nested_count; i++)
-                function.NestedFunctions.Add(ReadFunction(reader, version));
+                function.NestedFunctions.Add(ReadFunction(reader, version, debugInfo));
 
             return function;
         }

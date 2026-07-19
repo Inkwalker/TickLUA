@@ -10,7 +10,7 @@ namespace TickLUA.VM
         /// understands. Bump on any change to the instruction encoding, opcode
         /// set, constant serialization, or function layout.
         /// </summary>
-        public const ushort CurrentCompilerVersion = 1;
+        public const ushort CurrentCompilerVersion = 2;
 
         /// <summary>
         /// Version of the compiler that produced this bytecode. Freshly
@@ -30,6 +30,17 @@ namespace TickLUA.VM
         public List<LuaFunction> NestedFunctions { get; } = new List<LuaFunction>();
         public Metadata Meta { get; }
         public int InstructionCount => Instructions.Count;
+
+        /// <summary>
+        /// Whether <see cref="Metadata.Locals"/> carries local-variable debug
+        /// info. Always true for freshly compiled functions; false only on
+        /// functions deserialized from a stream written with
+        /// <c>stripDebugInfo</c>. An empty Locals list alone is ambiguous (a
+        /// function may simply declare no locals), so debuggability is tracked
+        /// explicitly. Line info (<see cref="Metadata.Lines"/>) survives
+        /// stripping — tracebacks keep real line numbers either way.
+        /// </summary>
+        public bool HasDebugInfo { get; internal set; } = true;
 
         internal LuaFunction(
             string name,
@@ -65,6 +76,37 @@ namespace TickLUA.VM
         public class Metadata
         {
             public List<ushort> Lines { get; } = new List<ushort>();
+
+            /// <summary>
+            /// Named locals with the register each occupies and the instruction
+            /// range where it is visible, in declaration order. Shadowing: for
+            /// a name matching several entries at a PC, the last entry wins.
+            /// Empty when <see cref="LuaFunction.HasDebugInfo"/> is false.
+            /// </summary>
+            public List<LocalVarInfo> Locals { get; } = new List<LocalVarInfo>();
+
+            /// <summary>
+            /// A named local's lifetime: visible (and resolvable by the
+            /// compiler) at instruction pc iff StartPC &lt;= pc &lt; EndPC.
+            /// StartPC is the naming point — for "local x = expr" that is
+            /// before the initializer's code, matching this compiler's
+            /// resolution semantics.
+            /// </summary>
+            public class LocalVarInfo
+            {
+                public string Name { get; }
+                public byte Register { get; }
+                public int StartPC { get; }
+                public int EndPC { get; internal set; }
+
+                public LocalVarInfo(string name, byte register, int startPC, int endPC)
+                {
+                    Name = name;
+                    Register = register;
+                    StartPC = startPC;
+                    EndPC = endPC;
+                }
+            }
         }
 
         internal class UpvalueDef

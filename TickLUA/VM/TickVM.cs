@@ -107,7 +107,28 @@ namespace TickLUA.VM
         /// </summary>
         internal int CallStackDepth => CallStack.Count;
 
+        /// <summary>
+        /// The configured memory limit
+        /// (<see cref="TickVMOptions.MaxMemoryBytes"/>), or null when
+        /// unlimited.
+        /// </summary>
+        internal long? MaxMemoryBytes => ledger?.MaxBytes;
+
+        /// <summary>
+        /// The configured per-coroutine call stack limit
+        /// (<see cref="TickVMOptions.MaxCallStackDepth"/>), or null when
+        /// unlimited.
+        /// </summary>
+        internal int? MaxCallStackDepth
+            => maxCallStackDepth == int.MaxValue ? (int?)null : maxCallStackDepth;
+
         public LuaObject[] ExecutionResult { get; private set; }
+
+        /// <summary>
+        /// The main chunk this VM was constructed with. Retained for the
+        /// debugger, which validates debug info over the whole function tree.
+        /// </summary>
+        internal LuaFunction RootFunction { get; }
 
         /// <summary>
         /// The globals table, exposed to scripts as _ENV. Hosts can register
@@ -154,6 +175,7 @@ namespace TickLUA.VM
 
             instructionHandlers = LoadInstructionSet();
             currentCoroutine = mainCoroutine;
+            RootFunction = bytecode;
 
             // The main chunk is compiled with _ENV as upvalue #0; its cell holds
             // the globals table.

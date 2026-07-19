@@ -28,6 +28,19 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             Value = new StringObject(value);
         }
 
+        // Synthetic literals (dot-access keys, folded constants) have no token
+        // of their own; the creator passes the range they stand in for so the
+        // emitted instruction carries a real source line.
+        public LiteralExpression(string value, SourceRange range) : this(value)
+        {
+            SourceRange = range;
+        }
+
+        public LiteralExpression(float value, SourceRange range) : this(value)
+        {
+            SourceRange = range;
+        }
+
         public LiteralExpression(LuaObject obj)
         {
             Value = obj;

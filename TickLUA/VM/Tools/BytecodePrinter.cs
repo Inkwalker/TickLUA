@@ -15,6 +15,13 @@ namespace TickLUA.VM.Tools
 
                 Console.WriteLine($"{line}   {inst} {comment}");
             }
+
+            if (func.Meta != null && func.Meta.Locals.Count > 0)
+            {
+                Console.WriteLine("locals:");
+                foreach (var local in func.Meta.Locals)
+                    Console.WriteLine($"      R{local.Register} {local.Name} [{local.StartPC}..{local.EndPC})");
+            }
             Console.WriteLine();
 
             if (include_nested) 

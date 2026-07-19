@@ -185,6 +185,16 @@ namespace TickLUA_Tests
 
             Assert.That(actual.Meta.Lines, Is.EqualTo(expected.Meta.Lines));
 
+            Assert.That(actual.HasDebugInfo, Is.EqualTo(expected.HasDebugInfo));
+            Assert.That(actual.Meta.Locals.Count, Is.EqualTo(expected.Meta.Locals.Count));
+            for (int i = 0; i < expected.Meta.Locals.Count; i++)
+            {
+                Assert.That(actual.Meta.Locals[i].Name, Is.EqualTo(expected.Meta.Locals[i].Name));
+                Assert.That(actual.Meta.Locals[i].Register, Is.EqualTo(expected.Meta.Locals[i].Register));
+                Assert.That(actual.Meta.Locals[i].StartPC, Is.EqualTo(expected.Meta.Locals[i].StartPC));
+                Assert.That(actual.Meta.Locals[i].EndPC, Is.EqualTo(expected.Meta.Locals[i].EndPC));
+            }
+
             Assert.That(actual.Constants.Count, Is.EqualTo(expected.Constants.Count));
             for (int i = 0; i < expected.Constants.Count; i++)
                 Assert.That(actual.Constants[i], Is.EqualTo(expected.Constants[i]));
@@ -200,6 +210,86 @@ namespace TickLUA_Tests
             Assert.That(actual.NestedFunctions.Count, Is.EqualTo(expected.NestedFunctions.Count));
             for (int i = 0; i < expected.NestedFunctions.Count; i++)
                 AssertFunctionsEqual(expected.NestedFunctions[i], actual.NestedFunctions[i]);
+        }
+
+        #endregion
+
+        #region Debug info stripping
+
+        [Test]
+        public void Strip_RemovesLocals_KeepsLines()
+        {
+            var compiled = LuaCompiler.Compile(Program);
+            var stripped = BytecodeSerializer.Deserialize(BytecodeSerializer.Serialize(compiled, stripDebugInfo: true));
+
+            void AssertStripped(LuaFunction expected, LuaFunction actual)
+            {
+                Assert.IsFalse(actual.HasDebugInfo);
+                Assert.That(actual.Meta.Locals, Is.Empty);
+                Assert.That(actual.Meta.Lines, Is.EqualTo(expected.Meta.Lines));
+
+                Assert.That(actual.NestedFunctions.Count, Is.EqualTo(expected.NestedFunctions.Count));
+                for (int i = 0; i < expected.NestedFunctions.Count; i++)
+                    AssertStripped(expected.NestedFunctions[i], actual.NestedFunctions[i]);
+            }
+
+            Assert.IsTrue(compiled.HasDebugInfo);
+            AssertStripped(compiled, stripped);
+        }
+
+        [Test]
+        public void Strip_SameExecutionResults()
+        {
+            var compiled = LuaCompiler.Compile(Program);
+            var stripped = BytecodeSerializer.Deserialize(BytecodeSerializer.Serialize(compiled, stripDebugInfo: true));
+
+            var vm = Utils.Run(stripped, 1000, new NumberObject(99));
+
+            Utils.AssertIntegerResult(vm, 30, 0);
+            Utils.AssertIntegerResult(vm, 15, 1);
+            Utils.AssertStringResult(vm, "hello", 2);
+            Utils.AssertIntegerResult(vm, 3, 3);
+            Utils.AssertIntegerResult(vm, 99, 4);
+        }
+
+        [Test]
+        public void Strip_ProducesSmallerPayload()
+        {
+            var compiled = LuaCompiler.Compile(Program);
+
+            var full = BytecodeSerializer.Serialize(compiled);
+            var stripped = BytecodeSerializer.Serialize(compiled, stripDebugInfo: true);
+
+            Assert.That(stripped.Length, Is.LessThan(full.Length));
+        }
+
+        [Test]
+        public void Strip_ReserializedStrippedChunk_StaysStripped()
+        {
+            var compiled = LuaCompiler.Compile(Program);
+            var stripped = BytecodeSerializer.Deserialize(BytecodeSerializer.Serialize(compiled, stripDebugInfo: true));
+
+            // No strip flag this time: HasDebugInfo == false must carry through.
+            var round_tripped = BytecodeSerializer.Deserialize(BytecodeSerializer.Serialize(stripped));
+
+            Assert.IsFalse(round_tripped.HasDebugInfo);
+            Assert.That(round_tripped.Meta.Locals, Is.Empty);
+        }
+
+        [Test]
+        public void Strip_TracebackKeepsRealLineNumbers()
+        {
+            var compiled = LuaCompiler.Compile("local x = 1\nlocal y = x .. {}\nreturn y");
+            var stripped = BytecodeSerializer.Deserialize(BytecodeSerializer.Serialize(compiled, stripDebugInfo: true));
+
+            var vm = new TickVM(stripped);
+            var ex = Assert.Throws<RuntimeException>(() =>
+            {
+                while (!vm.IsFinished) vm.Tick();
+            });
+
+            Assert.That(ex.LuaTraceback, Is.Not.Empty);
+            Assert.That(ex.LuaTraceback[0].Line, Is.EqualTo(2));
         }
 
         #endregion

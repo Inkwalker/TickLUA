@@ -57,7 +57,9 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
             Expression key = null;
             if (lexer.Current.Type == TokenType.Name)
             {
-                key = new LiteralExpression(lexer.Current.Content);
+                var key_range = new SourceRange(lexer.Current.Position,
+                    lexer.Current.Position + lexer.Current.Content.Length);
+                key = new LiteralExpression(lexer.Current.Content, key_range);
                 lexer.Next();
             }
             else if (lexer.Current.Type == TokenType.BRK_SQR_Left)
@@ -159,7 +161,7 @@ namespace TickLUA.Compilers.LUA.Parser.Expressions
 
             public TableArgumentNode(string key, Expression value)
             {
-                Key = new LiteralExpression(key);
+                Key = new LiteralExpression(key, value.SourceRange);
                 Value = value;
             }
 
