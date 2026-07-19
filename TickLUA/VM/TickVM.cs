@@ -85,7 +85,10 @@ namespace TickLUA.VM
 
         // Main cannot yield, so its stack only empties when the main chunk
         // returns; suspended coroutines left behind are simply abandoned.
-        public bool IsFinished => mainCoroutine.Stack.Count == 0;
+        // A host-started call (see StartFunction) runs on its own coroutine
+        // while main's stack stays empty, so the VM is only finished once
+        // main is also the current coroutine again.
+        public bool IsFinished => mainCoroutine.Stack.Count == 0 && currentCoroutine == mainCoroutine;
 
         // Per-coroutine frame budget; int.MaxValue when no limit was configured.
         private readonly int maxCallStackDepth;
@@ -251,6 +254,73 @@ namespace TickLUA.VM
             {
                 MemoryLedger.Current = previous_ledger;
             }
+        }
+
+        /// <summary>
+        /// Starts a call to a function held in the globals table, letting the
+        /// host invoke script-defined entry points (an init or update
+        /// callback, say) after the main chunk has set them up. The function
+        /// runs as a fresh coroutine — with the same _ENV the main chunk saw —
+        /// on subsequent <see cref="Tick"/> calls; tick until
+        /// <see cref="IsFinished"/>. Its return values are discarded, as are
+        /// any yielded values (a yield abandons the coroutine). An unhandled
+        /// error inside the call propagates out of <see cref="Tick"/> as a
+        /// <see cref="RuntimeException"/>, like an error in the main chunk.
+        /// Starting a call while the VM is mid-execution parks the current
+        /// execution, which continues after the started call completes.
+        /// </summary>
+        public void StartFunction(string globalName, params LuaObject[] args)
+        {
+            if (!TryStartFunction(globalName, args))
+                throw new ArgumentException(
+                    $"global '{globalName}' is not a startable function (got {NativeArgs.TypeName(Globals[globalName])})",
+                    nameof(globalName));
+        }
+
+        /// <summary>
+        /// Like <see cref="StartFunction"/>, but returns false instead of
+        /// throwing when the global is missing or not a startable function —
+        /// for optional entry points the script may or may not define.
+        /// </summary>
+        public bool TryStartFunction(string globalName, params LuaObject[] args)
+        {
+            if (globalName == null)
+                throw new ArgumentNullException(nameof(globalName));
+
+            // Same startability rule as coroutine.create: a closure, or a
+            // plain native. VM-aware natives (pcall and friends) read fixed
+            // caller registers and cannot run on a fresh stack.
+            var callee = Globals[globalName];
+            bool startable = callee is ClosureObject
+                || (callee is NativeFunctionObject native && native.VmFunction == null);
+            if (!startable)
+                return false;
+
+            var call_args = LuaObject.NoResults;
+            if (args != null && args.Length > 0)
+            {
+                call_args = new LuaObject[args.Length];
+                for (int i = 0; i < args.Length; i++)
+                    call_args[i] = args[i] ?? NilObject.Nil;
+            }
+
+            // Same ledger handoff as Tick: a native body runs synchronously
+            // right here, and the root frame is charged on push.
+            var previous_ledger = MemoryLedger.Current;
+            MemoryLedger.Current = ledger;
+            try
+            {
+                // Null error sink = wrap semantics: an unhandled body error
+                // unwinds into the resumer's stack, so with main idle it
+                // reaches the host as a rethrow out of Tick.
+                ResumeCoroutine(new CoroutineObject(callee), call_args,
+                    ResultsSink.Discard, null);
+            }
+            finally
+            {
+                MemoryLedger.Current = previous_ledger;
+            }
+            return true;
         }
 
         /// <summary>
