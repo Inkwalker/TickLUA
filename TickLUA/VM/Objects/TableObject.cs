@@ -288,6 +288,8 @@ namespace TickLUA.VM.Objects
             return str.ToString();
         }
 
+        public override string TypeName => "table";
+
         public override StringObject ToStringObject() => new StringObject("[table]");
 
         // Header only: the entries bill themselves through the indexer.

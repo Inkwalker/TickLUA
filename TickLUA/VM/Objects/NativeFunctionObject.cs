@@ -76,6 +76,9 @@ namespace TickLUA.VM.Objects
 
         public override string ToString() => Name == null ? "< native func >" : $"< native func '{Name}' >";
 
+        // Indistinguishable from a Lua closure to a script, as in reference Lua.
+        public override string TypeName => "function";
+
         public override StringObject ToStringObject() => new StringObject("[native func]");
 
         // Host-owned, typically a shared singleton.

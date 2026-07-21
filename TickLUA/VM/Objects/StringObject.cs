@@ -68,6 +68,8 @@ namespace TickLUA.VM.Objects
             return Value.GetHashCode();
         }
 
+        public override string TypeName => "string";
+
         public override StringObject ToStringObject() => this;
 
         public override long ShallowMemoryCost() => BaseMemoryCost + 2L * Value.Length;

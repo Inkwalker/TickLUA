@@ -21,6 +21,8 @@ namespace TickLUA.VM.Objects
             Value = value;
         }
 
+        public override string TypeName => "number";
+
         public override bool Equals(object obj)
         {
             if (obj is NumberObject number)

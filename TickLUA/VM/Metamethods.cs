@@ -36,6 +36,8 @@ namespace TickLUA.VM
         internal static readonly StringObject LessEqKey = new StringObject(LuaObject.LESS_EQ);
         internal static readonly StringObject EqualsKey = new StringObject(LuaObject.EQUALS);
 
+        internal static readonly StringObject ToStringKey  = new StringObject(LuaObject.TOSTRING);
+
         internal static readonly StringObject MetatableKey = new StringObject(LuaObject.METATABLE);
         #endregion
 

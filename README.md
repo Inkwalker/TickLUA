@@ -176,8 +176,9 @@ class Vec2 : LuaObject, IMetatable
 
     public TableObject Metatable => SharedMetatable;
 
+    public override string TypeName => "vec2";
     public override StringObject ToStringObject() => new StringObject($"({X}, {Y})");
-    public override long ShallowMemoryCost() => 32;
+    public override long ShallowMemoryCost() => 8;
 }
 
 vm.Globals["pos"] = new Vec2 { X = 1, Y = 2 };

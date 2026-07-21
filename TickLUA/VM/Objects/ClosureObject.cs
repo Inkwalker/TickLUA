@@ -23,6 +23,8 @@
             Upvalues = upvalues;
         }
 
+        public override string TypeName => "function";
+
         public override StringObject ToStringObject() => new StringObject("[func]");
 
         // Includes the captured cells, which can outlive their frame; the

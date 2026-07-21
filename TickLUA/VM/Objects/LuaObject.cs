@@ -38,6 +38,8 @@
         public const string LESS_EQ = "__le";
         public const string EQUALS = "__eq";
 
+        public const string TOSTRING = "__tostring";
+
         public const string METATABLE = "__metatable";
         #endregion
 
@@ -55,6 +57,15 @@
         {
             return $"< object >";
         }
+
+        /// <summary>
+        /// The value's Lua type name — what <c>type(v)</c> reports, and what
+        /// error messages name it by. The built-in types return the eight
+        /// standard names; a host type reports its own C# type name unless it
+        /// overrides this, so scripts can tell one host type from another
+        /// instead of seeing every one of them as "userdata".
+        /// </summary>
+        public virtual string TypeName => GetType().Name;
 
         public virtual BooleanObject ToBooleanObject() => BooleanObject.True;
 

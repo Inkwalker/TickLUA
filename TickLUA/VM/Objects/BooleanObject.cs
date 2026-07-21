@@ -17,6 +17,8 @@
         }
 
         public override BooleanObject ToBooleanObject() => this;
+        public override string TypeName => "boolean";
+
         public override StringObject ToStringObject() => new StringObject(ToString());
 
         // Singleton.

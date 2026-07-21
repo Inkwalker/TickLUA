@@ -81,6 +81,8 @@ namespace TickLUA.VM.Objects
 
         public override string ToString() => "< thread >";
 
+        public override string TypeName => "thread";
+
         public override StringObject ToStringObject() => new StringObject("[thread]");
 
         // Header only: the frames bill themselves on push/pop.

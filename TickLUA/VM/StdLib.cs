@@ -15,6 +15,8 @@ namespace TickLUA.VM
         private static readonly NativeFunctionObject ErrorFunction  = new NativeFunctionObject("error", Error);
         private static readonly NativeFunctionObject AssertFunction = new NativeFunctionObject("assert", Assert);
         private static readonly NativeFunctionObject PcallFunction  = new NativeFunctionObject("pcall", Pcall);
+        private static readonly NativeFunctionObject TypeFunction   = new NativeFunctionObject("type", Type);
+        private static readonly NativeFunctionObject ToStringFunction = new NativeFunctionObject("tostring", Tostring, TostringArgs);
 
         private static readonly NativeFunctionObject SetmetatableFunction = new NativeFunctionObject("setmetatable", Setmetatable);
         private static readonly NativeFunctionObject GetmetatableFunction = new NativeFunctionObject("getmetatable", Getmetatable);
@@ -37,6 +39,8 @@ namespace TickLUA.VM
             globals["error"]  = ErrorFunction;
             globals["assert"] = AssertFunction;
             globals["pcall"]  = PcallFunction;
+            globals["type"]     = TypeFunction;
+            globals["tostring"] = ToStringFunction;
 
             globals["setmetatable"] = SetmetatableFunction;
             globals["getmetatable"] = GetmetatableFunction;
@@ -103,6 +107,68 @@ namespace TickLUA.VM
             throw new RuntimeException(args.IsNilOrNone(1)
                 ? (LuaObject)new StringObject("assertion failed!")
                 : args[1]);
+        }
+
+        /// <summary>
+        /// type(v) — the value's own <see cref="LuaObject.TypeName"/>. Built-ins
+        /// give the standard Lua names; a host type names itself, so scripts can
+        /// branch on which one they were handed.
+        /// </summary>
+        private static LuaObject[] Type(NativeArgs args)
+        {
+            return new LuaObject[] { new StringObject(args.CheckAny(0).TypeName) };
+        }
+
+        /// <summary>
+        /// tostring(v) — VM-aware because a __tostring metamethod can be a Lua
+        /// closure, which cannot run inside a native: it is called like any
+        /// other metamethod and its result reaches the caller on a later tick.
+        /// Without a metamethod the value renders itself through
+        /// <see cref="LuaObject.ToStringObject"/>, so a host type controls how
+        /// it prints.
+        ///
+        /// Unlike reference Lua, tables, functions and threads carry no address
+        /// — "[table]" rather than "table: 0x55f8…". Addresses would expose the
+        /// host's memory layout to scripts and differ between otherwise
+        /// identical runs, which the VM's replayability rules out.
+        /// </summary>
+        private static void Tostring(TickVM vm, StackFrame frame, byte funcReg, int argCount, int resCount)
+        {
+            // Routed through NativeArgs so a missing argument reports the same
+            // message here as it does on the args path below.
+            var args = new LuaObject[argCount];
+            for (int i = 0; i < argCount; i++)
+                args[i] = frame.Registers[funcReg + 1 + i].Value;
+
+            TostringCore(vm, new NativeArgs(args, "tostring").CheckAny(0),
+                ResultsSink.ToRegisters(frame, funcReg, resCount), null);
+        }
+
+        private static void TostringArgs(TickVM vm, LuaObject[] args,
+            ResultsSinkDelegate sink, ErrorSinkDelegate errorSink)
+        {
+            TostringCore(vm, new NativeArgs(args, "tostring").CheckAny(0), sink, errorSink);
+        }
+
+        private static void TostringCore(TickVM vm, LuaObject value,
+            ResultsSinkDelegate sink, ErrorSinkDelegate errorSink)
+        {
+            var handler = Metamethods.GetHandler(value, Metamethods.ToStringKey);
+            if (handler == null)
+            {
+                sink(new LuaObject[] { value.ToStringObject() });
+                return;
+            }
+
+            Metamethods.Call(vm, handler, new LuaObject[] { value },
+                results =>
+                {
+                    var result = results.Length > 0 ? results[0] : NilObject.Nil;
+                    if (!(result is StringObject))
+                        throw new RuntimeException("'__tostring' must return a string");
+
+                    sink(new LuaObject[] { result });
+                }, errorSink);
         }
 
         private static LuaObject[] Setmetatable(NativeArgs args)

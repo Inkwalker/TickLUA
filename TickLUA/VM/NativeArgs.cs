@@ -133,18 +133,13 @@ namespace TickLUA.VM
             return copy;
         }
 
-        /// <summary>Lua type name of a value, as used in error messages.</summary>
+        /// <summary>
+        /// Lua type name of a value, as used in error messages — each type
+        /// answers for itself through <see cref="LuaObject.TypeName"/>. A C#
+        /// null is an absent value, which Lua calls nil.
+        /// </summary>
         public static string TypeName(LuaObject value)
-        {
-            if (NullOrNil(value)) return "nil";
-            if (value is BooleanObject) return "boolean";
-            if (value is NumberObject) return "number";
-            if (value is StringObject) return "string";
-            if (value is TableObject) return "table";
-            if (value is CoroutineObject) return "thread";
-            if (value is ClosureObject || value is NativeFunctionObject) return "function";
-            return value.GetType().Name;
-        }
+            => value == null ? "nil" : value.TypeName;
 
         private RuntimeException BadArgument(int index, string expected)
         {
