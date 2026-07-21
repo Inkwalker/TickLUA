@@ -205,6 +205,18 @@ var stack = dbg.GetCallStack();         // frames with names, lines, and local v
 
 Like the Ticker, every multi-tick method takes a tick budget and returns `BudgetExhausted` instead of blocking.
 
+## Optional libraries
+
+The `math` and `coroutine` libraries are registered by default and can be left out per VM:
+
+```csharp
+var vm = new TickVM(new TickVMOptions
+{
+    EnableMathLibrary      = false,   // no global 'math'
+    EnableCoroutineLibrary = false,   // no global 'coroutine'
+});
+```
+
 ## Quirks
 
 Ways TickLUA deliberately diverges from reference Lua.

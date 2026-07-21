@@ -193,7 +193,8 @@ namespace TickLUA.VM
         }
 
         /// <summary>
-        /// Builds an empty VM: standard library registered, nothing loaded. Set
+        /// Builds an empty VM: standard library registered (minus any library
+        /// <paramref name="options"/> turns off), nothing loaded. Set
         /// up <see cref="Globals"/> and <see cref="ModuleReader"/> as needed,
         /// then call <see cref="Load"/> to start a chunk.
         /// </summary>
@@ -217,7 +218,7 @@ namespace TickLUA.VM
 
             Globals = new TableObject();
             LoadedModules = new TableObject();
-            StdLib.Register(Globals, LoadedModules);
+            StdLib.Register(Globals, LoadedModules, options);
         }
 
         /// <summary>

@@ -23,7 +23,13 @@ namespace TickLUA.VM
         private static readonly NativeFunctionObject RawequalFunction = new NativeFunctionObject("rawequal", Rawequal);
         private static readonly NativeFunctionObject RawlenFunction   = new NativeFunctionObject("rawlen", Rawlen);
 
-        public static void Register(TableObject globals, TableObject loadedModules)
+        /// <summary>
+        /// Installs the library into a fresh globals table. The base functions
+        /// and package/require are always present; math and coroutine are
+        /// registered unless <paramref name="options"/> opts out. A null
+        /// <paramref name="options"/> means every default, i.e. everything on.
+        /// </summary>
+        public static void Register(TableObject globals, TableObject loadedModules, TickVMOptions options)
         {
             globals["next"]   = NextFunction;
             globals["pairs"]  = PairsFunction;
@@ -39,7 +45,11 @@ namespace TickLUA.VM
             globals["rawequal"] = RawequalFunction;
             globals["rawlen"]   = RawlenFunction;
 
-            StdLibCoroutine.Register(globals);
+            if (options?.EnableMathLibrary ?? true)
+                StdLibMath.Register(globals);
+            if (options?.EnableCoroutineLibrary ?? true)
+                StdLibCoroutine.Register(globals);
+
             StdLibPackage.Register(globals, loadedModules);
         }
 

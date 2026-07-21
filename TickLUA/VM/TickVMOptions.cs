@@ -1,8 +1,9 @@
 namespace TickLUA.VM
 {
     /// <summary>
-    /// Resource limits for a VM instance, supplied to the <see cref="TickVM"/>
-    /// constructor. Every limit is unlimited by default.
+    /// Resource limits and standard-library selection for a VM instance,
+    /// supplied to the <see cref="TickVM"/> constructor. Every limit is
+    /// unlimited by default and every library is enabled by default.
     /// </summary>
     public class TickVMOptions
     {
@@ -33,5 +34,22 @@ namespace TickLUA.VM
         /// first correction scan onward.
         /// </summary>
         public long? MaxMemoryBytes { get; set; }
+
+        /// <summary>
+        /// Registers the math library. When false the global <c>math</c> table
+        /// is absent entirely, so a script indexing it errors on a nil value.
+        /// Arithmetic operators are unaffected — they are instructions, not
+        /// library functions.
+        /// </summary>
+        public bool EnableMathLibrary { get; set; } = true;
+
+        /// <summary>
+        /// Registers the coroutine library. When false the global
+        /// <c>coroutine</c> table is absent entirely; scripts cannot create or
+        /// resume coroutines, nor yield to the host. The VM still runs every
+        /// chunk on a coroutine internally (see <see cref="TickVM.Load"/>) —
+        /// only the script-facing API goes away.
+        /// </summary>
+        public bool EnableCoroutineLibrary { get; set; } = true;
     }
 }
