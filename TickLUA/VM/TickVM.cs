@@ -72,23 +72,49 @@ namespace TickLUA.VM
 
         private readonly InstructionHandler[] instructionHandlers;
 
-        // Execution always operates on the current coroutine's stack; the main
-        // chunk runs on an implicit main coroutine. Resume/yield switch which
+        // Execution always operates on the current coroutine's stack; every call
+        // gets its own, the main chunk included. Resume/yield switch which
         // coroutine is current, and with it the stack every handler sees.
-        private readonly CoroutineObject mainCoroutine = new CoroutineObject();
+        //
+        // The idle root is the one coroutine that never runs Lua code: it is
+        // what is current when nothing is executing, and it terminates every
+        // resumer chain (see SwitchBack).
+        private readonly CoroutineObject idleCoroutine = new CoroutineObject();
         private CoroutineObject currentCoroutine;
+
+        // Every call's coroutine, so the memory ledger's correction scan can
+        // reach one that is merely suspended — nothing else references it.
+        // Pruned of dead entries as the scan walks it.
+        private readonly List<CoroutineObject> liveCoroutines = new List<CoroutineObject>();
 
         private Stack<StackFrame> CallStack => currentCoroutine.Stack;
 
-        internal CoroutineObject CurrentCoroutine => currentCoroutine;
-        internal CoroutineObject MainCoroutine => mainCoroutine;
+        /// <summary>
+        /// A resume or cancel the host requested through a <see cref="LuaCall"/>,
+        /// parked until the next tick can apply it safely.
+        /// </summary>
+        private struct PendingHostOp
+        {
+            public CoroutineObject Coroutine;
+            public LuaObject[] Args;
+            public bool IsCancel;
+        }
 
-        // Main cannot yield, so its stack only empties when the main chunk
-        // returns; suspended coroutines left behind are simply abandoned.
-        // A host-started call (see StartFunction) runs on its own coroutine
-        // while main's stack stays empty, so the VM is only finished once
-        // main is also the current coroutine again.
-        public bool IsFinished => mainCoroutine.Stack.Count == 0 && currentCoroutine == mainCoroutine;
+        private readonly Queue<PendingHostOp> pendingHostOps = new Queue<PendingHostOp>();
+
+        internal CoroutineObject CurrentCoroutine => currentCoroutine;
+
+        /// <summary>The coroutine running the main chunk; null until <see cref="Load"/>.</summary>
+        internal CoroutineObject MainCoroutine => MainCall?.Coroutine;
+
+        // Every call — the main chunk included — runs on its own coroutine, so
+        // "finished" means there is simply nothing to execute: control is back
+        // at the idle root and no queued resume or cancel is waiting for the
+        // next tick. That covers a VM with nothing loaded, one whose calls have
+        // all settled, and one whose calls are parked at a yield: none of them
+        // has an instruction to run until the host asks for more.
+        public bool IsFinished => currentCoroutine == idleCoroutine
+            && pendingHostOps.Count == 0;
 
         // Per-coroutine frame budget; int.MaxValue when no limit was configured.
         private readonly int maxCallStackDepth;
@@ -125,13 +151,23 @@ namespace TickLUA.VM
         internal int? MaxCallStackDepth
             => maxCallStackDepth == int.MaxValue ? (int?)null : maxCallStackDepth;
 
-        public LuaObject[] ExecutionResult { get; private set; }
+        /// <summary>
+        /// The main chunk's call, or null until <see cref="Load"/> is called.
+        /// </summary>
+        public LuaCall MainCall { get; private set; }
 
         /// <summary>
-        /// The main chunk this VM was constructed with. Retained for the
-        /// debugger, which validates debug info over the whole function tree.
+        /// What the main chunk returned — a shortcut to
+        /// <see cref="MainCall"/>.<see cref="LuaCall.Result"/>. Null until
+        /// <see cref="Load"/>, and empty until the chunk returns.
         /// </summary>
-        internal LuaFunction RootFunction { get; }
+        public LuaObject[] ExecutionResult => MainCall?.Result;
+
+        /// <summary>
+        /// The main chunk this VM loaded. Retained for the debugger, which
+        /// validates debug info over the whole function tree.
+        /// </summary>
+        internal LuaFunction RootFunction { get; private set; }
 
         /// <summary>
         /// The globals table, exposed to scripts as _ENV. Hosts can register
@@ -151,18 +187,18 @@ namespace TickLUA.VM
         /// </summary>
         public TableObject LoadedModules { get; }
 
-        public TickVM(LuaFunction bytecode, params LuaObject[] args)
-            : this(bytecode, null, args)
+        public TickVM()
+            : this(null)
         {
         }
 
-        public TickVM(LuaFunction bytecode, TickVMOptions options, params LuaObject[] args)
+        /// <summary>
+        /// Builds an empty VM: standard library registered, nothing loaded. Set
+        /// up <see cref="Globals"/> and <see cref="ModuleReader"/> as needed,
+        /// then call <see cref="Load"/> to start a chunk.
+        /// </summary>
+        public TickVM(TickVMOptions options)
         {
-            if (bytecode.CompilerVersion != LuaFunction.CurrentCompilerVersion)
-                throw new Serialization.BytecodeFormatException(
-                    $"Bytecode compiler version {bytecode.CompilerVersion} is not compatible with this VM " +
-                    $"(expected {LuaFunction.CurrentCompilerVersion})");
-
             if (options?.MaxCallStackDepth is int depth && depth < 1)
                 throw new ArgumentOutOfRangeException(nameof(options),
                     "MaxCallStackDepth must be at least 1 (null for unlimited)");
@@ -177,39 +213,106 @@ namespace TickLUA.VM
             }
 
             instructionHandlers = LoadInstructionSet();
-            currentCoroutine = mainCoroutine;
-            RootFunction = bytecode;
+            currentCoroutine = idleCoroutine;
 
-            // The main chunk is compiled with _ENV as upvalue #0; its cell holds
-            // the globals table.
             Globals = new TableObject();
             LoadedModules = new TableObject();
             StdLib.Register(Globals, LoadedModules);
-            var upvalues = new RegisterCell[] { new RegisterCell { Value = Globals } };
-            var frame = new StackFrame(bytecode, upvalues);
+        }
 
-            // The main chunk has no caller: its return becomes the VM's result.
-            frame.Sink = ResultsSink.ToExecutionResult(this);
+        /// <summary>
+        /// Starts the VM's main chunk, running it as a call like any other (see
+        /// <see cref="StartFunction"/>): it executes on subsequent
+        /// <see cref="Tick"/> calls and reports through the returned
+        /// <see cref="LuaCall"/>. <see cref="ExecutionResult"/> is a shortcut to
+        /// that handle's <see cref="LuaCall.Result"/>.
+        ///
+        /// <para>Host-supplied <paramref name="args"/> become the chunk's
+        /// varargs — scripts bind them with <c>local print, add = ...</c> — and
+        /// per the Lua spec are also published in the global <c>arg</c> table at
+        /// indices 1..n.</para>
+        ///
+        /// <para>A VM loads exactly one chunk: a second call throws, since two
+        /// chunks would fight over <see cref="Globals"/> and <c>arg</c>. Run
+        /// further entry points with <see cref="StartFunction"/> instead.</para>
+        /// </summary>
+        public LuaCall Load(LuaFunction bytecode, params LuaObject[] args)
+        {
+            if (bytecode == null)
+                throw new ArgumentNullException(nameof(bytecode));
+            if (MainCall != null)
+                throw new InvalidOperationException(
+                    "This VM has already loaded a chunk; use StartFunction to call into it");
 
-            // Host-supplied values become the main chunk's varargs; scripts bind
-            // them via "local print, add = ..." (the main chunk is compiled with
-            // HasVarargs = true and no parameters).
-            // Per the Lua spec they are also published in the global 'arg' table
-            // at indices 1..n.
+            if (bytecode.CompilerVersion != LuaFunction.CurrentCompilerVersion)
+                throw new Serialization.BytecodeFormatException(
+                    $"Bytecode compiler version {bytecode.CompilerVersion} is not compatible with this VM " +
+                    $"(expected {LuaFunction.CurrentCompilerVersion})");
+
+            RootFunction = bytecode;
+
             var arg_table = new TableObject();
-            if (args != null && args.Length > 0)
-            {
-                var varargs = new LuaObject[args.Length];
-                for (int i = 0; i < args.Length; i++)
-                {
-                    varargs[i] = args[i] ?? NilObject.Nil;
-                    arg_table[i + 1] = varargs[i];
-                }
-                frame.Varargs = varargs;
-            }
+            var call_args = NormalizeArgs(args);
+            for (int i = 0; i < call_args.Length; i++)
+                arg_table[i + 1] = call_args[i];
             Globals["arg"] = arg_table;
 
-            PushFrame(frame);
+            // The chunk is compiled with HasVarargs and no parameters, so
+            // BuildArgsFrame routes every argument into its varargs.
+            MainCall = CreateCall(ClosureInGlobalEnv(bytecode));
+            BeginCall(MainCall, call_args);
+            return MainCall;
+        }
+
+        /// <summary>
+        /// Wraps a compiled function as a closure over the globals table, which
+        /// chunks reference as _ENV (upvalue #0). Shared by <see cref="Load"/>
+        /// and the require/dofile loader.
+        /// </summary>
+        internal ClosureObject ClosureInGlobalEnv(LuaFunction function)
+        {
+            var upvalues = new RegisterCell[] { new RegisterCell { Value = Globals } };
+            return new ClosureObject(function, upvalues);
+        }
+
+        /// <summary>
+        /// Creates the handle and coroutine for a call without running anything.
+        /// Separate from <see cref="BeginCall"/> so callers hold the handle
+        /// before execution can throw — a native body runs synchronously and
+        /// its error would otherwise escape with the handle never handed back.
+        /// </summary>
+        private LuaCall CreateCall(LuaObject callee)
+        {
+            var co = new CoroutineObject(callee);
+            var call = new LuaCall(this, co);
+            co.HostCall = call;
+            liveCoroutines.Add(co);
+            return call;
+        }
+
+        /// <summary>
+        /// Starts a created call — the one path both <see cref="Load"/> and
+        /// <see cref="StartFunction"/> run through. Callers validate that the
+        /// callee is startable.
+        /// </summary>
+        private void BeginCall(LuaCall call, LuaObject[] args)
+        {
+            // Same ledger handoff as Tick: a native body runs synchronously
+            // right here, and the root frame is charged on push.
+            var previous_ledger = MemoryLedger.Current;
+            MemoryLedger.Current = ledger;
+            try
+            {
+                // Null error sink = wrap semantics: an unhandled body error
+                // unwinds into the resumer's stack, so with nothing else running
+                // it reaches the host as a rethrow out of Tick. The handle learns
+                // of the outcome through co.HostCall either way.
+                ResumeCoroutine(call.Coroutine, args, ResultsSink.Discard, null);
+            }
+            finally
+            {
+                MemoryLedger.Current = previous_ledger;
+            }
         }
 
         private InstructionHandler[] LoadInstructionSet()
@@ -228,11 +331,6 @@ namespace TickLUA.VM
 
         public void Tick()
         {
-            if (IsFinished) return;
-
-            var frame = CallStack.Peek();
-            var instruction = frame.Step();
-
             // Hand this VM's ledger to the write choke points for the duration
             // of the instruction (see MemoryLedger.Current); save/restore so a
             // native that ticks another VM cannot leave a stale ledger behind.
@@ -240,7 +338,15 @@ namespace TickLUA.VM
             MemoryLedger.Current = ledger;
             try
             {
-                Execute(frame, instruction);
+                // Before the IsFinished check, not after: a paused host call
+                // leaves main's stack empty, so the VM already reports finished
+                // and an early return would strand the queued op forever.
+                DrainPendingHostOps();
+
+                if (IsFinished) return;
+
+                var frame = CallStack.Peek();
+                Execute(frame, frame.Step());
 
                 if (ledger != null)
                     ledger.EnforceLimit();
@@ -257,35 +363,166 @@ namespace TickLUA.VM
         }
 
         /// <summary>
+        /// Applies the resumes and cancels the host asked for since the last
+        /// tick (see <see cref="LuaCall.Resume"/> / <see cref="LuaCall.Cancel"/>).
+        /// Running here rather than at request time keeps those methods free of
+        /// VM work, so a native can call them mid-tick without re-entering the
+        /// interpreter. Draining the whole queue means two calls resumed before
+        /// the same tick nest, the second parking the first as its resumer —
+        /// exactly what two back-to-back StartFunction calls already do.
+        /// </summary>
+        private void DrainPendingHostOps()
+        {
+            while (pendingHostOps.Count > 0)
+            {
+                var op = pendingHostOps.Dequeue();
+                if (op.IsCancel)
+                    CancelHostCall(op.Coroutine);
+                else if (op.Coroutine.Status == CoroutineStatus.Suspended)
+                    // Suspended is the only resumable state; anything else means
+                    // a cancel queued behind the resume already killed it.
+                    ResumeCoroutine(op.Coroutine, op.Args, ResultsSink.Discard, null);
+            }
+        }
+
+        internal void QueueHostResume(CoroutineObject co, LuaObject[] args)
+        {
+            pendingHostOps.Enqueue(new PendingHostOp
+            {
+                Coroutine = co,
+                Args = NormalizeArgs(args),
+            });
+        }
+
+        internal void QueueHostCancel(CoroutineObject co)
+        {
+            pendingHostOps.Enqueue(new PendingHostOp { Coroutine = co, IsCancel = true });
+        }
+
+        /// <summary>
+        /// Kills a host-started call. A cancelled call takes with it every
+        /// coroutine it resumed: tearing down only the call itself would leave a
+        /// live child pointing at a dead resumer, which would corrupt the switch
+        /// back when the child returns.
+        /// </summary>
+        private void CancelHostCall(CoroutineObject co)
+        {
+            if (co.Status == CoroutineStatus.Dead)
+                return;
+
+            bool on_active_chain = false;
+            for (var c = currentCoroutine; c != null; c = c.Resumer)
+            {
+                if (c == co)
+                {
+                    on_active_chain = true;
+                    break;
+                }
+            }
+
+            if (!on_active_chain)
+            {
+                // Suspended and not current — the ordinary paused case. A
+                // coroutine that yielded has no running child, so there is no
+                // chain to unwind and nobody to hand control back to.
+                DiscardCoroutineStack(co);
+                co.Status = CoroutineStatus.Dead;
+                return;
+            }
+
+            // Unwind the descendants co resumed, innermost first.
+            while (currentCoroutine != co)
+            {
+                var child = currentCoroutine;
+                DiscardCoroutineStack(child);
+                child.Status = CoroutineStatus.Dead;
+                currentCoroutine = child.Resumer;
+            }
+
+            DiscardCoroutineStack(co);
+            SwitchBack(co, CoroutineStatus.Dead);
+        }
+
+        /// <summary>
+        /// Drops a coroutine's frames, refunding what the ledger charged for them.
+        /// </summary>
+        private void DiscardCoroutineStack(CoroutineObject co)
+        {
+            if (ledger != null)
+                foreach (var f in co.Stack)
+                    ledger.ChargeFrame(f, -1);
+            co.Stack.Clear();
+        }
+
+        /// <summary>
+        /// Copies host-supplied arguments, substituting nil for nulls so the VM
+        /// never sees a null register value.
+        /// </summary>
+        private static LuaObject[] NormalizeArgs(LuaObject[] args)
+        {
+            if (args == null || args.Length == 0)
+                return LuaObject.NoResults;
+
+            var copy = new LuaObject[args.Length];
+            for (int i = 0; i < args.Length; i++)
+                copy[i] = args[i] ?? NilObject.Nil;
+            return copy;
+        }
+
+        /// <summary>
         /// Starts a call to a function held in the globals table, letting the
         /// host invoke script-defined entry points (an init or update
         /// callback, say) after the main chunk has set them up. The function
         /// runs as a fresh coroutine — with the same _ENV the main chunk saw —
-        /// on subsequent <see cref="Tick"/> calls; tick until
-        /// <see cref="IsFinished"/>. Its return values are discarded, as are
-        /// any yielded values (a yield abandons the coroutine). An unhandled
-        /// error inside the call propagates out of <see cref="Tick"/> as a
-        /// <see cref="RuntimeException"/>, like an error in the main chunk.
-        /// Starting a call while the VM is mid-execution parks the current
-        /// execution, which continues after the started call completes.
+        /// on subsequent <see cref="Tick"/> calls; tick until the returned
+        /// handle reports <see cref="LuaCall.IsFinished"/>.
+        ///
+        /// <para>The <see cref="LuaCall"/> is the call's deferred result: poll it
+        /// each tick for the body's return values, for values it yielded (which
+        /// pause the call until <see cref="LuaCall.Resume"/>), or for an error.
+        /// An unhandled error also propagates out of <see cref="Tick"/> as a
+        /// <see cref="RuntimeException"/>, like an error in the main chunk, so
+        /// hosts that ignore the handle behave as before.</para>
+        ///
+        /// <para>A plain native body runs synchronously, so its call is already
+        /// finished by the time this returns. Starting a call while the VM is
+        /// mid-execution parks the current execution, which continues after the
+        /// started call completes.</para>
         /// </summary>
-        public void StartFunction(string globalName, params LuaObject[] args)
+        public LuaCall StartFunction(string globalName, params LuaObject[] args)
         {
-            if (!TryStartFunction(globalName, args))
+            LuaCall call;
+            if (!TryStartFunction(globalName, out call, args))
                 throw new ArgumentException(
                     $"global '{globalName}' is not a startable function (got {NativeArgs.TypeName(Globals[globalName])})",
                     nameof(globalName));
+            return call;
         }
 
         /// <summary>
         /// Like <see cref="StartFunction"/>, but returns false instead of
         /// throwing when the global is missing or not a startable function —
-        /// for optional entry points the script may or may not define.
+        /// for optional entry points the script may or may not define. Use the
+        /// <see cref="TryStartFunction(string, out LuaCall, LuaObject[])"/>
+        /// overload to also get the call's handle.
         /// </summary>
         public bool TryStartFunction(string globalName, params LuaObject[] args)
         {
+            LuaCall call;
+            return TryStartFunction(globalName, out call, args);
+        }
+
+        /// <summary>
+        /// Like <see cref="TryStartFunction(string, LuaObject[])"/>, but also
+        /// hands back the started call's handle; <paramref name="call"/> is null
+        /// when the global is missing or not startable.
+        /// </summary>
+        public bool TryStartFunction(string globalName, out LuaCall call, params LuaObject[] args)
+        {
             if (globalName == null)
                 throw new ArgumentNullException(nameof(globalName));
+
+            call = null;
 
             // Same startability rule as coroutine.create: a closure, or a
             // plain native. VM-aware natives (pcall and friends) read fixed
@@ -296,30 +533,8 @@ namespace TickLUA.VM
             if (!startable)
                 return false;
 
-            var call_args = LuaObject.NoResults;
-            if (args != null && args.Length > 0)
-            {
-                call_args = new LuaObject[args.Length];
-                for (int i = 0; i < args.Length; i++)
-                    call_args[i] = args[i] ?? NilObject.Nil;
-            }
-
-            // Same ledger handoff as Tick: a native body runs synchronously
-            // right here, and the root frame is charged on push.
-            var previous_ledger = MemoryLedger.Current;
-            MemoryLedger.Current = ledger;
-            try
-            {
-                // Null error sink = wrap semantics: an unhandled body error
-                // unwinds into the resumer's stack, so with main idle it
-                // reaches the host as a rethrow out of Tick.
-                ResumeCoroutine(new CoroutineObject(callee), call_args,
-                    ResultsSink.Discard, null);
-            }
-            finally
-            {
-                MemoryLedger.Current = previous_ledger;
-            }
+            call = CreateCall(callee);
+            BeginCall(call, NormalizeArgs(args));
             return true;
         }
 
@@ -360,7 +575,7 @@ namespace TickLUA.VM
                     return true;
                 }
 
-                if (currentCoroutine == mainCoroutine)
+                if (currentCoroutine == idleCoroutine)
                 {
                     // Error escapes every boundary: record the Lua call stack (still
                     // intact — nothing has been popped) so the host sees where it happened.
@@ -373,11 +588,12 @@ namespace TickLUA.VM
                     // Wrap mode: the coroutine's frames are about to be discarded,
                     // so capture them now (innermost capture wins on re-capture).
                     ex.CaptureTraceback(BuildTraceback());
-                if (ledger != null)
-                    foreach (var f in co.Stack)
-                        ledger.ChargeFrame(f, -1);
-                co.Stack.Clear();
+                DiscardCoroutineStack(co);
                 SwitchBack(co, CoroutineStatus.Dead);
+
+                // A host-started call reports the error through its handle as
+                // well; the unwind below still delivers it as usual.
+                co.HostCall?.OnFaulted(ex);
 
                 if (co.PendingResumeErrorSink != null)
                 {
@@ -434,6 +650,7 @@ namespace TickLUA.VM
                     catch (RuntimeException ex)
                     {
                         SwitchBack(co, CoroutineStatus.Dead);
+                        co.HostCall?.OnFaulted(ex);
                         if (co.PendingResumeErrorSink != null)
                             co.PendingResumeErrorSink(ex.ErrorValue);
                         else
@@ -459,11 +676,15 @@ namespace TickLUA.VM
         internal void YieldCurrent(LuaObject[] values, ResultsSinkDelegate resumeArgsSink)
         {
             var co = currentCoroutine;
-            if (co == mainCoroutine)
+            if (co.Resumer == null)
+                // Only the idle root has no resumer, and no script can run
+                // there — this is a structural safety net, not a language rule.
+                // Every call, the main chunk included, is free to yield.
                 throw new RuntimeException("attempt to yield from outside a coroutine");
 
             co.PendingYieldSink = resumeArgsSink;
             SwitchBack(co, CoroutineStatus.Suspended);
+            co.HostCall?.OnYielded(values);
             co.PendingResumeSink(values);
         }
 
@@ -474,6 +695,7 @@ namespace TickLUA.VM
         private void FinishCoroutine(CoroutineObject co, LuaObject[] results)
         {
             SwitchBack(co, CoroutineStatus.Dead);
+            co.HostCall?.OnFinished(results);
             co.PendingResumeSink(results);
         }
 
@@ -535,9 +757,15 @@ namespace TickLUA.VM
             return frame;
         }
 
-        internal void SetExecutionResult(params LuaObject[] result)
+        /// <summary>
+        /// Every live call's coroutine, for the memory ledger's correction scan.
+        /// Dead entries are dropped as it goes: a finished or cancelled call
+        /// retains nothing.
+        /// </summary>
+        internal List<CoroutineObject> CollectLiveCoroutines()
         {
-            ExecutionResult = result;
+            liveCoroutines.RemoveAll(co => co.Status == CoroutineStatus.Dead);
+            return liveCoroutines;
         }
     }
 }

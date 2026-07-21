@@ -8,11 +8,15 @@ Combined with call-stack and memory limits, this makes the VM safe to hand to pl
 ## Creating a VM and execution limits
 
 ```csharp
-var vm = new TickVM(bytecode, new TickVMOptions
+var vm = new TickVM(new TickVMOptions
 {
     MaxCallStackDepth = 200,              // frames per coroutine; overflow raises a Lua error
     MaxMemoryBytes    = 1 * 1024 * 1024,  // approximate cap on script-reachable memory
 });
+
+vm.Globals["log"] = new NativeFunctionObject("log", ...);  // set up globals
+
+vm.Load(bytecode);                        // load the main chunk
 
 while (!vm.IsFinished)
     vm.Tick();                            // one instruction per call
@@ -20,9 +24,13 @@ while (!vm.IsFinished)
 LuaObject[] results = vm.ExecutionResult; // main chunk's return values
 ```
 
+A VM can have only one chunk loaded.
+
+Extra `Load` arguments (`vm.Load(bytecode, arg1, arg2)`) become the chunk's `...` varargs and the global `arg` table.<br>
+`vm.Load` hands back a `LuaCall` handle that can be used to monitor execution progress of the main chunk, resume it after `coroutine.yield` and get results.<br>
+
 Both limits raise catchable Lua errors (`pcall`) when exceeded.<br>
-Unhandled script errors surface as `RuntimeException` from `Tick()`.<br>
-Extra constructor arguments (`new TickVM(bytecode, options, arg1, arg2)`) become the main chunk's `...` varargs and the global `arg` table.
+Unhandled script errors surface as `RuntimeException` from `Tick()`, and also fault the handle.
 
 ## Compiling source code
 
@@ -49,17 +57,25 @@ Deserialization throws `BytecodeFormatException` on corrupt or version-mismatche
 
 ## Ticker
 
-`Ticker` is a convenience driver over `Tick()` for the common host patterns: a per-frame instruction budget, line stepping, or run-to-completion:
+`Ticker` is a convenience driver over `Tick()` for the common host patterns: a per-frame instruction budget, line stepping, or run-to-completion.
 
 ```csharp
 var ticker = new Ticker(vm);
 
-TickerResult r = ticker.Tick(500);          // advance up to 500 instructions
-r = ticker.TickLine();                      // run until the source line changes
-r = ticker.TickToEnd(maxTicks: 100_000);    // run until the script finishes
+TickerResult r = ticker.Tick(500);            // advance up to 500 instructions
+r = ticker.TickLine();                        // run until the source line changes
+r = ticker.TickToEnd(maxTicks: 100_000);      // run until nothing is left to run
 ```
 
 Each method returns `Finished`, `Advanced`, or `LimitReached`. On `LimitReached` it can be called again next frame. A typical game integration gives each script N ticks per frame.
+
+It also drives a single script function end to end, resuming it with no arguments whenever it yields:
+
+```csharp
+LuaCall call = ticker.RunFunction("global_func");
+if (call.Status == LuaCallStatus.Completed)
+    var results = call.Result;
+```
 
 ## Global values
 
@@ -93,14 +109,40 @@ Natives run synchronously inside one tick and must not re-enter the VM (no `Tick
 After the main chunk has run (and defined its global functions), the host can invoke script entry points by global name:
 
 ```csharp
-vm.StartFunction("on_update", new NumberObject(deltaTime)); // throws if missing
-vm.TryStartFunction("on_init");                             // false if missing — for optional hooks
+var call = vm.StartFunction("on_update", new NumberObject(deltaTime)); // throws if missing
+vm.TryStartFunction("on_init");                                       // false if missing — for optional hooks
 
 while (!vm.IsFinished)
     vm.Tick(); // the started call runs on subsequent ticks
+
+if (call.Status == LuaCallStatus.Completed)
+    Console.WriteLine(call.Result[0]); // what on_update returned
 ```
 
-The call runs as a fresh coroutine under the same tick/limit regime; return values are discarded.
+The call runs as a fresh coroutine under the same tick/limit regime. `StartFunction` hands back a `LuaCall` handle that can be used to check corutine status after each `Tick()`:
+
+| `Status` | Meaning |
+| --- | --- |
+| `Running` | still executing, or queued to resume next tick |
+| `Paused` | the body yielded; `Result` holds the yielded values |
+| `Completed` | the body returned; `Result` holds its return values |
+| `Faulted` | an uncaught error killed it; `Error` holds it (and it still propagates out of `Tick()`) |
+| `Cancelled` | the host called `Cancel()` |
+
+A yield pauses the call. It must be resumed manually:
+
+```csharp
+var call = vm.StartFunction("producer");
+while (!call.IsFinished)
+{
+    vm.Tick();
+    if (call.Status == LuaCallStatus.Paused)
+        call.Resume(...); // feed the next coroutine.yield()
+}
+```
+
+`Cancel()` stops the coroutine and releases memory.
+
 
 ## Module loader
 
@@ -162,3 +204,39 @@ var stack = dbg.GetCallStack();         // frames with names, lines, and local v
 ```
 
 Like the Ticker, every multi-tick method takes a tick budget and returns `BudgetExhausted` instead of blocking.
+
+## Quirks
+
+Ways TickLUA deliberately diverges from reference Lua.
+
+### `coroutine.isyieldable()` always returns `true`
+
+TickLUA runs every chunk as a call on its own coroutine, the main chunk included (see [`Load`](#creating-a-vm-and-execution-limits)) so yielding is always illegal:
+
+```lua
+print(coroutine.isyieldable())  -- true, even at the top level
+coroutine.yield(1)              -- legal: pauses the main chunk for the host
+```
+
+`coroutine.running()` is unaffected: its second return still reports whether you are in the main chunk.
+
+### Number are 32-bit floats
+
+For simplicity `NumberObject` wraps a single-precision `float`. There is no integer subtype.
+
+### C-style operators
+
+The lexer takes `!=` as a synonym for `~=`:
+
+```lua
+if a ~= b then end
+if a != b then end   -- valid
+```
+
+Compound assignment operators are also supported:
+
+```lua
+a += 5      a -= 5
+a *= 2      a /= 2      a //= 2
+a %= 3      a ^= 2
+```

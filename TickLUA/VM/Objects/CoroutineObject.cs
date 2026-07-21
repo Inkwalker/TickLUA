@@ -58,6 +58,15 @@ namespace TickLUA.VM.Objects
         /// </summary>
         internal ResultsSinkDelegate PendingYieldSink { get; set; }
 
+        /// <summary>
+        /// Set when this coroutine backs a host-started call (see
+        /// <see cref="TickVM.StartFunction"/>). The VM reports returns, yields
+        /// and errors here, which is why the handle stays accurate no matter who
+        /// drove the resume — unlike <see cref="PendingResumeSink"/>, which every
+        /// resume replaces.
+        /// </summary>
+        internal LuaCall HostCall { get; set; }
+
         internal CoroutineObject(LuaObject body)
         {
             Body = body;

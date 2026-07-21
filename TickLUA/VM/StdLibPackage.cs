@@ -128,7 +128,7 @@ namespace TickLUA.VM
         /// <summary>
         /// Reads the source through the host delegate, compiles it and wraps it
         /// in a closure sharing the VM's globals as _ENV — the same wiring the
-        /// main chunk gets in the TickVM constructor.
+        /// main chunk gets from <see cref="TickVM.Load"/>.
         /// </summary>
         private static ClosureObject LoadChunk(TickVM vm, string name, string notFoundMessage)
         {
@@ -150,8 +150,7 @@ namespace TickLUA.VM
                     $"error loading module '{name}': {ex.Message} (line {ex.Line}, column {ex.Column})");
             }
 
-            var upvalues = new RegisterCell[] { new RegisterCell { Value = vm.Globals } };
-            return new ClosureObject(function, upvalues);
+            return vm.ClosureInGlobalEnv(function);
         }
 
         private static string CheckName(StackFrame frame, byte funcReg, int argCount, string funcName)

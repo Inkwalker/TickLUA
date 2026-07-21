@@ -36,12 +36,19 @@ namespace TickLUA.VM.Objects
             return Value.GetHashCode();
         }
 
+        /// <summary>
+        /// Always invariant: number-to-string is script-visible, and the host's
+        /// regional settings must not change what a script computes. A comma
+        /// decimal separator would also be rejected by <see cref="TryParse"/>,
+        /// which is invariant, breaking the round trip on the same machine.
+        /// </summary>
         public override string ToString()
         {
-            return Value.ToString();
+            return Value.ToString(CultureInfo.InvariantCulture);
         }
 
-        public override StringObject ToStringObject() => new StringObject(Value.ToString());
+        public override StringObject ToStringObject()
+            => new StringObject(Value.ToString(CultureInfo.InvariantCulture));
 
         // Fixed-size and bounded by the slots that hold it.
         public override long ShallowMemoryCost() => 0;

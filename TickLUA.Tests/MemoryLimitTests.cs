@@ -1,4 +1,5 @@
 using TickLUA.Compilers.LUA;
+using TickLUA.VM.Objects;
 
 namespace TickLUA_Tests
 {
@@ -6,7 +7,7 @@ namespace TickLUA_Tests
     {
         private static TickVM Compile(string source, TickVMOptions options)
         {
-            return new TickVM(LuaCompiler.Compile(source), options);
+            return Utils.Load(LuaCompiler.Compile(source), options);
         }
 
         private static RuntimeException AssertThrowsOutOfMemory(TickVM vm)
@@ -47,6 +48,96 @@ namespace TickLUA_Tests
             Utils.AssertIntegerResult(vm, 100);
             // 100 entries at 32 bytes each, at minimum.
             Assert.That(vm.EstimatedMemoryBytes, Is.GreaterThanOrEqualTo(3200));
+        }
+
+        [Test]
+        public void Limit_CancelledCallRefundsItsFrames()
+        {
+            // A paused host call holds its frames, and their charge, until the
+            // host cancels it (see LuaCall.Cancel). The recursion is deliberately
+            // not a tail call, so all 20 frames are live at the yield.
+            const int depth = 20;
+            string source = @"
+                function deep(n)
+                    if n > 0 then
+                        local r = deep(n - 1)
+                        return r
+                    end
+                    coroutine.yield()
+                end";
+
+            var vm = Compile(source, new TickVMOptions { MaxMemoryBytes = 256 * 1024 });
+            Utils.Run(vm, 100_000);
+            long idle = vm.EstimatedMemoryBytes;
+
+            var call = vm.StartFunction("deep", new NumberObject(depth));
+            Utils.Run(vm, 100_000);
+            Assert.That(call.Status, Is.EqualTo(LuaCallStatus.Paused));
+
+            long paused = vm.EstimatedMemoryBytes;
+            Assert.That(paused, Is.GreaterThan(idle),
+                "the paused call's frames should still be charged");
+
+            call.Cancel();
+            Utils.Run(vm, 100_000);
+
+            // Cancelling refunds every frame the call held. The ledger is an
+            // upper bound that only reverses what it can attribute, so values
+            // written into those frames stay billed until the next correction
+            // scan — hence a floor on the drop rather than a return to idle.
+            long refunded = paused - vm.EstimatedMemoryBytes;
+            Assert.That(refunded, Is.GreaterThanOrEqualTo(depth * MemoryLedger.FrameCost),
+                "each discarded frame should be refunded");
+        }
+
+        [Test]
+        public void Limit_ScanCountsSuspendedCalls()
+        {
+            // A paused call's frames are reachable from nothing else — the
+            // correction scan finds it only through the VM's live-call list. If
+            // it did not, the scan would rebaseline as though the retained table
+            // were free.
+            string source = @"
+                function hold()
+                    local t = {}
+                    for i = 1, 500 do t[i] = 'value' .. i end
+                    coroutine.yield()
+                end
+                function churn()
+                    pcall(function()
+                        local s = 'x'
+                        while true do s = s .. s end
+                    end)
+                end";
+
+            // Measured as a difference: run the identical scan with and without
+            // the suspended call, so the assertion is about what the scan sees
+            // rather than about any absolute estimate.
+            long AfterScan(bool holdSomething)
+            {
+                var vm = Compile(source, new TickVMOptions { MaxMemoryBytes = 512 * 1024 });
+                Utils.Run(vm, 100_000);
+
+                if (holdSomething)
+                {
+                    var held = vm.StartFunction("hold");
+                    Utils.Run(vm, 100_000);
+                    Assert.That(held.Status, Is.EqualTo(LuaCallStatus.Paused));
+                }
+
+                // Runaway concatenation drives the total over the limit, forcing
+                // a correction scan; pcall contains the resulting error.
+                vm.StartFunction("churn");
+                Utils.Run(vm, 1_000_000);
+                return vm.EstimatedMemoryBytes;
+            }
+
+            long idle = AfterScan(false);
+            long holding = AfterScan(true);
+
+            // 500 string entries plus the frames retaining them.
+            Assert.That(holding - idle, Is.GreaterThan(10_000),
+                "the scan discarded the suspended call's retained data");
         }
 
         [Test]
@@ -159,9 +250,9 @@ namespace TickLUA_Tests
         [Test]
         public void Limit_MustBePositive()
         {
-            var func = LuaCompiler.Compile("return 1");
+            // Options are validated by the constructor, independently of any chunk.
             Assert.Throws<System.ArgumentOutOfRangeException>(
-                () => new TickVM(func, new TickVMOptions { MaxMemoryBytes = 0 }));
+                () => new TickVM(new TickVMOptions { MaxMemoryBytes = 0 }));
         }
     }
 }

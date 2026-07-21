@@ -11,7 +11,7 @@ namespace TickLUA_Tests.Debugging
         private static (TickVM vm, DebugSession dbg) Create(string source, params LuaObject[] args)
         {
             var func = LuaCompiler.Compile(source);
-            var vm = new TickVM(func, args);
+            var vm = Utils.Load(func, args);
             return (vm, new DebugSession(vm));
         }
 
@@ -407,7 +407,7 @@ namespace TickLUA_Tests.Debugging
                 "end\n" +
                 "local r = f()\n" +
                 "return r");
-            var vm = new TickVM(func, new TickVMOptions
+            var vm = Utils.Load(func, new TickVMOptions
             {
                 MaxMemoryBytes = 64 * 1024,
                 MaxCallStackDepth = 32,
@@ -454,7 +454,7 @@ namespace TickLUA_Tests.Debugging
             var stripped = BytecodeSerializer.Deserialize(BytecodeSerializer.Serialize(compiled, stripDebugInfo: true));
 
             Assert.IsFalse(stripped.HasDebugInfo);
-            var vm = new TickVM(stripped);
+            var vm = Utils.Load(stripped);
             Assert.Throws<InvalidOperationException>(() => new DebugSession(vm));
         }
 
@@ -464,7 +464,7 @@ namespace TickLUA_Tests.Debugging
             var compiled = LuaCompiler.Compile("local a = 1\nlocal b = a + 1\nreturn b");
             var restored = BytecodeSerializer.Deserialize(BytecodeSerializer.Serialize(compiled));
 
-            var vm = new TickVM(restored);
+            var vm = Utils.Load(restored);
             var dbg = new DebugSession(vm);
 
             dbg.AddBreakpoint(2);

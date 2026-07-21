@@ -21,15 +21,32 @@ namespace TickLUA_Tests
 
             BytecodePrinter.ConsoleWrite(luaFunction, true);
 
-            var vm = new TickVM(luaFunction, vm_args);
+            // The reader has to be installed before the chunk starts, which is
+            // exactly what splitting Load out of the constructor allows.
+            var vm = new TickVM();
             vm.ModuleReader = module_reader;
+            vm.Load(luaFunction, vm_args);
 
             return Run(vm, tick_limit);
         }
 
         public static TickVM Run(LuaFunction func, int tick_limit, params LuaObject[] vm_args)
         {
-            return Run(new TickVM(func, vm_args), tick_limit);
+            return Run(Load(func, vm_args), tick_limit);
+        }
+
+        /// <summary>Builds a VM and starts <paramref name="func"/> as its main chunk.</summary>
+        public static TickVM Load(LuaFunction func, params LuaObject[] vm_args)
+        {
+            return Load(func, (TickVMOptions?)null, vm_args);
+        }
+
+        /// <summary><see cref="Load(LuaFunction, LuaObject[])"/> with VM options.</summary>
+        public static TickVM Load(LuaFunction func, TickVMOptions? options, params LuaObject[] vm_args)
+        {
+            var vm = new TickVM(options);
+            vm.Load(func, vm_args);
+            return vm;
         }
 
         public static TickVM Run(TickVM vm, int tick_limit)

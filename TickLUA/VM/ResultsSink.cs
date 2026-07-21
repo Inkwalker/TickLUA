@@ -31,12 +31,6 @@ namespace TickLUA.VM
             => results => WriteResults(target, start_reg, res_count, results);
 
         /// <summary>
-        /// Top-level chunk delivery: the results become the VM's ExecutionResult.
-        /// </summary>
-        internal static ResultsSinkDelegate ToExecutionResult(TickVM vm)
-            => results => vm.SetExecutionResult(results);
-
-        /// <summary>
         /// Delivery for calls whose results are ignored (__newindex handlers).
         /// </summary>
         internal static readonly ResultsSinkDelegate Discard = results => { };

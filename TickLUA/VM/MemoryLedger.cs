@@ -193,11 +193,19 @@ namespace TickLUA.VM
 
             AddRoot(vm.Globals);
             AddRoot(vm.LoadedModules);
-            AddRoot(vm.MainCoroutine);
             AddRoot(vm.CurrentCoroutine);
-            if (vm.ExecutionResult != null)
-                foreach (var v in vm.ExecutionResult)
-                    Visit(v);
+
+            // Coroutine traversal only follows the child -> resumer edge, so a
+            // suspended call is reachable from nothing else: without this the
+            // scan would undercount every parked call's frames.
+            foreach (var co in vm.CollectLiveCoroutines())
+            {
+                AddRoot(co);
+                var result = co.HostCall?.Result;
+                if (result != null)
+                    foreach (var v in result)
+                        Visit(v);
+            }
 
             while (pending.Count > 0)
             {

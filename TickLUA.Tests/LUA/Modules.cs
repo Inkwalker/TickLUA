@@ -234,7 +234,7 @@ namespace TickLUA_Tests.LUA
         public void Require_HostPreloadedModule_SkipsReader()
         {
             var func = LuaCompiler.Compile("return require('pre').x");
-            var vm = new TickVM(func);
+            var vm = Utils.Load(func);
 
             var preloaded = new TableObject();
             preloaded["x"] = LuaObject.From(5);

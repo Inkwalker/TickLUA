@@ -18,7 +18,7 @@ namespace TickLUA_Tests.Instructions
             bytecode.Instructions.Add(Instruction.NOP());
             bytecode.Instructions.Add(Instruction.RETURN(0, 0));
 
-            var vm = new TickVM(bytecode);
+            var vm = Utils.Load(bytecode);
 
             for (int i = 0; i < 3; i++)
             {

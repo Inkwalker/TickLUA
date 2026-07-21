@@ -1,3 +1,6 @@
+using TickLUA.Compilers.LUA;
+using TickLUA.VM.Objects;
+
 namespace TickLUA_Tests.LUA
 {
     internal class Coroutines
@@ -286,15 +289,28 @@ namespace TickLUA_Tests.LUA
         }
 
         [Test]
-        public void Yield_FromMainChunkIsAnError()
+        public void Yield_FromMainChunkPausesIt()
         {
-            string source = @"
-                local ok, err = pcall(coroutine.yield)
-                return ok, err";
+            // The main chunk runs as a call like any other (TickVM.Load), so it
+            // is a genuine coroutine and yielding parks it for the host.
+            var vm = Utils.Load(LuaCompiler.Compile(@"
+                stage = 'before'
+                coroutine.yield(7)
+                stage = 'after'
+                return 'done'"));
+            var main = vm.MainCall;
 
-            var vm = Utils.Run(source, 100);
-            Utils.AssertBoolResult(vm, false);
-            Utils.AssertStringResult(vm, "attempt to yield from outside a coroutine", 1);
+            Utils.Run(vm, 100);
+
+            Assert.That(main.Status, Is.EqualTo(LuaCallStatus.Paused));
+            Assert.That(((NumberObject)main.Result[0]).Value, Is.EqualTo(7));
+            Assert.That(((StringObject)vm.Globals["stage"]).Value, Is.EqualTo("before"));
+
+            main.Resume();
+            Utils.Run(vm, 100);
+
+            Assert.That(main.Status, Is.EqualTo(LuaCallStatus.Completed));
+            Utils.AssertStringResult(vm, "done");
         }
 
         [Test]
@@ -345,7 +361,9 @@ namespace TickLUA_Tests.LUA
 
             var vm = Utils.Run(source, 200);
             Utils.AssertBoolResult(vm, true);       // running() in main reports main
-            Utils.AssertBoolResult(vm, false, 1);   // main is not yieldable
+            // Every execution context is a real coroutine now, the main chunk
+            // included, so there is nowhere yield is illegal.
+            Utils.AssertBoolResult(vm, true, 1);    // main is yieldable too
             Utils.AssertBoolResult(vm, true, 2);    // body is yieldable
             Utils.AssertBoolResult(vm, false, 3);   // running() in body is not main
         }

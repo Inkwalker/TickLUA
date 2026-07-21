@@ -112,7 +112,7 @@ namespace TickLUA_Tests.LUA
             string source = @"return add(2, 3)";
 
             var func = LuaCompiler.Compile(source);
-            var vm = new TickVM(func);
+            var vm = Utils.Load(func);
             vm.Globals["add"] = new NativeFunctionObject("add", args =>
             {
                 float result = args.CheckNumber(0) + args.CheckNumber(1);

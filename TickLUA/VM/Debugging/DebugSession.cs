@@ -34,8 +34,9 @@ namespace TickLUA.VM.Debugging
             = new HashSet<(string function, int line)>();
 
         /// <exception cref="InvalidOperationException">
-        /// The VM's bytecode was serialized with <c>stripDebugInfo</c>, so
-        /// variable inspection is impossible. Check
+        /// The VM has not loaded a chunk yet, or its bytecode was serialized
+        /// with <c>stripDebugInfo</c> so variable inspection is impossible.
+        /// Call <see cref="TickVM.Load"/> first, and check
         /// <see cref="LuaFunction.HasDebugInfo"/> before creating a session.
         /// </exception>
         public DebugSession(TickVM vm)
@@ -44,6 +45,11 @@ namespace TickLUA.VM.Debugging
                 throw new ArgumentNullException(nameof(vm));
 
             this.vm = vm;
+
+            if (vm.RootFunction == null)
+                throw new InvalidOperationException(
+                    "The VM has not loaded a chunk yet; call TickVM.Load before starting a debug session.");
+
             ValidateDebugInfo(vm.RootFunction);
         }
 

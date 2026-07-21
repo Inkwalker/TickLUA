@@ -441,7 +441,7 @@ namespace TickLUA_Tests.LUA
 
             var luaFunction = LuaCompiler.Compile(source);
 
-            var vm = new TickVM(luaFunction);
+            var vm = Utils.Load(luaFunction);
 
             var sw = Stopwatch.StartNew();
 

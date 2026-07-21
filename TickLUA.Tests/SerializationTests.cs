@@ -282,7 +282,7 @@ namespace TickLUA_Tests
             var compiled = LuaCompiler.Compile("local x = 1\nlocal y = x .. {}\nreturn y");
             var stripped = BytecodeSerializer.Deserialize(BytecodeSerializer.Serialize(compiled, stripDebugInfo: true));
 
-            var vm = new TickVM(stripped);
+            var vm = Utils.Load(stripped);
             var ex = Assert.Throws<RuntimeException>(() =>
             {
                 while (!vm.IsFinished) vm.Tick();
@@ -334,7 +334,7 @@ namespace TickLUA_Tests
             var func = LuaCompiler.Compile("return 1");
             func.CompilerVersion = LuaFunction.CurrentCompilerVersion + 1;
 
-            Assert.Throws<BytecodeFormatException>(() => new TickVM(func));
+            Assert.Throws<BytecodeFormatException>(() => Utils.Load(func));
         }
 
         [Test]

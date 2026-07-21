@@ -14,7 +14,7 @@ namespace TickLUA_Tests
 
         private static TickVM Compile(string source, TickVMOptions options)
         {
-            return new TickVM(LuaCompiler.Compile(source), options);
+            return Utils.Load(LuaCompiler.Compile(source), options);
         }
 
         [Test]
@@ -131,9 +131,9 @@ namespace TickLUA_Tests
         [Test]
         public void Limit_MustBePositive()
         {
-            var func = LuaCompiler.Compile("return 1");
+            // Options are validated by the constructor, independently of any chunk.
             Assert.Throws<System.ArgumentOutOfRangeException>(
-                () => new TickVM(func, new TickVMOptions { MaxCallStackDepth = 0 }));
+                () => new TickVM(new TickVMOptions { MaxCallStackDepth = 0 }));
         }
     }
 }

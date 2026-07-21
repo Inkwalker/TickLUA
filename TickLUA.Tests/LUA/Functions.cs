@@ -388,7 +388,7 @@ namespace TickLUA_Tests.LUA
                 return count(1000)";
 
             var lua_function = LuaCompiler.Compile(source);
-            var vm = new TickVM(lua_function);
+            var vm = Utils.Load(lua_function);
 
             int max_depth = 0;
             int ticks = 0;

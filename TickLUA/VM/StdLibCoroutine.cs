@@ -163,11 +163,16 @@ namespace TickLUA.VM
             });
         }
 
+        /// <summary>
+        /// coroutine.isyieldable() — always true here: every execution context a
+        /// script can observe is a real coroutine, the main chunk included (see
+        /// <see cref="TickVM.Load"/>), so there is nowhere yield is illegal.
+        /// </summary>
         private static void IsYieldable(TickVM vm, StackFrame frame, byte funcReg, int argCount, int resCount)
         {
             ResultsSink.ToRegisters(frame, funcReg, resCount)(new LuaObject[]
             {
-                BooleanObject.FromBool(vm.CurrentCoroutine != vm.MainCoroutine),
+                BooleanObject.True,
             });
         }
 
